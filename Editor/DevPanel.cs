@@ -9,319 +9,330 @@ using System.IO;
 using Newtonsoft.Json;
 using Filta.Datatypes;
 
-public class DevPanel : EditorWindow
+namespace Filta
 {
-    private string email = "";
-    private string password = "";
-    private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
-    private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
-    private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadArtSource"; } }
-    private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
-    private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
-    private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
-    private string _statusBar = "";
-    private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-    private string assetBundlePath = "";
-    private bool showDebug = false;
-    private bool runLocally = false;
-    private string selectedArtTitle = "";
-    private string selectedArtKey = "";
-    private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
-    private LoginResponse loginData;
-    private int selGridInt = 0;
-
-
-    private Filta.Backend Backend;
-
-    [MenuItem("Filta/Developer Panel")]
-    static void Init()
+    public class DevPanel : EditorWindow
     {
-        DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel));
-        window.Show();
-    }
+        private string email = "";
+        private string password = "";
+        private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
+        private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
+        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadArtSource"; } }
+        private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
+        private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
+        private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
+        private string _statusBar = "";
+        private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
+        private string assetBundlePath = "";
+        private bool runLocally = false;
+        private string selectedArtTitle = "";
+        private string selectedArtKey = "";
+        private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
+        private LoginResponse loginData;
+        private int selGridInt = 0;
 
-    void OnGUI()
-    {
-
-        Login();
-        EditorGUILayout.Separator();
-
-        if (loginData != null && loginData.idToken != "")
+        [MenuItem("Filta/Artist Panel")]
+        static void Init()
         {
-            if (selectedArtKey != "")
+            DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
+            window.Show();
+        }
+
+        void OnGUI()
+        {
+
+            Login();
+            EditorGUILayout.Separator();
+
+            if (loginData != null && loginData.idToken != "")
             {
-                SelectedArt();
+                if (selectedArtKey != "")
+                {
+                    SelectedArt();
+                }
+                else
+                {
+                    PrivateCollection();
+                }
+            }
+
+            GUILayout.FlexibleSpace();
+            runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
+            EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
+        }
+
+        private async void GenerateAndUploadAssetBundle(string name)
+        {
+            if (String.IsNullOrEmpty(selectedArtKey))
+            {
+                Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
+                return;
+            }
+            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle: {name}");
+            if (!assetBundleButton) { return; }
+
+            statusBar = "Generating asset bundles";
+            string assetBundleDirectory = "AssetBundles";
+            if (!Directory.Exists(assetBundleDirectory))
+            {
+                Directory.CreateDirectory(assetBundleDirectory);
+            }
+            var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
+                                    BuildAssetBundleOptions.None,
+                                    BuildTarget.iOS);
+            assetBundlePath = $"{assetBundleDirectory}/{name}";
+            statusBar = "Asset bundle generated";
+
+
+            statusBar = "Connecting...";
+            Hash128 hash;
+            if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
+            {
+                statusBar = "Asset bundle not found";
+                return;
+            }
+            WWWForm postData = new WWWForm();
+            if (selectedArtKey != "temp")
+            {
+                Debug.LogWarning("Updating Art with artid: " + selectedArtKey);
+                postData.AddField("artid", selectedArtKey);
+            }
+            postData.AddField("uid", loginData.idToken);
+            postData.AddField("hash", hash.ToString());
+            postData.AddField("title", selectedArtTitle);
+            var www = UnityWebRequest.Post(UPLOAD_URL, postData);
+            await www.SendWebRequest();
+            statusBar = "Connected! Uploading...";
+            var response = www.downloadHandler.text;
+            UploadBundleResponse parsed;
+            try
+            {
+                parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
+            }
+            catch
+            {
+                statusBar = "Error! Check console for more information";
+                Debug.LogError(response);
+                return;
+            }
+            var bytes = File.ReadAllBytes(assetBundlePath);
+            var upload = UnityWebRequest.Put(parsed.url, bytes);
+            await upload.SendWebRequest();
+            await GetPrivateCollection();
+            selectedArtKey = parsed.artid;
+            statusBar = "Upload successful";
+        }
+
+        private async void Login()
+        {
+            if (loginData != null)
+            {
+                bool logout = GUILayout.Button("Logout");
+                if (logout)
+                {
+                    password = "";
+                    loginData = null;
+                    GUI.FocusControl(null);
+                }
+                return;
+            }
+
+            EditorGUILayout.LabelField("Login to your user account", EditorStyles.boldLabel);
+            email = (string)EditorGUILayout.TextField("email", email);
+            password = (string)EditorGUILayout.PasswordField("password", password);
+            var submitButton = GUILayout.Button("Login");
+            if (!submitButton) { return; }
+            selectedArtKey = "";
+            WWWForm postData = new WWWForm();
+            postData.AddField("email", email);
+            postData.AddField("password", password);
+            postData.AddField("returnSecureToken", "true");
+            var www = UnityWebRequest.Post(loginURL + fbaseKey, postData);
+            statusBar = "Connecting...";
+
+            await www.SendWebRequest();
+            var response = www.downloadHandler.text;
+            if (response.Contains("EMAIL_NOT_FOUND"))
+            {
+                statusBar = "Error: Email not found";
+            }
+            else if (response.Contains("MISSING_PASSWORD"))
+            {
+                statusBar = "Error: Missing Password";
+            }
+            else if (response.Contains("INVALID_PASSWORD"))
+            {
+                statusBar = "Error: Invalid Password";
             }
             else
             {
-                PrivateCollection();
+                loginData = JsonUtility.FromJson<LoginResponse>(response);
+                statusBar = $"Login successful!";
             }
-        }
-
-        showDebug = EditorGUILayout.Foldout(showDebug, "Debug Utilities");
-        if (showDebug)
-        {
-            GetWardrobe();
-        }
-
-        GUILayout.FlexibleSpace();
-        runLocally = GUILayout.Toggle(runLocally, "Test locally");
-        EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
-    }
-
-    private async void GenerateAndUploadAssetBundle(string name)
-    {
-        bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle: {name}");
-        if (!assetBundleButton) { return; }
-        if (selectedArtKey != "temp")
-        {
-            statusBar = "Updating art not supported yet!";
-            return;
-        }
-        statusBar = "Generating asset bundles";
-        string assetBundleDirectory = "AssetBundles";
-        if (!Directory.Exists(assetBundleDirectory))
-        {
-            Directory.CreateDirectory(assetBundleDirectory);
-        }
-        var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
-                                BuildAssetBundleOptions.None,
-                                BuildTarget.iOS);
-        assetBundlePath = $"{assetBundleDirectory}/{name}";
-        statusBar = "Asset bundle generated";
-
-
-        statusBar = "Connecting...";
-        Hash128 hash;
-        if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
-        {
-            statusBar = "Asset bundle not found";
-            return;
-        }
-        WWWForm postData = new WWWForm();
-        postData.AddField("uid", loginData.idToken);
-        postData.AddField("hash", hash.ToString());
-        postData.AddField("title", selectedArtTitle);
-        var www = UnityWebRequest.Post(UPLOAD_URL, postData);
-        await www.SendWebRequest();
-        statusBar = "Connected! Uploading...";
-        var response = www.downloadHandler.text;
-        UploadBundleResponse parsed;
-        try
-        {
-            parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
-        }
-        catch (Exception e)
-        {
-            statusBar = "Error! Check console for more information";
-            Debug.LogError(response);
-            return;
-        }
-        var bytes = File.ReadAllBytes(assetBundlePath);
-        var upload = UnityWebRequest.Put(parsed.url, bytes);
-        await upload.SendWebRequest();
-        await GetPrivateCollection();
-        selectedArtKey = parsed.artid;
-        statusBar = "Upload successful";
-    }
-
-    private async void Login()
-    {
-        EditorGUILayout.LabelField("Login to your user account", EditorStyles.boldLabel);
-        email = (string)EditorGUILayout.TextField("email", email);
-        password = (string)EditorGUILayout.PasswordField("password", password);
-        var submitButton = GUILayout.Button("Login");
-        if (!submitButton) { return; }
-        selectedArtKey = "";
-        WWWForm postData = new WWWForm();
-        postData.AddField("email", email);
-        postData.AddField("password", password);
-        postData.AddField("returnSecureToken", "true");
-        var www = UnityWebRequest.Post(loginURL + fbaseKey, postData);
-        statusBar = "Connecting...";
-
-        await www.SendWebRequest();
-        var response = www.downloadHandler.text;
-        if (response.Contains("EMAIL_NOT_FOUND"))
-        {
-            statusBar = "Error: Email not found";
-        }
-        else if (response.Contains("MISSING_PASSWORD"))
-        {
-            statusBar = "Error: Missing Password";
-        }
-        else if (response.Contains("INVALID_PASSWORD"))
-        {
-            statusBar = "Error: Invalid Password";
-        }
-        else
-        {
-            loginData = JsonUtility.FromJson<LoginResponse>(response);
-            statusBar = $"Login successful!";
-        }
-        try
-        {
-            await GetPrivateCollection();
-        }
-        catch (Exception e)
-        {
-            statusBar = "Error downloading collection. Try again. Check console for more information.";
-            Debug.LogError(e.Message);
-        }
-    }
-
-    private async void GetWardrobe()
-    {
-        bool wardrobeButton = GUILayout.Button("Get Wardrobe");
-        if (!wardrobeButton) { return; }
-        Backend = await Filta.Backend.ConstructBackend();
-        var wardrobe = await Backend.GetWardrobe(loginData.localId);
-
-    }
-
-    private async Task GetPrivateCollection()
-    {
-        string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
-        {
-            await req.SendWebRequest();
-            if (req.isNetworkError || req.isHttpError)
+            try
             {
-                throw new Exception(req.error.ToString());
+                await GetPrivateCollection();
             }
-            var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
-            privateCollection = result;
-            this.Repaint();
-        }
-    }
-
-    private void PrivateCollection()
-    {
-        if (privateCollection.Count < 1) { return; }
-        EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
-
-        foreach (var item in privateCollection)
-        {
-            bool clicked = GUILayout.Button(item.Value.title);
-            if (clicked)
+            catch (Exception e)
             {
-                selectedArtTitle = item.Value.title;
-                selectedArtKey = item.Key;
+                statusBar = "Error downloading collection. Try again. Check console for more information.";
+                Debug.LogError(e.Message);
             }
         }
-        bool newClicked = GUILayout.Button("Create new piece");
-        if (newClicked)
+
+        private async Task GetPrivateCollection()
         {
-            selectedArtTitle = "Untitled Piece";
-            selectedArtKey = "temp";
+            string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                await req.SendWebRequest();
+                if (req.isNetworkError || req.isHttpError)
+                {
+                    throw new Exception(req.error.ToString());
+                }
+                var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
+                privateCollection = result;
+                this.Repaint();
+            }
         }
 
-    }
-
-    private async void DeletePrivArt(string artId)
-    {
-        if (GUILayout.Button("Delete"))
+        private void PrivateCollection()
         {
-            if (!EditorUtility.DisplayDialog("Delete", "Are you sure you want to delete this from Filta?", "yes", "cancel"))
+            if (privateCollection.Count < 1) { return; }
+            EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
+            bool newClicked = GUILayout.Button("CREATE NEW PIECE");
+            EditorGUILayout.Space();
+            if (newClicked)
+            {
+                selectedArtTitle = "Untitled Piece";
+                selectedArtKey = "temp";
+            }
+
+            foreach (var item in privateCollection)
+            {
+                bool clicked = GUILayout.Button(item.Value.title);
+                if (clicked)
+                {
+                    selectedArtTitle = item.Value.title;
+                    selectedArtKey = item.Key;
+                }
+            }
+            
+
+        }
+
+        private async void DeletePrivArt(string artId)
+        {
+            if (GUILayout.Button("Delete upload from Filta"))
+            {
+                if (!EditorUtility.DisplayDialog("Delete", "Are you sure you want to delete this from Filta?", "yes", "cancel"))
+                {
+                    return;
+                }
+            }
+            else
             {
                 return;
             }
-        }
-        else
-        {
-            return;
-        }
 
-        statusBar = "Deleting...";
+            statusBar = "Deleting...";
 
-        WWWForm postData = new WWWForm();
-        postData.AddField("uid", loginData.idToken);
-        postData.AddField("artid", artId);
-        var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
-        await www.SendWebRequest();
-        var response = www.downloadHandler.text;
-        if (www.isHttpError || www.isNetworkError)
-        {
-            statusBar = $"Error Deleting. Check console for details.";
-            Debug.LogError(www.error + " " + www.downloadHandler.text);
-            return;
-        }
-        statusBar = $"Delete: {response}";
-        privateCollection.Remove(selectedArtKey);
-        selectedArtKey = "";
-    }
-
-    private void SelectedArt()
-    {
-        if (GUILayout.Button("Back"))
-        {
+            WWWForm postData = new WWWForm();
+            postData.AddField("uid", loginData.idToken);
+            postData.AddField("artid", artId);
+            var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
+            await www.SendWebRequest();
+            var response = www.downloadHandler.text;
+            if (www.isHttpError || www.isNetworkError)
+            {
+                statusBar = $"Error Deleting. Check console for details.";
+                Debug.LogError(www.error + " " + www.downloadHandler.text);
+                return;
+            }
+            statusBar = $"Delete: {response}";
+            privateCollection.Remove(selectedArtKey);
             selectedArtKey = "";
         }
-        selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
 
-        var names = AssetDatabase.GetAllAssetBundleNames();
-
-
-        if (names.Length == 0)
+        private void SelectedArt()
         {
-            EditorGUILayout.LabelField("One asset bundle needed");
+            if (GUILayout.Button("Back"))
+            {
+                selectedArtKey = "";
+            }
+            EditorGUILayout.Space();
+            selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Select an asset bundle to upload:");
+
+            var names = AssetDatabase.GetAllAssetBundleNames();
+
+
+            if (names.Length == 0)
+            {
+                EditorGUILayout.LabelField("No asset bundles found. Create one!");
+            }
+            else
+            {
+                selGridInt = GUILayout.SelectionGrid(selGridInt, names, names.Length);
+                EditorGUILayout.Space();
+                GenerateAndUploadAssetBundle(names[selGridInt]);
+            }
+                EditorGUILayout.Space();
+                EditorGUILayout.Space();
+
+            DeletePrivArt(selectedArtKey);
         }
-        else
+    }
+
+    [Serializable]
+    public class LoginResponse
+    {
+        public string localId;
+        public string displayName;
+        public string idToken;
+        public string refreshToken;
+        public int expiresIn;
+    }
+
+    [Serializable]
+    public class UploadBundleResponse
+    {
+        public string url;
+        public string artid;
+    }
+
+    public class UnityWebRequestAwaiter : INotifyCompletion
+    {
+        private UnityWebRequestAsyncOperation asyncOp;
+        private Action continuation;
+
+        public UnityWebRequestAwaiter(UnityWebRequestAsyncOperation asyncOp)
         {
-            selGridInt = GUILayout.SelectionGrid(selGridInt, names, names.Length);
-            GenerateAndUploadAssetBundle(names[selGridInt]);
+            this.asyncOp = asyncOp;
+            asyncOp.completed += OnRequestCompleted;
         }
-        DeletePrivArt(selectedArtKey);
-    }
-}
 
-[Serializable]
-public class LoginResponse
-{
-    public string localId;
-    public string displayName;
-    public string idToken;
-    public string refreshToken;
-    public int expiresIn;
-}
+        public bool IsCompleted { get { return asyncOp.isDone; } }
 
-[Serializable]
-public class UploadBundleResponse
-{
-    public string url;
-    public string artid;
-}
+        public void GetResult() { }
 
-public class UnityWebRequestAwaiter : INotifyCompletion
-{
-    private UnityWebRequestAsyncOperation asyncOp;
-    private Action continuation;
+        public void OnCompleted(Action continuation)
+        {
+            this.continuation = continuation;
+        }
 
-    public UnityWebRequestAwaiter(UnityWebRequestAsyncOperation asyncOp)
-    {
-        this.asyncOp = asyncOp;
-        asyncOp.completed += OnRequestCompleted;
+        private void OnRequestCompleted(AsyncOperation obj)
+        {
+            continuation();
+        }
     }
 
-    public bool IsCompleted { get { return asyncOp.isDone; } }
-
-    public void GetResult() { }
-
-    public void OnCompleted(Action continuation)
+    public static class ExtensionMethods
     {
-        this.continuation = continuation;
-    }
-
-    private void OnRequestCompleted(AsyncOperation obj)
-    {
-        continuation();
-    }
-}
-
-public static class ExtensionMethods
-{
-    public static UnityWebRequestAwaiter GetAwaiter(this UnityWebRequestAsyncOperation asyncOp)
-    {
-        return new UnityWebRequestAwaiter(asyncOp);
+        public static UnityWebRequestAwaiter GetAwaiter(this UnityWebRequestAsyncOperation asyncOp)
+        {
+            return new UnityWebRequestAwaiter(asyncOp);
+        }
     }
 }
