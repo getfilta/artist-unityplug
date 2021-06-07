@@ -1,14 +1,14 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Plugin",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "unity": "2020.1",
-  "author": "Chris Horne",
+  "author": "Filta",
   "description": "A suite of plugins to help artists create face filters in Unity",
   "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/getfilta/artist-unityplug",
-    "revision": "47a080dca86b6c8c923357733ef461d9ecbc442a"
+    "revision": "dd9748aad0857e7fa53568641f5b5b56eabbf972"
   }
 }
