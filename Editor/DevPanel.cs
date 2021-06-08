@@ -58,7 +58,17 @@ namespace Filta
 
             GUILayout.FlexibleSpace();
             runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
+            if (GUILayout.Button("Check for updates"))
+            {
+                UpdatePanel();
+            };
+
             EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
+        }
+
+        private void UpdatePanel()
+        {
+            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
         }
 
         private async void GenerateAndUploadAssetBundle(string name)
