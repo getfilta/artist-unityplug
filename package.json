@@ -1,14 +1,13 @@
 {
   "name": "com.getfilta.artist-unityplug",
-  "displayName": "Filta Artist Panel",
+  "displayName": "Filta Artist Suite",
   "version": "0.1.1",
   "unity": "2020.1",
   "author": "Filta",
-  "description": "A suite of tools to help artists create face filters in Unity",
+  "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
   "dependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/getfilta/artist-unityplug",
-    "revision": "dd9748aad0857e7fa53568641f5b5b56eabbf972"
+    "url": "https://github.com/getfilta/artist-unityplug"
   }
 }

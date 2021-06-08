@@ -58,7 +58,7 @@ namespace Filta
 
             GUILayout.FlexibleSpace();
             runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
-            if (GUILayout.Button("Check for updates"))
+            if (GUILayout.Button("Get latest plugin version"))
             {
                 UpdatePanel();
             };
