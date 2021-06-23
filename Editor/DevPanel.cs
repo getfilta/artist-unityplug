@@ -208,7 +208,6 @@ namespace Filta
 
         private void PrivateCollection()
         {
-            if (privateCollection.Count < 1) { return; }
             EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
             bool newClicked = GUILayout.Button("CREATE NEW PIECE");
             EditorGUILayout.Space();
@@ -217,7 +216,8 @@ namespace Filta
                 selectedArtTitle = "Untitled Piece";
                 selectedArtKey = "temp";
             }
-
+            
+            if (privateCollection == null || privateCollection.Count < 1) { return; }
             foreach (var item in privateCollection)
             {
                 bool clicked = GUILayout.Button(item.Value.title);
