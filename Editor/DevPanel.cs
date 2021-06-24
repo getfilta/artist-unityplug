@@ -82,6 +82,22 @@ namespace Filta
             if (!assetBundleButton) { return; }
 
             statusBar = "Generating asset bundles";
+
+            var filterObject = GameObject.Find("Filter");
+            if (filterObject == null)
+            {
+                EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
+                return;
+            }
+            try
+            {
+                PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
+            } catch
+            {
+                EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
+                return;
+            }
+
             string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
             {
