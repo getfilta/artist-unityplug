@@ -119,7 +119,7 @@ namespace Filta
 
         private void UpdatePanel()
         {
-            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git#simulator");
         }
 
         private async void GenerateAndUploadAssetBundle(string name)
