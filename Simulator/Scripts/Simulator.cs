@@ -176,7 +176,7 @@ public class Simulator : MonoBehaviour
         mesh = new Mesh();
         isPlaying = true;
         startTime = DateTime.Now;
-        filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Editor/Simulator/FaceRecording");
+        filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
         Debug.Log("Starting playback");
     }
 
