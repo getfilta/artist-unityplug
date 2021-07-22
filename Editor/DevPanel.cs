@@ -76,8 +76,9 @@ namespace Filta
             }
             else{
                 if (GUILayout.Button("Activate Simulator")){
+                    GameObject filter = GameObject.Find("Filter");
                     activeSimulator = true;
-                    GameObject simulatorObject = Instantiate(simulatorPrefab);
+                    GameObject simulatorObject = filter == null ? Instantiate(simulatorPrefab) : Instantiate(simulatorPrefab, filter.transform);
                     simulator = simulatorObject.GetComponent<Simulator>();
                 }
             }
