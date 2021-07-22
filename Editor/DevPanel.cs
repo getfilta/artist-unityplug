@@ -93,6 +93,7 @@ namespace Filta
             EditorGUILayout.Separator();
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
+            HandleSimulator();
 
             if (loginData != null && loginData.idToken != "")
             {
