@@ -45,7 +45,7 @@ namespace Filta
 
         private bool activeSimulator;
         private void OnEnable(){
-            simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Editor/Simulator/Simulator.prefab");
+            simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
             GameObject simulatorObject = GameObject.FindGameObjectWithTag("Simulator");
             if (simulatorObject != null){
                 simulator = simulatorObject.GetComponent<Simulator>();
