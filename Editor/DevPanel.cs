@@ -37,12 +37,63 @@ namespace Filta
             DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
             window.Show();
         }
+        
+        #region Simulator
+
+        private GameObject simulatorPrefab;
+        private Simulator simulator;
+
+        private bool activeSimulator;
+        private void OnEnable(){
+            simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
+            GameObject simulatorObject = GameObject.FindGameObjectWithTag("Simulator");
+            if (simulatorObject != null){
+                simulator = simulatorObject.GetComponent<Simulator>();
+                if (simulator != null){
+                    activeSimulator = true;
+                }
+            }
+        }
+
+        private void HandleSimulator(){
+            if (activeSimulator){
+                if (simulator.isPlaying){
+                    if (GUILayout.Button("Stop")){
+                        simulator.isPlaying = false;
+                    }
+                }
+                else{
+                    if (GUILayout.Button("Play")){
+                        simulator.isPlaying = true;
+                    }
+                }
+
+                if (GUILayout.Button("Remove Simulator")){
+                    activeSimulator = false;
+                    DestroyImmediate(simulator.gameObject);
+                    simulator = null;
+                }
+            }
+            else{
+                if (GUILayout.Button("Activate Simulator")){
+                    GameObject filter = GameObject.Find("Filter");
+                    activeSimulator = true;
+                    GameObject simulatorObject = filter == null ? Instantiate(simulatorPrefab) : Instantiate(simulatorPrefab, filter.transform);
+                    simulator = simulatorObject.GetComponent<Simulator>();
+                }
+            }
+        }
+
+        #endregion
 
         void OnGUI()
         {
 
             Login();
             EditorGUILayout.Separator();
+            EditorGUILayout.Separator();
+            EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
+            HandleSimulator();
 
             if (loginData != null && loginData.idToken != "")
             {
@@ -68,7 +119,7 @@ namespace Filta
 
         private void UpdatePanel()
         {
-            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git#simulator2");
         }
 
         private async void GenerateAndUploadAssetBundle(string name)
