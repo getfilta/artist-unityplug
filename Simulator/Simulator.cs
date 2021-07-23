@@ -101,6 +101,11 @@ public class Simulator : MonoBehaviour
                                      (rightEyeTracker.localPosition - leftEyeTracker.localPosition) / 2;
         noseBridgeTracker.localPosition = noseBridgePosition;
         noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
+		faceTracker.name = "FaceTracker";
+        leftEyeTracker.name = "LeftEyeTracker";
+        rightEyeTracker.name = "RightEyeTracker";
+        noseBridgeTracker.name = "NoseBridgeTracker";
+        gameObject.name = "Simulator";
     }
 
     private void Playback(long currentTime){
