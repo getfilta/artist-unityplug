@@ -142,6 +142,9 @@ namespace Filta
             }
             try
             {
+				if (simulator != null){
+					GameObject.DestroyImmediate(simulator);
+				}
                 PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
             } catch
             {
