@@ -10,45 +10,52 @@ using Unity.Collections;
 [ExecuteAlways]
 public class Simulator : MonoBehaviour
 {
-    public string filePath;
+    private string _filePath;
     
-    private long recordingLength;
+    private long _recordingLength;
     
-    private FaceRecording faceRecording;
+    private FaceRecording _faceRecording;
 
-    public GameObject faceMeshVisualiser;
-    public float visualiserOffset;
+    [SerializeField]
+    private GameObject faceMeshVisualiser;
+    [SerializeField]
+    private float visualiserOffset;
 
     [Header("Face Trackers")]
-    public Transform faceTracker;
-    public Transform leftEyeTracker;
-    public Transform rightEyeTracker;
-    public Transform noseBridgeTracker;
+    [SerializeField]
+    private Transform faceTracker;
+    [SerializeField]
+    private Transform leftEyeTracker;
+    [SerializeField]
+    private Transform rightEyeTracker;
+    [SerializeField]
+    private Transform noseBridgeTracker;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
     public bool isPlaying;
     
     
-    private long prevTime;
-    private int previousFrame;
+    private long _prevTime;
+    private int _previousFrame;
 
 
-    private DateTime startTime;
+    private DateTime _startTime;
 
-    private FaceData.FaceMesh faceMesh;
+    private FaceData.FaceMesh _faceMesh;
 
     private bool IsSetUpProperly(){
         return faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null && rightEyeTracker != null && noseBridgeTracker != null;
     }
 
+    //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     private void Update(){
         if (!IsSetUpProperly()){
             Debug.LogError("The simulator object is not set up properly. Consider deleting the simulator object and re-activating it from the artist panel!");
             return;
         }
             
-        if (faceRecording.faceDatas == null || faceRecording.faceDatas.Count == 0){
+        if (_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0){
             try{
                 GetRecordingData();
             }
@@ -60,23 +67,23 @@ public class Simulator : MonoBehaviour
         }
         
         if (!isPlaying){
-            startTime = DateTime.Now;
+            _startTime = DateTime.Now;
             return;
         }
-        long time = (long) (DateTime.Now - startTime).TotalMilliseconds;
+        long time = (long) (DateTime.Now - _startTime).TotalMilliseconds;
         Playback(time);
     }
     
     private void GetRecordingData(){
         Debug.Log("Deserializing file");
-        byte[] data = File.ReadAllBytes(filePath);
+        byte[] data = File.ReadAllBytes(_filePath);
         string faceData = Encoding.ASCII.GetString(data);
-        faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
-        recordingLength = faceRecording.faceDatas[faceRecording.faceDatas.Count - 1].timestamp;
+        _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
+        _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
     }
 
     void Replay(){
-        startTime = DateTime.Now;
+        _startTime = DateTime.Now;
     }
     
 
@@ -109,30 +116,30 @@ public class Simulator : MonoBehaviour
     }
 
     private void Playback(long currentTime){
-        if (recordingLength <= 0){
+        if (_recordingLength <= 0){
             return;
         }
 
-        if (currentTime > recordingLength){
+        if (currentTime > _recordingLength){
             Replay();
             return;
         }
 
-        if (prevTime > currentTime){
-            previousFrame = 0;
+        if (_prevTime > currentTime){
+            _previousFrame = 0;
         }
 
-        prevTime = currentTime;
+        _prevTime = currentTime;
 
-        for (int i = previousFrame; i < faceRecording.faceDatas.Count; i++){
-            FaceData faceData = faceRecording.faceDatas[i];
-            faceMesh = faceData.faceMesh;
+        for (int i = _previousFrame; i < _faceRecording.faceDatas.Count; i++){
+            FaceData faceData = _faceRecording.faceDatas[i];
+            _faceMesh = faceData.faceMesh;
             long nextTimeStamp = faceData.timestamp;
             float[] nextBlendShape = faceData.blendshapeData;
 
             //we want to find the timestamp in the future so we can walk back a frame and interpolate
             if (nextTimeStamp < currentTime){
-                if (i == faceRecording.faceDatas.Count - 1){
+                if (i == _faceRecording.faceDatas.Count - 1){
                     i = 0;
                     break;
                 }
@@ -168,7 +175,7 @@ public class Simulator : MonoBehaviour
                 faceMask.SetBlendShapeWeight(j, nowValue);
             }*/
 
-            previousFrame = i;
+            _previousFrame = i;
             break;
         }
     }
@@ -180,8 +187,8 @@ public class Simulator : MonoBehaviour
     private void Awake(){
         mesh = new Mesh();
         isPlaying = true;
-        startTime = DateTime.Now;
-        filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
+        _startTime = DateTime.Now;
+        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
         Debug.Log("Starting playback");
     }
 
@@ -193,19 +200,19 @@ public class Simulator : MonoBehaviour
         }
 
         mesh.Clear();
-        if (faceMesh.vertices.Count > 0 && faceMesh.indices.Count > 0){
-            mesh.SetVertices(FaceData.Vector3Converter(faceMesh.vertices));
-            mesh.SetIndices(faceMesh.indices, MeshTopology.Triangles, 0, false);
+        if (_faceMesh.vertices.Count > 0 && _faceMesh.indices.Count > 0){
+            mesh.SetVertices(FaceData.Vector3Converter(_faceMesh.vertices));
+            mesh.SetIndices(_faceMesh.indices, MeshTopology.Triangles, 0, false);
             mesh.RecalculateBounds();
-            if (faceMesh.normals.Count == faceMesh.vertices.Count){
-                mesh.SetNormals(FaceData.Vector3Converter(faceMesh.normals));
+            if (_faceMesh.normals.Count == _faceMesh.vertices.Count){
+                mesh.SetNormals(FaceData.Vector3Converter(_faceMesh.normals));
             }
             else{
                 mesh.RecalculateNormals();
             }
 
-            if (faceMesh.uvs.Count > 0){
-                mesh.SetUVs(0, FaceData.Vector2Converter(faceMesh.uvs));
+            if (_faceMesh.uvs.Count > 0){
+                mesh.SetUVs(0, FaceData.Vector2Converter(_faceMesh.uvs));
             }
             
             var meshFilter = faceMeshVisualiser.GetComponent<MeshFilter>();

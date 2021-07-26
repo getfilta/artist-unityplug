@@ -40,46 +40,46 @@ namespace Filta
         
         #region Simulator
 
-        private GameObject simulatorPrefab;
-        private Simulator simulator;
+        private GameObject _simulatorPrefab;
+        private Simulator _simulator;
 
-        private bool activeSimulator;
+        private bool _activeSimulator;
         private void OnEnable(){
-            simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
+            _simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
             GameObject simulatorObject = GameObject.FindGameObjectWithTag("Simulator");
             if (simulatorObject != null){
-                simulator = simulatorObject.GetComponent<Simulator>();
-                if (simulator != null){
-                    activeSimulator = true;
+                _simulator = simulatorObject.GetComponent<Simulator>();
+                if (_simulator != null){
+                    _activeSimulator = true;
                 }
             }
         }
 
         private void HandleSimulator(){
-            if (activeSimulator){
-                if (simulator.isPlaying){
+            if (_activeSimulator){
+                if (_simulator.isPlaying){
                     if (GUILayout.Button("Stop")){
-                        simulator.isPlaying = false;
+                        _simulator.isPlaying = false;
                     }
                 }
                 else{
                     if (GUILayout.Button("Play")){
-                        simulator.isPlaying = true;
+                        _simulator.isPlaying = true;
                     }
                 }
 
                 if (GUILayout.Button("Remove Simulator")){
-                    activeSimulator = false;
-                    DestroyImmediate(simulator.gameObject);
-                    simulator = null;
+                    _activeSimulator = false;
+                    DestroyImmediate(_simulator.gameObject);
+                    _simulator = null;
                 }
             }
             else{
                 if (GUILayout.Button("Activate Simulator")){
                     GameObject filter = GameObject.Find("Filter");
-                    activeSimulator = true;
-                    GameObject simulatorObject = filter == null ? Instantiate(simulatorPrefab) : Instantiate(simulatorPrefab, filter.transform);
-                    simulator = simulatorObject.GetComponent<Simulator>();
+                    _activeSimulator = true;
+                    GameObject simulatorObject = filter == null ? Instantiate(_simulatorPrefab) : Instantiate(_simulatorPrefab, filter.transform);
+                    _simulator = simulatorObject.GetComponent<Simulator>();
                 }
             }
         }
@@ -142,8 +142,8 @@ namespace Filta
             }
             try
             {
-				if (simulator != null){
-					GameObject.DestroyImmediate(simulator);
+				if (_simulator != null){
+					GameObject.DestroyImmediate(_simulator);
 				}
                 PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
             } catch

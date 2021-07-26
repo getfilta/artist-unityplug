@@ -1,3 +1,0 @@
-Sloth model is taken from here:
-https://github.com/Unity-Technologies/arfoundation-samples
-You can find textures there too, I removed them to reduce plugin size.
