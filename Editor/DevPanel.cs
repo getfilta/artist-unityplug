@@ -140,6 +140,11 @@ namespace Filta
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
             }
+
+            FilterObjectManager filterObjectManager = filterObject.GetComponent<FilterObjectManager>();
+            if (filterObjectManager != null){
+                DestroyImmediate(filterObjectManager);
+            }
             try
             {
 				if (_simulator != null){
