@@ -37,12 +37,63 @@ namespace Filta
             DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
             window.Show();
         }
+        
+        #region Simulator
+
+        private GameObject _simulatorPrefab;
+        private Simulator _simulator;
+
+        private bool _activeSimulator;
+        private void OnEnable(){
+            _simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
+            GameObject simulatorObject = GameObject.FindGameObjectWithTag("Simulator");
+            if (simulatorObject != null){
+                _simulator = simulatorObject.GetComponent<Simulator>();
+                if (_simulator != null){
+                    _activeSimulator = true;
+                }
+            }
+        }
+
+        private void HandleSimulator(){
+            if (_activeSimulator){
+                if (_simulator.isPlaying){
+                    if (GUILayout.Button("Stop")){
+                        _simulator.isPlaying = false;
+                    }
+                }
+                else{
+                    if (GUILayout.Button("Play")){
+                        _simulator.isPlaying = true;
+                    }
+                }
+
+                if (GUILayout.Button("Remove Simulator")){
+                    _activeSimulator = false;
+                    DestroyImmediate(_simulator.gameObject);
+                    _simulator = null;
+                }
+            }
+            else{
+                if (GUILayout.Button("Activate Simulator")){
+                    GameObject filter = GameObject.Find("Filter");
+                    _activeSimulator = true;
+                    GameObject simulatorObject = filter == null ? Instantiate(_simulatorPrefab) : Instantiate(_simulatorPrefab, filter.transform);
+                    _simulator = simulatorObject.GetComponent<Simulator>();
+                }
+            }
+        }
+
+        #endregion
 
         void OnGUI()
         {
 
             Login();
             EditorGUILayout.Separator();
+            EditorGUILayout.Separator();
+            EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
+            HandleSimulator();
 
             if (loginData != null && loginData.idToken != "")
             {
@@ -91,6 +142,9 @@ namespace Filta
             }
             try
             {
+				if (_simulator != null){
+					GameObject.DestroyImmediate(_simulator);
+				}
                 PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
             } catch
             {
