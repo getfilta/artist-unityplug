@@ -53,7 +53,7 @@ public class Simulator : MonoBehaviour
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     private void Update(){
         if (!IsSetUpProperly()){
-            Debug.LogError("The simulator object is not set up properly. Consider deleting the simulator object and re-activating it from the artist panel!");
+            Debug.LogError("The simulator object is not set up properly. Ensure all the object references are correctly placed in the Inspector!");
             return;
         }
         EnforceObjectStructure();
