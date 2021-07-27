@@ -169,7 +169,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7458e90b50d3040e7b87a4d9ffc2aa1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  filePath: EditorFace/FaceRecording
   faceMeshVisualiser: {fileID: 6447836285124905232}
   visualiserOffset: 0
   faceTracker: {fileID: 6447836283690108724}
@@ -235,7 +234,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 646203e7a704943bfa93031ba515f8a3, type: 2}
+  - {fileID: 2100000, guid: 9696b6c4997bb4cc1acad19412d86877, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -307,7 +306,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 646203e7a704943bfa93031ba515f8a3, type: 2}
+  - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
