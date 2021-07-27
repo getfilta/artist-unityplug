@@ -17,6 +17,8 @@ public class Simulator : MonoBehaviour
     private FaceRecording _faceRecording;
 
     [SerializeField]
+    private Transform filterObject;
+    [SerializeField]
     private GameObject faceMeshVisualiser;
     [SerializeField]
     private float visualiserOffset;
@@ -45,7 +47,7 @@ public class Simulator : MonoBehaviour
     private FaceData.FaceMesh _faceMesh;
 
     private bool IsSetUpProperly(){
-        return faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null && rightEyeTracker != null && noseBridgeTracker != null;
+        return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null && rightEyeTracker != null && noseBridgeTracker != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
@@ -54,7 +56,7 @@ public class Simulator : MonoBehaviour
             Debug.LogError("The simulator object is not set up properly. Consider deleting the simulator object and re-activating it from the artist panel!");
             return;
         }
-            
+        EnforceObjectStructure();
         if (_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0){
             try{
                 GetRecordingData();
@@ -100,19 +102,26 @@ public class Simulator : MonoBehaviour
     void PositionTrackers(FaceData faceData){
         faceTracker.localPosition = faceData.face.localPosition;
         faceTracker.localEulerAngles = faceData.face.localRotation;
-        leftEyeTracker.localPosition = faceData.leftEye.position;
-        leftEyeTracker.localEulerAngles = faceData.leftEye.rotation;
-        rightEyeTracker.localPosition = faceData.rightEye.position;
-        rightEyeTracker.localEulerAngles = faceData.rightEye.rotation;
+        leftEyeTracker.localPosition = faceData.leftEye.localPosition;
+        leftEyeTracker.localEulerAngles = faceData.leftEye.localRotation;
+        rightEyeTracker.localPosition = faceData.rightEye.localPosition;
+        rightEyeTracker.localEulerAngles = faceData.rightEye.localRotation;
         Vector3 noseBridgePosition = leftEyeTracker.localPosition +
                                      (rightEyeTracker.localPosition - leftEyeTracker.localPosition) / 2;
         noseBridgeTracker.localPosition = noseBridgePosition;
         noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
-		faceTracker.name = "FaceTracker";
+    }
+
+    void EnforceObjectStructure(){
+        faceTracker.name = "FaceTracker";
         leftEyeTracker.name = "LeftEyeTracker";
         rightEyeTracker.name = "RightEyeTracker";
         noseBridgeTracker.name = "NoseBridgeTracker";
         gameObject.name = "Simulator";
+        filterObject.name = "Filter";
+        filterObject.position = Vector3.zero;
+        filterObject.rotation = Quaternion.identity;
+        filterObject.localScale = Vector3.one;
     }
 
     private void Playback(long currentTime){
@@ -189,6 +198,7 @@ public class Simulator : MonoBehaviour
         isPlaying = true;
         _startTime = DateTime.Now;
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
+        //_filePath = Path.Combine(Application.dataPath, "Simulator/FaceRecording");
         Debug.Log("Starting playback");
     }
 
