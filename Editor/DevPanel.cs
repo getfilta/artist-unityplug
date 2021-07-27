@@ -249,19 +249,24 @@ namespace Filta
             {
                 statusBar = "Error: Invalid Password";
             }
-            else
+            else if (response.Contains("idToken"))
             {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
                 statusBar = $"Login successful!";
+                try
+                {
+                    await GetPrivateCollection();
+                }
+                catch (Exception e)
+                {
+                    statusBar = "Error downloading collection. Try again. Check console for more information.";
+                    Debug.LogError("Error downloading: " + e.Message);
+                }
             }
-            try
+            else
             {
-                await GetPrivateCollection();
-            }
-            catch (Exception e)
-            {
-                statusBar = "Error downloading collection. Try again. Check console for more information.";
-                Debug.LogError(e.Message);
+                statusBar = "Unknown Error. Check console for more information.";
+                Debug.LogError(response);
             }
         }
 
@@ -321,22 +326,27 @@ namespace Filta
             }
 
             statusBar = "Deleting...";
-
-            WWWForm postData = new WWWForm();
-            postData.AddField("uid", loginData.idToken);
-            postData.AddField("artid", artId);
-            var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
-            await www.SendWebRequest();
-            var response = www.downloadHandler.text;
-            if (www.isHttpError || www.isNetworkError)
+            try
             {
-                statusBar = $"Error Deleting. Check console for details.";
-                Debug.LogError(www.error + " " + www.downloadHandler.text);
-                return;
+                WWWForm postData = new WWWForm();
+                postData.AddField("uid", loginData.idToken);
+                postData.AddField("artid", artId);
+                var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
+                await www.SendWebRequest();
+                var response = www.downloadHandler.text;
+                if (www.isHttpError || www.isNetworkError)
+                {
+                    statusBar = $"Error Deleting. Check console for details.";
+                    Debug.LogError(www.error + " " + www.downloadHandler.text);
+                    return;
+                }
+                statusBar = $"Delete: {response}";
             }
-            statusBar = $"Delete: {response}";
-            privateCollection.Remove(selectedArtKey);
-            selectedArtKey = "";
+            finally
+            {
+                privateCollection.Remove(selectedArtKey);
+                selectedArtKey = "";
+            }
         }
 
         private void SelectedArt()
