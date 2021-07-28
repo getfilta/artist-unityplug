@@ -4,7 +4,11 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 
 [ExecuteAlways]
@@ -32,6 +36,8 @@ public class Simulator : MonoBehaviour
     private Transform rightEyeTracker;
     [SerializeField]
     private Transform noseBridgeTracker;
+    [SerializeField]
+    private Transform faceMaskHolder;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -47,7 +53,8 @@ public class Simulator : MonoBehaviour
     private FaceData.FaceMesh _faceMesh;
 
     private bool IsSetUpProperly(){
-        return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null && rightEyeTracker != null && noseBridgeTracker != null;
+        return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null &&
+               rightEyeTracker != null && noseBridgeTracker != null && faceMaskHolder != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
@@ -117,6 +124,7 @@ public class Simulator : MonoBehaviour
         leftEyeTracker.name = "LeftEyeTracker";
         rightEyeTracker.name = "RightEyeTracker";
         noseBridgeTracker.name = "NoseBridgeTracker";
+        faceMaskHolder.name = "FaceMasks";
         gameObject.name = "Simulator";
         filterObject.name = "Filter";
         filterObject.position = Vector3.zero;
@@ -166,6 +174,8 @@ public class Simulator : MonoBehaviour
             faceMeshVisualiser.transform.position -= faceMeshVisualiser.transform.forward * visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
+            FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
+            UpdateMasks(faceData, prevFaceData, currentTime);
 
             //Logic to implement blendshape manipulation
             
@@ -189,11 +199,56 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    #region Face Mask Control
+
+    private List<SkinnedMeshRenderer> _faceMasks;
+
+#if UNITY_EDITOR
+    private void OnEnable(){
+        EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
+    }
+
+    private void OnDisable(){
+        EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
+    }
+#endif
+
+    private int _maskCount;
+    private void GetSkinnedMeshRenderers(){
+        if (_maskCount == faceMaskHolder.childCount) return;
+        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _maskCount = faceMaskHolder.childCount;
+    }
+
+    private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime){
+        long nextTimeStamp = faceData.timestamp;
+        float[] nextBlendShape = faceData.blendshapeData;
+        long prevTimeStamp = prevFaceData.timestamp;
+        float[] prevBlendShape = prevFaceData.blendshapeData;
+        float nextWeight = (float) (currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
+        float prevWeight = 1f - nextWeight;
+
+        //now to grab the blendshape values of the prev and next frame and lerp + assign them
+        for (int j = 0; j < prevBlendShape.Length - 2; j++){
+            var nowValue = (prevBlendShape[j] * prevWeight) + (nextBlendShape[j] * nextWeight);
+            for (int i = 0; i < _faceMasks.Count; i++){
+                if (_faceMasks[i] != null){
+                    _faceMasks[i].SetBlendShapeWeight(j, nowValue);
+                }
+                
+            }
+        }
+    }
+
+    #endregion
+
     #region Face Mesh Generation
 
     public Mesh mesh { get; private set; }
 
     private void Awake(){
+        _faceMasks = new List<SkinnedMeshRenderer>();
+        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         mesh = new Mesh();
         isPlaying = true;
         _startTime = DateTime.Now;
