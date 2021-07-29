@@ -61,6 +61,7 @@ public class Simulator : MonoBehaviour
         isPlaying = true;
         _startTime = DateTime.Now;
         Debug.Log("Starting playback");
+        TryAutomaticSetup();
     }
     
 #if UNITY_EDITOR
@@ -77,6 +78,40 @@ public class Simulator : MonoBehaviour
     }
 #endif
 
+    private void TryAutomaticSetup(){
+        if (IsSetUpProperly())
+            return;
+        if (faceMeshVisualiser == null){
+            faceMeshVisualiser = transform.GetChild(0).gameObject;
+        }
+        if (filterObject == null){
+            filterObject = GameObject.Find("Filter").transform;
+        }
+
+        if (filterObject != null){
+            if (faceTracker == null)
+                faceTracker = filterObject.Find("FaceTracker");
+        }
+
+        if (faceTracker != null){
+            if (rightEyeTracker == null)
+                rightEyeTracker = faceTracker.Find("RightEyeTracker");
+            if (leftEyeTracker == null)
+                leftEyeTracker = faceTracker.Find("LeftEyeTracker");
+            if (noseBridgeTracker == null)
+                noseBridgeTracker = faceTracker.Find("NoseBridgeTracker");
+            if (facesHolder == null)
+                facesHolder = faceTracker.Find("Faces");
+            if (faceMaskHolder == null)
+                faceMaskHolder = faceTracker.Find("FaceMasks");
+        }
+        if (IsSetUpProperly())
+            Debug.Log("Successfully Set up");
+        else{
+            Debug.LogError("Failed to set up simulator");
+        }
+        
+    }
     private bool IsSetUpProperly(){
         return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null &&
                rightEyeTracker != null && noseBridgeTracker != null && faceMaskHolder != null && facesHolder != null;
@@ -85,7 +120,7 @@ public class Simulator : MonoBehaviour
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     private void Update(){
         if (!IsSetUpProperly()){
-            Debug.LogError("The simulator object is not set up properly. Ensure all the object references are correctly placed in the Inspector!");
+            Debug.LogError("The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
             return;
         }
         EnforceObjectStructure();
@@ -420,5 +455,40 @@ public class Simulator : MonoBehaviour
         }
     
         #endregion
+        
+    #region Editor 
+    
+    #if UNITY_EDITOR
+    [CustomEditor(typeof(Simulator))]
+    public class SimulatorEditor : Editor
+    {
+        public override void OnInspectorGUI(){
+            DrawDefaultInspector();
+            EditorGUILayout.Separator();
+            Simulator sim = (Simulator) target;
+            if (sim.isPlaying){
+                if (GUILayout.Button("Stop")){
+                    sim.isPlaying = false;
+                }
+            }
+            else{
+                if (GUILayout.Button("Play")){
+                    sim.isPlaying = true;
+                }
+            }
+            if (!sim.IsSetUpProperly()){
+                if (GUILayout.Button("Automatically set up")){
+                    sim.TryAutomaticSetup();
+                }
+            }
+            
+
+        }
+    }
+    
+    
+    #endif
+    
+    #endregion
 
 }
