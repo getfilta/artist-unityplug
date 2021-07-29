@@ -38,6 +38,8 @@ public class Simulator : MonoBehaviour
     private Transform noseBridgeTracker;
     [SerializeField]
     private Transform faceMaskHolder;
+    [SerializeField]
+    private Transform facesHolder;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -51,10 +53,33 @@ public class Simulator : MonoBehaviour
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
+    
+    private void Awake(){
+        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _faceMeshes = facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        mesh = new Mesh();
+        isPlaying = true;
+        _startTime = DateTime.Now;
+        Debug.Log("Starting playback");
+    }
+    
+#if UNITY_EDITOR
+    private void OnEnable(){
+        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
+        //_filePath = Path.Combine(Application.dataPath, "Simulator/FaceRecording");
+        EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
+        EditorApplication.hierarchyChanged += GetFaceMeshFilters;
+    }
+
+    private void OnDisable(){
+        EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
+        EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
+    }
+#endif
 
     private bool IsSetUpProperly(){
         return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null &&
-               rightEyeTracker != null && noseBridgeTracker != null && faceMaskHolder != null;
+               rightEyeTracker != null && noseBridgeTracker != null && faceMaskHolder != null && facesHolder != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
@@ -125,6 +150,7 @@ public class Simulator : MonoBehaviour
         rightEyeTracker.name = "RightEyeTracker";
         noseBridgeTracker.name = "NoseBridgeTracker";
         faceMaskHolder.name = "FaceMasks";
+        facesHolder.name = "Faces";
         gameObject.name = "Simulator";
         filterObject.name = "Filter";
         filterObject.position = Vector3.zero;
@@ -202,17 +228,7 @@ public class Simulator : MonoBehaviour
     #region Face Mask Control
 
     private List<SkinnedMeshRenderer> _faceMasks;
-
-#if UNITY_EDITOR
-    private void OnEnable(){
-        EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
-    }
-
-    private void OnDisable(){
-        EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
-    }
-#endif
-
+    
     private int _maskCount;
     private void GetSkinnedMeshRenderers(){
         if (_maskCount == faceMaskHolder.childCount) return;
@@ -242,20 +258,19 @@ public class Simulator : MonoBehaviour
 
     #endregion
 
-    #region Face Mesh Generation
+    #region Face Mesh Control
+    
+    private List<MeshFilter> _faceMeshes;
+    
+    private int _faceCount;
+
+    private void GetFaceMeshFilters(){
+        if (_faceCount == facesHolder.childCount) return;
+        _faceMeshes = facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _faceCount = facesHolder.childCount;
+    }
 
     public Mesh mesh { get; private set; }
-
-    private void Awake(){
-        _faceMasks = new List<SkinnedMeshRenderer>();
-        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
-        mesh = new Mesh();
-        isPlaying = true;
-        _startTime = DateTime.Now;
-        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
-        //_filePath = Path.Combine(Application.dataPath, "Simulator/FaceRecording");
-        Debug.Log("Starting playback");
-    }
 
     void SetMeshTopology()
     {
@@ -284,6 +299,12 @@ public class Simulator : MonoBehaviour
             if (meshFilter != null)
             {
                 meshFilter.sharedMesh = mesh;
+            }
+
+            for (int i = 0; i < _faceMeshes.Count; i++){
+                if (_faceMeshes[i] != null){
+                    _faceMeshes[i].sharedMesh = mesh;
+                }
             }
         }
     }
