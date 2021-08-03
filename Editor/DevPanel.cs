@@ -31,6 +31,8 @@ namespace Filta
         private LoginResponse loginData;
         private int selGridInt = 0;
 
+        private PluginInfo _pluginInfo;
+
         [MenuItem("Filta/Artist Panel")]
         static void Init()
         {
@@ -50,6 +52,8 @@ namespace Filta
                     _activeSimulator = true;
                 }
             }
+
+            _pluginInfo = new PluginInfo{version = 1};
         }
 
         private void HandleSimulator(){
@@ -133,6 +137,15 @@ namespace Filta
                 return;
             }
 
+            try{
+                File.WriteAllText(JsonConvert.SerializeObject(_pluginInfo),
+                    Path.Combine(Application.dataPath, "pluginInfo.json"));
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+            catch{
+                Debug.Log("Could not attach plugin info");
+            }
             string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
             {
@@ -405,5 +418,10 @@ namespace Filta
         {
             return new UnityWebRequestAwaiter(asyncOp);
         }
+    }
+
+    public struct PluginInfo
+    {
+        public int version;
     }
 }
