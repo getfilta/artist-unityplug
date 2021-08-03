@@ -138,8 +138,8 @@ namespace Filta
             }
 
             try{
-                File.WriteAllText(JsonConvert.SerializeObject(_pluginInfo),
-                    Path.Combine(Application.dataPath, "pluginInfo.json"));
+                File.WriteAllText(
+                    Path.Combine(Application.dataPath, "pluginInfo.json"),JsonConvert.SerializeObject(_pluginInfo));
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
