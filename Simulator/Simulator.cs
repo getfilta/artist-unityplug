@@ -4,7 +4,12 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
+using UnityEngine.Serialization;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 
 [ExecuteAlways]
@@ -16,20 +21,26 @@ public class Simulator : MonoBehaviour
     
     private FaceRecording _faceRecording;
 
-    [SerializeField]
-    private GameObject faceMeshVisualiser;
-    [SerializeField]
-    private float visualiserOffset;
+    [FormerlySerializedAs("filterObject"),SerializeField]
+    private Transform _filterObject;
+    [FormerlySerializedAs("faceMeshVisualiser"),SerializeField]
+    private GameObject _faceMeshVisualiser;
+    [FormerlySerializedAs("visualiserOffset"),SerializeField]
+    private float _visualiserOffset;
 
-    [Header("Face Trackers")]
+    [FormerlySerializedAs("faceTracker"),Header("Face Trackers")]
     [SerializeField]
-    private Transform faceTracker;
-    [SerializeField]
-    private Transform leftEyeTracker;
-    [SerializeField]
-    private Transform rightEyeTracker;
-    [SerializeField]
-    private Transform noseBridgeTracker;
+    private Transform _faceTracker;
+    [FormerlySerializedAs("leftEyeTracker"),SerializeField]
+    private Transform _leftEyeTracker;
+    [FormerlySerializedAs("rightEyeTracker"),SerializeField]
+    private Transform _rightEyeTracker;
+    [FormerlySerializedAs("noseBridgeTracker"),SerializeField]
+    private Transform _noseBridgeTracker;
+    [FormerlySerializedAs("faceMaskHolder"),SerializeField]
+    private Transform _faceMaskHolder;
+    [FormerlySerializedAs("facesHolder"),SerializeField]
+    private Transform _facesHolder;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -43,18 +54,77 @@ public class Simulator : MonoBehaviour
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
+    
+    private void Awake(){
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        mesh = new Mesh();
+        isPlaying = true;
+        _startTime = DateTime.Now;
+        Debug.Log("Starting playback");
+        TryAutomaticSetup();
+    }
+    
+#if UNITY_EDITOR
+    private void OnEnable(){
+        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
+        //_filePath = Path.Combine(Application.dataPath, "Simulator/FaceRecording");
+        EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
+        EditorApplication.hierarchyChanged += GetFaceMeshFilters;
+    }
 
+    private void OnDisable(){
+        EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
+        EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
+    }
+#endif
+
+    private void TryAutomaticSetup(){
+        if (IsSetUpProperly())
+            return;
+        if (_faceMeshVisualiser == null){
+            _faceMeshVisualiser = transform.GetChild(0).gameObject;
+        }
+        if (_filterObject == null){
+            _filterObject = GameObject.Find("Filter").transform;
+        }
+
+        if (_filterObject != null){
+            if (_faceTracker == null)
+                _faceTracker = _filterObject.Find("FaceTracker");
+        }
+
+        if (_faceTracker != null){
+            if (_rightEyeTracker == null)
+                _rightEyeTracker = _faceTracker.Find("RightEyeTracker");
+            if (_leftEyeTracker == null)
+                _leftEyeTracker = _faceTracker.Find("LeftEyeTracker");
+            if (_noseBridgeTracker == null)
+                _noseBridgeTracker = _faceTracker.Find("NoseBridgeTracker");
+            if (_facesHolder == null)
+                _facesHolder = _faceTracker.Find("Faces");
+            if (_faceMaskHolder == null)
+                _faceMaskHolder = _faceTracker.Find("FaceMasks");
+        }
+        if (IsSetUpProperly())
+            Debug.Log("Successfully Set up");
+        else{
+            Debug.LogError("Failed to set up simulator");
+        }
+        
+    }
     private bool IsSetUpProperly(){
-        return faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null && rightEyeTracker != null && noseBridgeTracker != null;
+        return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null && _leftEyeTracker != null &&
+               _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null && _facesHolder != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     private void Update(){
         if (!IsSetUpProperly()){
-            Debug.LogError("The simulator object is not set up properly. Consider deleting the simulator object and re-activating it from the artist panel!");
+            Debug.LogError("The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
             return;
         }
-            
+        EnforceObjectStructure();
         if (_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0){
             try{
                 GetRecordingData();
@@ -98,21 +168,30 @@ public class Simulator : MonoBehaviour
     }
 
     void PositionTrackers(FaceData faceData){
-        faceTracker.localPosition = faceData.face.localPosition;
-        faceTracker.localEulerAngles = faceData.face.localRotation;
-        leftEyeTracker.localPosition = faceData.leftEye.position;
-        leftEyeTracker.localEulerAngles = faceData.leftEye.rotation;
-        rightEyeTracker.localPosition = faceData.rightEye.position;
-        rightEyeTracker.localEulerAngles = faceData.rightEye.rotation;
-        Vector3 noseBridgePosition = leftEyeTracker.localPosition +
-                                     (rightEyeTracker.localPosition - leftEyeTracker.localPosition) / 2;
-        noseBridgeTracker.localPosition = noseBridgePosition;
-        noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
-		faceTracker.name = "FaceTracker";
-        leftEyeTracker.name = "LeftEyeTracker";
-        rightEyeTracker.name = "RightEyeTracker";
-        noseBridgeTracker.name = "NoseBridgeTracker";
+        _faceTracker.localPosition = faceData.face.localPosition;
+        _faceTracker.localEulerAngles = faceData.face.localRotation;
+        _leftEyeTracker.localPosition = faceData.leftEye.localPosition;
+        _leftEyeTracker.localEulerAngles = faceData.leftEye.localRotation;
+        _rightEyeTracker.localPosition = faceData.rightEye.localPosition;
+        _rightEyeTracker.localEulerAngles = faceData.rightEye.localRotation;
+        Vector3 noseBridgePosition = _leftEyeTracker.localPosition +
+                                     (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
+        _noseBridgeTracker.localPosition = noseBridgePosition;
+        _noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
+    }
+
+    void EnforceObjectStructure(){
+        _faceTracker.name = "FaceTracker";
+        _leftEyeTracker.name = "LeftEyeTracker";
+        _rightEyeTracker.name = "RightEyeTracker";
+        _noseBridgeTracker.name = "NoseBridgeTracker";
+        _faceMaskHolder.name = "FaceMasks";
+        _facesHolder.name = "Faces";
         gameObject.name = "Simulator";
+        _filterObject.name = "Filter";
+        _filterObject.position = Vector3.zero;
+        _filterObject.rotation = Quaternion.identity;
+        _filterObject.localScale = Vector3.one;
     }
 
     private void Playback(long currentTime){
@@ -152,11 +231,13 @@ public class Simulator : MonoBehaviour
                 break;
             }
             
-            faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
-            faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
-            faceMeshVisualiser.transform.position -= faceMeshVisualiser.transform.forward * visualiserOffset;
+            _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
+            _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
+            _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
+            FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
+            UpdateMasks(faceData, prevFaceData, currentTime);
 
             //Logic to implement blendshape manipulation
             
@@ -180,17 +261,52 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    #region Face Mesh Generation
+    #region Face Mask Control
+
+    private List<SkinnedMeshRenderer> _faceMasks;
+    
+    private int _maskCount;
+    private void GetSkinnedMeshRenderers(){
+        if (_maskCount == _faceMaskHolder.childCount) return;
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _maskCount = _faceMaskHolder.childCount;
+    }
+
+    private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime){
+        long nextTimeStamp = faceData.timestamp;
+        float[] nextBlendShape = faceData.blendshapeData;
+        long prevTimeStamp = prevFaceData.timestamp;
+        float[] prevBlendShape = prevFaceData.blendshapeData;
+        float nextWeight = (float) (currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
+        float prevWeight = 1f - nextWeight;
+
+        //now to grab the blendshape values of the prev and next frame and lerp + assign them
+        for (int j = 0; j < prevBlendShape.Length - 2; j++){
+            var nowValue = (prevBlendShape[j] * prevWeight) + (nextBlendShape[j] * nextWeight);
+            for (int i = 0; i < _faceMasks.Count; i++){
+                if (_faceMasks[i] != null){
+                    _faceMasks[i].SetBlendShapeWeight(j, nowValue);
+                }
+                
+            }
+        }
+    }
+
+    #endregion
+
+    #region Face Mesh Control
+    
+    private List<MeshFilter> _faceMeshes;
+    
+    private int _faceCount;
+
+    private void GetFaceMeshFilters(){
+        if (_faceCount == _facesHolder.childCount) return;
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _faceCount = _facesHolder.childCount;
+    }
 
     public Mesh mesh { get; private set; }
-
-    private void Awake(){
-        mesh = new Mesh();
-        isPlaying = true;
-        _startTime = DateTime.Now;
-        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
-        Debug.Log("Starting playback");
-    }
 
     void SetMeshTopology()
     {
@@ -215,10 +331,16 @@ public class Simulator : MonoBehaviour
                 mesh.SetUVs(0, FaceData.Vector2Converter(_faceMesh.uvs));
             }
             
-            var meshFilter = faceMeshVisualiser.GetComponent<MeshFilter>();
+            var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
             if (meshFilter != null)
             {
                 meshFilter.sharedMesh = mesh;
+            }
+
+            for (int i = 0; i < _faceMeshes.Count; i++){
+                if (_faceMeshes[i] != null){
+                    _faceMeshes[i].sharedMesh = mesh;
+                }
             }
         }
     }
@@ -334,5 +456,40 @@ public class Simulator : MonoBehaviour
         }
     
         #endregion
+        
+    #region Editor 
+    
+    #if UNITY_EDITOR
+    [CustomEditor(typeof(Simulator))]
+    public class SimulatorEditor : Editor
+    {
+        public override void OnInspectorGUI(){
+            DrawDefaultInspector();
+            EditorGUILayout.Separator();
+            Simulator sim = (Simulator) target;
+            if (sim.isPlaying){
+                if (GUILayout.Button("Stop")){
+                    sim.isPlaying = false;
+                }
+            }
+            else{
+                if (GUILayout.Button("Play")){
+                    sim.isPlaying = true;
+                }
+            }
+            if (!sim.IsSetUpProperly()){
+                if (GUILayout.Button("Automatically set up")){
+                    sim.TryAutomaticSetup();
+                }
+            }
+            
+
+        }
+    }
+    
+    
+    #endif
+    
+    #endregion
 
 }

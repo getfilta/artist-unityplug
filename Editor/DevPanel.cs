@@ -31,6 +31,8 @@ namespace Filta
         private LoginResponse loginData;
         private int selGridInt = 0;
 
+        private PluginInfo _pluginInfo;
+
         [MenuItem("Filta/Artist Panel")]
         static void Init()
         {
@@ -39,47 +41,32 @@ namespace Filta
         }
         
         #region Simulator
-
-        private GameObject _simulatorPrefab;
         private Simulator _simulator;
 
         private bool _activeSimulator;
         private void OnEnable(){
-            _simulatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.getfilta.artist-unityplug/Simulator/Simulator.prefab");
-            GameObject simulatorObject = GameObject.FindGameObjectWithTag("Simulator");
+            GameObject simulatorObject = GameObject.Find("Simulator");
             if (simulatorObject != null){
                 _simulator = simulatorObject.GetComponent<Simulator>();
                 if (_simulator != null){
                     _activeSimulator = true;
                 }
             }
+
+            _pluginInfo = new PluginInfo{version = 1};
         }
 
         private void HandleSimulator(){
-            if (_activeSimulator){
-                if (_simulator.isPlaying){
-                    if (GUILayout.Button("Stop")){
-                        _simulator.isPlaying = false;
-                    }
-                }
-                else{
-                    if (GUILayout.Button("Play")){
-                        _simulator.isPlaying = true;
-                    }
-                }
-
-                if (GUILayout.Button("Remove Simulator")){
-                    _activeSimulator = false;
-                    DestroyImmediate(_simulator.gameObject);
-                    _simulator = null;
+            if (!_activeSimulator) return;
+            EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
+            if (_simulator.isPlaying){
+                if (GUILayout.Button("Stop")){
+                    _simulator.isPlaying = false;
                 }
             }
             else{
-                if (GUILayout.Button("Activate Simulator")){
-                    GameObject filter = GameObject.Find("Filter");
-                    _activeSimulator = true;
-                    GameObject simulatorObject = filter == null ? Instantiate(_simulatorPrefab) : Instantiate(_simulatorPrefab, filter.transform);
-                    _simulator = simulatorObject.GetComponent<Simulator>();
+                if (GUILayout.Button("Play")){
+                    _simulator.isPlaying = true;
                 }
             }
         }
@@ -92,7 +79,7 @@ namespace Filta
             Login();
             EditorGUILayout.Separator();
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
+            
             HandleSimulator();
 
             if (loginData != null && loginData.idToken != "")
@@ -140,16 +127,9 @@ namespace Filta
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
             }
-
-            FilterObjectManager filterObjectManager = filterObject.GetComponent<FilterObjectManager>();
-            if (filterObjectManager != null){
-                DestroyImmediate(filterObjectManager);
-            }
+            
             try
             {
-				if (_simulator != null){
-					GameObject.DestroyImmediate(_simulator);
-				}
                 PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
             } catch
             {
@@ -157,6 +137,15 @@ namespace Filta
                 return;
             }
 
+            try{
+                File.WriteAllText(
+                    Path.Combine(Application.dataPath, "pluginInfo.json"),JsonConvert.SerializeObject(_pluginInfo));
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+            catch{
+                Debug.Log("Could not attach plugin info");
+            }
             string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
             {
@@ -429,5 +418,10 @@ namespace Filta
         {
             return new UnityWebRequestAwaiter(asyncOp);
         }
+    }
+
+    public struct PluginInfo
+    {
+        public int version;
     }
 }
