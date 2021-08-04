@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -20,26 +21,26 @@ public class Simulator : MonoBehaviour
     
     private FaceRecording _faceRecording;
 
-    [SerializeField]
-    private Transform filterObject;
-    [SerializeField]
-    private GameObject faceMeshVisualiser;
-    [SerializeField]
-    private float visualiserOffset;
+    [FormerlySerializedAs("filterObject"),SerializeField]
+    private Transform _filterObject;
+    [FormerlySerializedAs("faceMeshVisualiser"),SerializeField]
+    private GameObject _faceMeshVisualiser;
+    [FormerlySerializedAs("visualiserOffset"),SerializeField]
+    private float _visualiserOffset;
 
-    [Header("Face Trackers")]
+    [FormerlySerializedAs("faceTracker"),Header("Face Trackers")]
     [SerializeField]
-    private Transform faceTracker;
-    [SerializeField]
-    private Transform leftEyeTracker;
-    [SerializeField]
-    private Transform rightEyeTracker;
-    [SerializeField]
-    private Transform noseBridgeTracker;
-    [SerializeField]
-    private Transform faceMaskHolder;
-    [SerializeField]
-    private Transform facesHolder;
+    private Transform _faceTracker;
+    [FormerlySerializedAs("leftEyeTracker"),SerializeField]
+    private Transform _leftEyeTracker;
+    [FormerlySerializedAs("rightEyeTracker"),SerializeField]
+    private Transform _rightEyeTracker;
+    [FormerlySerializedAs("noseBridgeTracker"),SerializeField]
+    private Transform _noseBridgeTracker;
+    [FormerlySerializedAs("faceMaskHolder"),SerializeField]
+    private Transform _faceMaskHolder;
+    [FormerlySerializedAs("facesHolder"),SerializeField]
+    private Transform _facesHolder;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -55,8 +56,8 @@ public class Simulator : MonoBehaviour
     private FaceData.FaceMesh _faceMesh;
     
     private void Awake(){
-        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
-        _faceMeshes = facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         mesh = new Mesh();
         isPlaying = true;
         _startTime = DateTime.Now;
@@ -81,29 +82,29 @@ public class Simulator : MonoBehaviour
     private void TryAutomaticSetup(){
         if (IsSetUpProperly())
             return;
-        if (faceMeshVisualiser == null){
-            faceMeshVisualiser = transform.GetChild(0).gameObject;
+        if (_faceMeshVisualiser == null){
+            _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
-        if (filterObject == null){
-            filterObject = GameObject.Find("Filter").transform;
-        }
-
-        if (filterObject != null){
-            if (faceTracker == null)
-                faceTracker = filterObject.Find("FaceTracker");
+        if (_filterObject == null){
+            _filterObject = GameObject.Find("Filter").transform;
         }
 
-        if (faceTracker != null){
-            if (rightEyeTracker == null)
-                rightEyeTracker = faceTracker.Find("RightEyeTracker");
-            if (leftEyeTracker == null)
-                leftEyeTracker = faceTracker.Find("LeftEyeTracker");
-            if (noseBridgeTracker == null)
-                noseBridgeTracker = faceTracker.Find("NoseBridgeTracker");
-            if (facesHolder == null)
-                facesHolder = faceTracker.Find("Faces");
-            if (faceMaskHolder == null)
-                faceMaskHolder = faceTracker.Find("FaceMasks");
+        if (_filterObject != null){
+            if (_faceTracker == null)
+                _faceTracker = _filterObject.Find("FaceTracker");
+        }
+
+        if (_faceTracker != null){
+            if (_rightEyeTracker == null)
+                _rightEyeTracker = _faceTracker.Find("RightEyeTracker");
+            if (_leftEyeTracker == null)
+                _leftEyeTracker = _faceTracker.Find("LeftEyeTracker");
+            if (_noseBridgeTracker == null)
+                _noseBridgeTracker = _faceTracker.Find("NoseBridgeTracker");
+            if (_facesHolder == null)
+                _facesHolder = _faceTracker.Find("Faces");
+            if (_faceMaskHolder == null)
+                _faceMaskHolder = _faceTracker.Find("FaceMasks");
         }
         if (IsSetUpProperly())
             Debug.Log("Successfully Set up");
@@ -113,8 +114,8 @@ public class Simulator : MonoBehaviour
         
     }
     private bool IsSetUpProperly(){
-        return filterObject != null && faceMeshVisualiser != null && faceTracker != null && leftEyeTracker != null &&
-               rightEyeTracker != null && noseBridgeTracker != null && faceMaskHolder != null && facesHolder != null;
+        return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null && _leftEyeTracker != null &&
+               _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null && _facesHolder != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
@@ -167,30 +168,30 @@ public class Simulator : MonoBehaviour
     }
 
     void PositionTrackers(FaceData faceData){
-        faceTracker.localPosition = faceData.face.localPosition;
-        faceTracker.localEulerAngles = faceData.face.localRotation;
-        leftEyeTracker.localPosition = faceData.leftEye.localPosition;
-        leftEyeTracker.localEulerAngles = faceData.leftEye.localRotation;
-        rightEyeTracker.localPosition = faceData.rightEye.localPosition;
-        rightEyeTracker.localEulerAngles = faceData.rightEye.localRotation;
-        Vector3 noseBridgePosition = leftEyeTracker.localPosition +
-                                     (rightEyeTracker.localPosition - leftEyeTracker.localPosition) / 2;
-        noseBridgeTracker.localPosition = noseBridgePosition;
-        noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
+        _faceTracker.localPosition = faceData.face.localPosition;
+        _faceTracker.localEulerAngles = faceData.face.localRotation;
+        _leftEyeTracker.localPosition = faceData.leftEye.localPosition;
+        _leftEyeTracker.localEulerAngles = faceData.leftEye.localRotation;
+        _rightEyeTracker.localPosition = faceData.rightEye.localPosition;
+        _rightEyeTracker.localEulerAngles = faceData.rightEye.localRotation;
+        Vector3 noseBridgePosition = _leftEyeTracker.localPosition +
+                                     (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
+        _noseBridgeTracker.localPosition = noseBridgePosition;
+        _noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
     }
 
     void EnforceObjectStructure(){
-        faceTracker.name = "FaceTracker";
-        leftEyeTracker.name = "LeftEyeTracker";
-        rightEyeTracker.name = "RightEyeTracker";
-        noseBridgeTracker.name = "NoseBridgeTracker";
-        faceMaskHolder.name = "FaceMasks";
-        facesHolder.name = "Faces";
+        _faceTracker.name = "FaceTracker";
+        _leftEyeTracker.name = "LeftEyeTracker";
+        _rightEyeTracker.name = "RightEyeTracker";
+        _noseBridgeTracker.name = "NoseBridgeTracker";
+        _faceMaskHolder.name = "FaceMasks";
+        _facesHolder.name = "Faces";
         gameObject.name = "Simulator";
-        filterObject.name = "Filter";
-        filterObject.position = Vector3.zero;
-        filterObject.rotation = Quaternion.identity;
-        filterObject.localScale = Vector3.one;
+        _filterObject.name = "Filter";
+        _filterObject.position = Vector3.zero;
+        _filterObject.rotation = Quaternion.identity;
+        _filterObject.localScale = Vector3.one;
     }
 
     private void Playback(long currentTime){
@@ -230,9 +231,9 @@ public class Simulator : MonoBehaviour
                 break;
             }
             
-            faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
-            faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
-            faceMeshVisualiser.transform.position -= faceMeshVisualiser.transform.forward * visualiserOffset;
+            _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
+            _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
+            _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
             FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
@@ -266,9 +267,9 @@ public class Simulator : MonoBehaviour
     
     private int _maskCount;
     private void GetSkinnedMeshRenderers(){
-        if (_maskCount == faceMaskHolder.childCount) return;
-        _faceMasks = faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
-        _maskCount = faceMaskHolder.childCount;
+        if (_maskCount == _faceMaskHolder.childCount) return;
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _maskCount = _faceMaskHolder.childCount;
     }
 
     private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime){
@@ -300,9 +301,9 @@ public class Simulator : MonoBehaviour
     private int _faceCount;
 
     private void GetFaceMeshFilters(){
-        if (_faceCount == facesHolder.childCount) return;
-        _faceMeshes = facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
-        _faceCount = facesHolder.childCount;
+        if (_faceCount == _facesHolder.childCount) return;
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _faceCount = _facesHolder.childCount;
     }
 
     public Mesh mesh { get; private set; }
@@ -330,7 +331,7 @@ public class Simulator : MonoBehaviour
                 mesh.SetUVs(0, FaceData.Vector2Converter(_faceMesh.uvs));
             }
             
-            var meshFilter = faceMeshVisualiser.GetComponent<MeshFilter>();
+            var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
             if (meshFilter != null)
             {
                 meshFilter.sharedMesh = mesh;
