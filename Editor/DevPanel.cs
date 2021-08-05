@@ -15,11 +15,14 @@ namespace Filta
     {
         private string email = "";
         private string password = "";
+        private bool _stayLoggedIn;
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
+        private const string REFRESH_KEY = "RefreshToken";
         private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadArtSource"; } }
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
+        private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
@@ -28,10 +31,11 @@ namespace Filta
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
-        private LoginResponse loginData;
+        private static LoginResponse loginData;
         private int selGridInt = 0;
 
         private PluginInfo _pluginInfo;
+        private static DateTime _expiryTime;
 
         [MenuItem("Filta/Artist Panel")]
         static void Init()
@@ -44,6 +48,8 @@ namespace Filta
         private Simulator _simulator;
 
         private bool _activeSimulator;
+        private bool _loggingIn;
+
         private void OnEnable(){
             GameObject simulatorObject = GameObject.Find("Simulator");
             if (simulatorObject != null){
@@ -54,6 +60,18 @@ namespace Filta
             }
 
             _pluginInfo = new PluginInfo{version = 1};
+            if (loginData == null || String.IsNullOrEmpty(loginData.idToken)){
+                LoginAutomatic();
+            }
+            else{
+                if (DateTime.Now > _expiryTime){
+                    loginData = null;
+                    LoginAutomatic();
+                }
+                else{
+                    GetPrivateCollection();
+                }
+            }
         }
 
         private void HandleSimulator(){
@@ -197,26 +215,83 @@ namespace Filta
             statusBar = "Upload successful";
         }
 
+        private async void LoginAutomatic(){
+            string token = PlayerPrefs.GetString(REFRESH_KEY, null);
+            if (String.IsNullOrEmpty(token)){
+                return;
+            }
+
+            _loggingIn = true;
+            WWWForm postData = new WWWForm();
+            postData.AddField("grant_type", "refresh_token");
+            postData.AddField("refresh_token", token);
+            UnityWebRequest www = UnityWebRequest.Post(refreshURL + fbaseKey, postData);
+            statusBar = "Logging you in...";
+            await www.SendWebRequest();
+            _loggingIn = false;
+            string response = www.downloadHandler.text;
+            if (response.Contains("TOKEN_EXPIRED"))
+            {
+                statusBar = "Error: Token has expired";
+            }
+            else if (response.Contains("USER_NOT_FOUND"))
+            {
+                statusBar = "Error: User was not found";
+            }
+            else if (response.Contains("INVALID_REFRESH_TOKEN"))
+            {
+                statusBar = "Error: Invalid token provided";
+            }
+            else if (response.Contains("id_token")){
+                RefreshResponse refreshData = JsonUtility.FromJson<RefreshResponse>(response);
+                loginData = new LoginResponse{refreshToken = refreshData.refresh_token, idToken = refreshData.id_token, expiresIn = refreshData.expires_in, localId = refreshData.user_id};
+                statusBar = $"Login successful!";
+                _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
+                PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
+                PlayerPrefs.Save();
+                try
+                {
+                    await GetPrivateCollection();
+                }
+                catch (Exception e)
+                {
+                    statusBar = "Error downloading collection. Try again. Check console for more information.";
+                    Debug.LogError("Error downloading: " + e.Message);
+                }
+            }
+            else
+            {
+                statusBar = "Unknown Error. Check console for more information.";
+                Debug.LogError(response);
+            }
+        }
+
         private async void Login()
         {
-            if (loginData != null)
+            if (loginData != null && !String.IsNullOrEmpty(loginData.idToken))
             {
                 bool logout = GUILayout.Button("Logout");
                 if (logout)
                 {
                     password = "";
                     loginData = null;
+                    PlayerPrefs.SetString(REFRESH_KEY, null);
+                    PlayerPrefs.Save();
                     GUI.FocusControl(null);
                 }
                 return;
             }
-
-            EditorGUILayout.LabelField("Login to your user account", EditorStyles.boldLabel);
-            email = (string)EditorGUILayout.TextField("email", email);
-            password = (string)EditorGUILayout.PasswordField("password", password);
-            var submitButton = GUILayout.Button("Login");
+            if (!_loggingIn){
+                EditorGUILayout.LabelField("Login to your user account", EditorStyles.boldLabel);
+                email = (string)EditorGUILayout.TextField("email", email);
+                password = (string)EditorGUILayout.PasswordField("password", password);
+                _stayLoggedIn = EditorGUILayout.Toggle("Stay logged in", _stayLoggedIn);
+            }
+            bool submitButton = !_loggingIn && GUILayout.Button("Login");
             if (!submitButton) { return; }
+            
             selectedArtKey = "";
+            _loggingIn = true;
             WWWForm postData = new WWWForm();
             postData.AddField("email", email);
             postData.AddField("password", password);
@@ -225,6 +300,7 @@ namespace Filta
             statusBar = "Connecting...";
 
             await www.SendWebRequest();
+            _loggingIn = false;
             var response = www.downloadHandler.text;
             if (response.Contains("EMAIL_NOT_FOUND"))
             {
@@ -242,6 +318,12 @@ namespace Filta
             {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
                 statusBar = $"Login successful!";
+                _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
+                if (_stayLoggedIn){
+                    PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
+                    PlayerPrefs.Save();
+                }
+                
                 try
                 {
                     await GetPrivateCollection();
@@ -377,6 +459,15 @@ namespace Filta
         public string idToken;
         public string refreshToken;
         public int expiresIn;
+    }
+
+    [Serializable]
+    public class RefreshResponse
+    {
+        public string id_token;
+        public string refresh_token;
+        public int expires_in;
+        public string user_id;
     }
 
     [Serializable]
