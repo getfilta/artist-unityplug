@@ -9,6 +9,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Filta.Datatypes;
 using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 
 namespace Filta
 {
