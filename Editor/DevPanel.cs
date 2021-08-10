@@ -155,6 +155,7 @@ namespace Filta
                     EditorSceneManager.OpenScene($"Assets/Filters/{sceneName}.unity", OpenSceneMode.Single);
                 }
             }
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
             
         }
 
