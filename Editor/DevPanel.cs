@@ -43,7 +43,7 @@ namespace Filta
         [MenuItem("Filta/Artist Panel")]
         static void Init()
         {
-            DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
             window.Show();
         }
         
@@ -54,14 +54,8 @@ namespace Filta
         private bool _loggingIn;
 
         private void OnEnable(){
-            GameObject simulatorObject = GameObject.Find("Simulator");
-            if (simulatorObject != null){
-                _simulator = simulatorObject.GetComponent<Simulator>();
-                if (_simulator != null){
-                    _activeSimulator = true;
-                }
-            }
-
+            EditorApplication.playModeStateChanged += FindSimulator;
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
             _pluginInfo = new PluginInfo{version = 1};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)){
                 LoginAutomatic();
@@ -75,6 +69,20 @@ namespace Filta
                     GetPrivateCollection();
                 }
             }
+        }
+
+        private void FindSimulator(PlayModeStateChange stateChange){
+            GameObject simulatorObject = GameObject.Find("Simulator");
+            if (simulatorObject != null){
+                _simulator = simulatorObject.GetComponent<Simulator>();
+                if (_simulator != null){
+                    _activeSimulator = true;
+                }
+            }
+        }
+
+        private void OnDisable(){
+            EditorApplication.playModeStateChanged -= FindSimulator;
         }
 
         private void HandleSimulator(){
