@@ -35,7 +35,6 @@ namespace Filta
         private string selectedArtKey = "";
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
-        private int selGridInt = 0;
 
         private PluginInfo _pluginInfo;
         private static DateTime _expiryTime;
@@ -148,8 +147,8 @@ namespace Filta
                 if (!success)
                     statusBar = "Failed to create new filter scene";
                 else{
-                    if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()){
-                        EditorSceneManager.SaveOpenScenes();
+                    if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
+                        EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                     }
 
                     EditorSceneManager.OpenScene($"Assets/Filters/{sceneName}.unity", OpenSceneMode.Single);
@@ -159,14 +158,14 @@ namespace Filta
             
         }
 
-        private async void GenerateAndUploadAssetBundle(string name)
+        private async void GenerateAndUploadAssetBundle()
         {
             if (String.IsNullOrEmpty(selectedArtKey)){
-                selectedArtKey = SceneManager.GetActiveScene().name;
+                //selectedArtKey = SceneManager.GetActiveScene().name;
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle: {name}");
+            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
             if (!assetBundleButton) { return; }
 
             statusBar = "Generating asset bundles";
@@ -210,7 +209,7 @@ namespace Filta
             var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
-            assetBundlePath = $"{assetBundleDirectory}/{name}";
+            assetBundlePath = $"{assetBundleDirectory}/filter";
             statusBar = "Asset bundle generated";
 
 
@@ -459,32 +458,17 @@ namespace Filta
             }
         }
 
-        private void SelectedArt()
-        {
-            if (GUILayout.Button("Back"))
-            {
+        private void SelectedArt(){
+            if (GUILayout.Button("Back")){
                 selectedArtKey = "";
             }
+
             EditorGUILayout.Space();
-            selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
+            selectedArtTitle = (string) EditorGUILayout.TextField("Title", selectedArtTitle);
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Select an asset bundle to upload:");
-
-            var names = AssetDatabase.GetAllAssetBundleNames();
-
-
-            if (names.Length == 0)
-            {
-                EditorGUILayout.LabelField("No asset bundles found. Create one!");
-            }
-            else
-            {
-                selGridInt = GUILayout.SelectionGrid(selGridInt, names, names.Length);
-                EditorGUILayout.Space();
-                GenerateAndUploadAssetBundle(names[selGridInt]);
-            }
-                EditorGUILayout.Space();
-                EditorGUILayout.Space();
+            GenerateAndUploadAssetBundle();
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             DeletePrivArt(selectedArtKey);
         }
