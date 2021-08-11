@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using Newtonsoft.Json;
 using Filta.Datatypes;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 
 namespace Filta
 {
@@ -24,6 +26,7 @@ namespace Filta
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
+        private const string variantTempSave = "Assets/FilterVariant.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
         private string assetBundlePath = "";
@@ -32,7 +35,6 @@ namespace Filta
         private string selectedArtKey = "";
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
-        private int selGridInt = 0;
 
         private PluginInfo _pluginInfo;
         private static DateTime _expiryTime;
@@ -40,7 +42,7 @@ namespace Filta
         [MenuItem("Filta/Artist Panel")]
         static void Init()
         {
-            DevPanel window = (DevPanel)EditorWindow.GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
             window.Show();
         }
         
@@ -51,14 +53,8 @@ namespace Filta
         private bool _loggingIn;
 
         private void OnEnable(){
-            GameObject simulatorObject = GameObject.Find("Simulator");
-            if (simulatorObject != null){
-                _simulator = simulatorObject.GetComponent<Simulator>();
-                if (_simulator != null){
-                    _activeSimulator = true;
-                }
-            }
-
+            EditorApplication.playModeStateChanged += FindSimulator;
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
             _pluginInfo = new PluginInfo{version = 1};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)){
                 LoginAutomatic();
@@ -72,6 +68,20 @@ namespace Filta
                     GetPrivateCollection();
                 }
             }
+        }
+
+        private void FindSimulator(PlayModeStateChange stateChange){
+            GameObject simulatorObject = GameObject.Find("Simulator");
+            if (simulatorObject != null){
+                _simulator = simulatorObject.GetComponent<Simulator>();
+                if (_simulator != null){
+                    _activeSimulator = true;
+                }
+            }
+        }
+
+        private void OnDisable(){
+            EditorApplication.playModeStateChanged -= FindSimulator;
         }
 
         private void HandleSimulator(){
@@ -93,7 +103,7 @@ namespace Filta
 
         void OnGUI()
         {
-
+            CreateNewScene();
             Login();
             EditorGUILayout.Separator();
             EditorGUILayout.Separator();
@@ -127,14 +137,36 @@ namespace Filta
             UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
         }
 
-        private async void GenerateAndUploadAssetBundle(string name)
+        private string sceneName;
+        void CreateNewScene(){
+            sceneName = (string)EditorGUILayout.TextField("filter name", sceneName);
+            if (GUILayout.Button("Create new filter")){
+                bool success;
+                success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
+                //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
+                if (!success)
+                    statusBar = "Failed to create new filter scene";
+                else{
+                    if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
+                        EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+                    }
+
+                    EditorSceneManager.OpenScene($"Assets/Filters/{sceneName}.unity", OpenSceneMode.Single);
+                }
+            }
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            
+        }
+
+        private async void GenerateAndUploadAssetBundle()
         {
-            if (String.IsNullOrEmpty(selectedArtKey))
-            {
+            if (String.IsNullOrEmpty(selectedArtKey)){
+                //selectedArtKey = SceneManager.GetActiveScene().name;
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle: {name}");
+            
+            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
             if (!assetBundleButton) { return; }
 
             statusBar = "Generating asset bundles";
@@ -148,7 +180,13 @@ namespace Filta
             
             try
             {
-                PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
+                //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
+                PrefabUtility.SaveAsPrefabAsset(filterObject, variantTempSave, out bool success);
+                if (success){
+                    AssetImporter.GetAtPath(variantTempSave).assetBundleName =
+                        "filter";
+                }
+                
             } catch
             {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
@@ -172,7 +210,7 @@ namespace Filta
             var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
-            assetBundlePath = $"{assetBundleDirectory}/{name}";
+            assetBundlePath = $"{assetBundleDirectory}/filter";
             statusBar = "Asset bundle generated";
 
 
@@ -213,6 +251,7 @@ namespace Filta
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
             statusBar = "Upload successful";
+            AssetDatabase.DeleteAsset(variantTempSave);
         }
 
         private async void LoginAutomatic(){
@@ -359,27 +398,26 @@ namespace Filta
 
         private void PrivateCollection()
         {
-            EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
-            bool newClicked = GUILayout.Button("CREATE NEW PIECE");
-            EditorGUILayout.Space();
-            if (newClicked)
-            {
-                selectedArtTitle = "Untitled Piece";
-                selectedArtKey = "temp";
-            }
-            
-            if (privateCollection == null || privateCollection.Count < 1) { return; }
-            foreach (var item in privateCollection)
-            {
-                bool clicked = GUILayout.Button(item.Value.title);
-                if (clicked)
+            if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
+                EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
+                bool newClicked = GUILayout.Button("CREATE NEW PIECE");
+                EditorGUILayout.Space();
+                if (newClicked)
                 {
-                    selectedArtTitle = item.Value.title;
-                    selectedArtKey = item.Key;
+                    selectedArtTitle = SceneManager.GetActiveScene().name;
+                    selectedArtKey = "temp";
+                }
+                if (privateCollection == null || privateCollection.Count < 1) { return; }
+                foreach (var item in privateCollection)
+                {
+                    bool clicked = GUILayout.Button(item.Value.title);
+                    if (clicked)
+                    {
+                        selectedArtTitle = item.Value.title;
+                        selectedArtKey = item.Key;
+                    }
                 }
             }
-            
-
         }
 
         private async void DeletePrivArt(string artId)
@@ -420,32 +458,17 @@ namespace Filta
             }
         }
 
-        private void SelectedArt()
-        {
-            if (GUILayout.Button("Back"))
-            {
+        private void SelectedArt(){
+            if (GUILayout.Button("Back")){
                 selectedArtKey = "";
             }
+
             EditorGUILayout.Space();
-            selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
+            selectedArtTitle = (string) EditorGUILayout.TextField("Title", selectedArtTitle);
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Select an asset bundle to upload:");
-
-            var names = AssetDatabase.GetAllAssetBundleNames();
-
-
-            if (names.Length == 0)
-            {
-                EditorGUILayout.LabelField("No asset bundles found. Create one!");
-            }
-            else
-            {
-                selGridInt = GUILayout.SelectionGrid(selGridInt, names, names.Length);
-                EditorGUILayout.Space();
-                GenerateAndUploadAssetBundle(names[selGridInt]);
-            }
-                EditorGUILayout.Space();
-                EditorGUILayout.Space();
+            GenerateAndUploadAssetBundle();
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             DeletePrivArt(selectedArtKey);
         }
