@@ -407,19 +407,17 @@ namespace Filta
                     selectedArtTitle = SceneManager.GetActiveScene().name;
                     selectedArtKey = "temp";
                 }
-            }
-            if (privateCollection == null || privateCollection.Count < 1) { return; }
-            foreach (var item in privateCollection)
-            {
-                bool clicked = GUILayout.Button(item.Value.title);
-                if (clicked)
+                if (privateCollection == null || privateCollection.Count < 1) { return; }
+                foreach (var item in privateCollection)
                 {
-                    selectedArtTitle = item.Value.title;
-                    selectedArtKey = item.Key;
+                    bool clicked = GUILayout.Button(item.Value.title);
+                    if (clicked)
+                    {
+                        selectedArtTitle = item.Value.title;
+                        selectedArtKey = item.Key;
+                    }
                 }
             }
-            
-
         }
 
         private async void DeletePrivArt(string artId)
