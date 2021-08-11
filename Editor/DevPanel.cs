@@ -165,6 +165,7 @@ namespace Filta
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
+            
             bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
             if (!assetBundleButton) { return; }
 
@@ -397,15 +398,16 @@ namespace Filta
 
         private void PrivateCollection()
         {
-            EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
-            bool newClicked = GUILayout.Button("CREATE NEW PIECE");
-            EditorGUILayout.Space();
-            if (newClicked)
-            {
-                selectedArtTitle = SceneManager.GetActiveScene().name;
-                selectedArtKey = "temp";
+            if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
+                EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
+                bool newClicked = GUILayout.Button("CREATE NEW PIECE");
+                EditorGUILayout.Space();
+                if (newClicked)
+                {
+                    selectedArtTitle = SceneManager.GetActiveScene().name;
+                    selectedArtKey = "temp";
+                }
             }
-            
             if (privateCollection == null || privateCollection.Count < 1) { return; }
             foreach (var item in privateCollection)
             {
