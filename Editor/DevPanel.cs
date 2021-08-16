@@ -169,6 +169,10 @@ namespace Filta
             bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
             if (!assetBundleButton) { return; }
 
+            if (EditorApplication.isPlayingOrWillChangePlaymode){
+                EditorApplication.ExitPlaymode();
+                await Task.Delay(1000);
+            }
             statusBar = "Generating asset bundles";
 
             var filterObject = GameObject.Find("Filter");
