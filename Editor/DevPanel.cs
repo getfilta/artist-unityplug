@@ -186,10 +186,16 @@ namespace Filta
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
                 }
+                else{
+                    EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
+                    statusBar = "Failed to generate asset bundle.";
+                    return;
+                }
                 
             } catch
             {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
+                statusBar = "Failed to generate asset bundle.";
                 return;
             }
 
@@ -200,7 +206,9 @@ namespace Filta
                 AssetDatabase.Refresh();
             }
             catch{
-                Debug.Log("Could not attach plugin info");
+                EditorUtility.DisplayDialog("Error", "There was a problem editing the pluginInfo.json. Did you delete it from your assets?", "Ok");
+                statusBar = "Failed to generate asset bundle.";
+                return;
             }
             string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
