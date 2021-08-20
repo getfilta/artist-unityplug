@@ -251,7 +251,8 @@ public class Simulator : MonoBehaviour
                 break;
             }
 
-            _videoFeed.texture = _frames[i];
+            if (_videoFeed != null)
+                _videoFeed.texture = _frames[i];
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
