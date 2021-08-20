@@ -170,8 +170,8 @@ namespace Filta
             if (!assetBundleButton) { return; }
 
             if (EditorApplication.isPlayingOrWillChangePlaymode){
-                EditorApplication.ExitPlaymode();
-                await Task.Delay(1000);
+                EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
+                return;
             }
             statusBar = "Generating asset bundles";
 
