@@ -154,12 +154,18 @@ public class Simulator : MonoBehaviour
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
-        GetVideo();
+        _frames = new List<Texture>();
+        try{
+            GetVideo();
+        }
+        catch (Exception e){
+            Debug.Log($"Could not get video data. {e.Message}");
+        }
+
     }
     
     private List<Texture> _frames;
     private void GetVideo(){
-        _frames = new List<Texture>();
         string[] textureFiles = Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
         foreach(string textFile in textureFiles){
             string prefix = _filePath == Application.dataPath ? "Assets" : "Packages/com.getfilta.artist-unityplug";
@@ -251,7 +257,7 @@ public class Simulator : MonoBehaviour
                 break;
             }
 
-            if (_videoFeed != null)
+            if (_videoFeed != null && _frames.Count > i)
                 _videoFeed.texture = _frames[i];
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
