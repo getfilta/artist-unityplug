@@ -52,20 +52,20 @@ namespace Filta
         private bool _activeSimulator;
         private bool _loggingIn;
 
-        private void OnEnable(){
+        private async void OnEnable(){
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
             _pluginInfo = new PluginInfo{version = 1};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)){
-                LoginAutomatic();
+                await LoginAutomatic();
             }
             else{
                 if (DateTime.Now > _expiryTime){
                     loginData = null;
-                    LoginAutomatic();
+                    await LoginAutomatic();
                 }
                 else{
-                    GetPrivateCollection();
+                    await GetPrivateCollection();
                 }
             }
         }
@@ -168,7 +168,11 @@ namespace Filta
             
             bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
             if (!assetBundleButton) { return; }
-
+            if (DateTime.Now > _expiryTime){
+                loginData = null;
+                if (!await LoginAutomatic())
+                    return;
+            }
             if (EditorApplication.isPlayingOrWillChangePlaymode){
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
@@ -266,12 +270,13 @@ namespace Filta
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
-        private async void LoginAutomatic(){
+        private async Task<bool> LoginAutomatic(){
             string token = PlayerPrefs.GetString(REFRESH_KEY, null);
             if (String.IsNullOrEmpty(token)){
-                return;
+                return false;
             }
 
+            bool success = false;
             _loggingIn = true;
             WWWForm postData = new WWWForm();
             postData.AddField("grant_type", "refresh_token");
@@ -300,6 +305,7 @@ namespace Filta
                 _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
                 PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
                 PlayerPrefs.Save();
+                success = true;
                 try
                 {
                     await GetPrivateCollection();
@@ -315,6 +321,8 @@ namespace Filta
                 statusBar = "Unknown Error. Check console for more information.";
                 Debug.LogError(response);
             }
+
+            return success;
         }
 
         private async void Login()
@@ -445,7 +453,11 @@ namespace Filta
             {
                 return;
             }
-
+            if (DateTime.Now > _expiryTime){
+                loginData = null;
+                if (!await LoginAutomatic())
+                    return;
+            }
             statusBar = "Deleting...";
             try
             {
