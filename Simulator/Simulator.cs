@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -45,8 +46,11 @@ public class Simulator : MonoBehaviour
 
     [NonSerialized]
     public bool isPlaying;
-    
-    
+
+    [SerializeField]
+    private RawImage _videoFeed;
+
+
     private long _prevTime;
     private int _previousFrame;
 
@@ -67,8 +71,8 @@ public class Simulator : MonoBehaviour
     
 #if UNITY_EDITOR
     private void OnEnable(){
-        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug/Simulator/FaceRecording");
-        //_filePath = Path.Combine(Application.dataPath, "Simulator/FaceRecording");
+        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
+        //_filePath = Application.dataPath;
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
     }
@@ -146,10 +150,30 @@ public class Simulator : MonoBehaviour
     
     private void GetRecordingData(){
         Debug.Log("Deserializing file");
-        byte[] data = File.ReadAllBytes(_filePath);
+        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
+        _frames = new List<Texture>();
+        try{
+            GetVideo();
+        }
+        catch (Exception e){
+            Debug.Log($"Could not get video data. {e.Message}");
+        }
+
+    }
+    
+    private List<Texture> _frames;
+    private void GetVideo(){
+        string[] textureFiles = Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
+        foreach(string textFile in textureFiles){
+            string prefix = _filePath == Application.dataPath ? "Assets" : "Packages/com.getfilta.artist-unityplug";
+            string assetPath = prefix + textFile.Replace(_filePath, "").Replace('\\', '/');
+            Texture sourceText = (Texture)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture));
+            _frames.Add(sourceText);
+        }
+        _frames = _frames.OrderBy((texture => Convert.ToInt64(texture.name))).ToList();
     }
 
     void Replay(){
@@ -178,6 +202,8 @@ public class Simulator : MonoBehaviour
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
+        Camera.main.transform.position = faceData.camera.position;
+        Camera.main.transform.eulerAngles = faceData.camera.rotation;
     }
 
     void EnforceObjectStructure(){
@@ -230,7 +256,9 @@ public class Simulator : MonoBehaviour
             if (i == 0){
                 break;
             }
-            
+
+            if (_videoFeed != null && _frames.Count > i)
+                _videoFeed.texture = _frames[i];
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
@@ -358,6 +386,7 @@ public class Simulator : MonoBehaviour
             public Trans face;
             public Trans leftEye;
             public Trans rightEye;
+            public Trans camera;
     
             [Serializable]
             public struct FaceMesh
