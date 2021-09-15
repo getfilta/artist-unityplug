@@ -155,16 +155,19 @@ public class Simulator : MonoBehaviour
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
         _frames = new List<Texture>();
+        #if UNITY_EDITOR
         try{
             GetVideo();
         }
         catch (Exception e){
             Debug.Log($"Could not get video data. {e.Message}");
         }
-
+        #endif
     }
     
     private List<Texture> _frames;
+    
+    #if UNITY_EDITOR
     private void GetVideo(){
         string[] textureFiles = Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
         foreach(string textFile in textureFiles){
@@ -175,6 +178,8 @@ public class Simulator : MonoBehaviour
         }
         _frames = _frames.OrderBy((texture => Convert.ToInt64(texture.name))).ToList();
     }
+    
+    #endif
 
     void Replay(){
         _startTime = DateTime.Now;

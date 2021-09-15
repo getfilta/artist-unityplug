@@ -186,10 +186,9 @@ namespace Filta
                 return;
             }
             
-            try
-            {
-                //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                PrefabUtility.SaveAsPrefabAsset(filterObject, variantTempSave, out bool success);
+            try{
+                //AssetImporter.GetAtPath(EditorSceneManager.GetActiveScene().path).assetBundleName = "filter";
+                /*PrefabUtility.SaveAsPrefabAsset(filterObject, variantTempSave, out bool success);
                 if (success){
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
@@ -198,8 +197,8 @@ namespace Filta
                     EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                     statusBar = "Failed to generate asset bundle.";
                     return;
-                }
-                
+                }*/
+
             } catch
             {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
