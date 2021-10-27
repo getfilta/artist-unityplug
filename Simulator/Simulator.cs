@@ -17,31 +17,41 @@ using UnityEditor;
 public class Simulator : MonoBehaviour
 {
     private string _filePath;
-    
+
     private long _recordingLength;
-    
+
     private FaceRecording _faceRecording;
 
-    [FormerlySerializedAs("filterObject"),SerializeField]
+    [FormerlySerializedAs("filterObject"), SerializeField]
     private Transform _filterObject;
-    [FormerlySerializedAs("faceMeshVisualiser"),SerializeField]
+
+    [FormerlySerializedAs("faceMeshVisualiser"), SerializeField]
     private GameObject _faceMeshVisualiser;
-    [FormerlySerializedAs("visualiserOffset"),SerializeField]
+
+    [FormerlySerializedAs("visualiserOffset"), SerializeField]
     private float _visualiserOffset;
 
-    [FormerlySerializedAs("faceTracker"),Header("Face Trackers")]
+    [FormerlySerializedAs("faceTracker"), Header("Face Trackers")]
     [SerializeField]
     private Transform _faceTracker;
-    [FormerlySerializedAs("leftEyeTracker"),SerializeField]
+
+    [FormerlySerializedAs("leftEyeTracker"), SerializeField]
     private Transform _leftEyeTracker;
-    [FormerlySerializedAs("rightEyeTracker"),SerializeField]
+
+    [FormerlySerializedAs("rightEyeTracker"), SerializeField]
     private Transform _rightEyeTracker;
-    [FormerlySerializedAs("noseBridgeTracker"),SerializeField]
+
+    [FormerlySerializedAs("noseBridgeTracker"), SerializeField]
     private Transform _noseBridgeTracker;
-    [FormerlySerializedAs("faceMaskHolder"),SerializeField]
+
+    [FormerlySerializedAs("faceMaskHolder"), SerializeField]
     private Transform _faceMaskHolder;
-    [FormerlySerializedAs("facesHolder"),SerializeField]
+
+    [FormerlySerializedAs("facesHolder"), SerializeField]
     private Transform _facesHolder;
+
+    [SerializeField]
+    private Transform _vertexHolder;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -58,7 +68,7 @@ public class Simulator : MonoBehaviour
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
-    
+
     private void Awake(){
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
@@ -68,7 +78,7 @@ public class Simulator : MonoBehaviour
         Debug.Log("Starting playback");
         TryAutomaticSetup();
     }
-    
+
 #if UNITY_EDITOR
     private void OnEnable(){
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
@@ -89,6 +99,7 @@ public class Simulator : MonoBehaviour
         if (_faceMeshVisualiser == null){
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
+
         if (_filterObject == null){
             _filterObject = GameObject.Find("Filter").transform;
         }
@@ -110,24 +121,30 @@ public class Simulator : MonoBehaviour
             if (_faceMaskHolder == null)
                 _faceMaskHolder = _faceTracker.Find("FaceMasks");
         }
+
         if (IsSetUpProperly())
             Debug.Log("Successfully Set up");
         else{
             Debug.LogError("Failed to set up simulator");
         }
-        
+
     }
+
     private bool IsSetUpProperly(){
-        return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null && _leftEyeTracker != null &&
-               _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null && _facesHolder != null;
+        return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
+               _leftEyeTracker != null &&
+               _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
+               _facesHolder != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     private void Update(){
         if (!IsSetUpProperly()){
-            Debug.LogError("The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
+            Debug.LogError(
+                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
             return;
         }
+
         EnforceObjectStructure();
         if (_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0){
             try{
@@ -139,15 +156,16 @@ public class Simulator : MonoBehaviour
             }
 
         }
-        
+
         if (!isPlaying){
             _startTime = DateTime.Now;
             return;
         }
+
         long time = (long) (DateTime.Now - _startTime).TotalMilliseconds;
         Playback(time);
     }
-    
+
     private void GetRecordingData(){
         Debug.Log("Deserializing file");
         byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
@@ -155,36 +173,38 @@ public class Simulator : MonoBehaviour
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
         _frames = new List<Texture>();
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         try{
             GetVideo();
         }
         catch (Exception e){
             Debug.Log($"Could not get video data. {e.Message}");
         }
-        #endif
+#endif
     }
-    
+
     private List<Texture> _frames;
-    
-    #if UNITY_EDITOR
+
+#if UNITY_EDITOR
     private void GetVideo(){
-        string[] textureFiles = Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
-        foreach(string textFile in textureFiles){
+        string[] textureFiles =
+            Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
+        foreach (string textFile in textureFiles){
             string prefix = _filePath == Application.dataPath ? "Assets" : "Packages/com.getfilta.artist-unityplug";
             string assetPath = prefix + textFile.Replace(_filePath, "").Replace('\\', '/');
-            Texture sourceText = (Texture)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture));
+            Texture sourceText = (Texture) AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture));
             _frames.Add(sourceText);
         }
+
         _frames = _frames.OrderBy((texture => Convert.ToInt64(texture.name))).ToList();
     }
-    
-    #endif
+
+#endif
 
     void Replay(){
         _startTime = DateTime.Now;
     }
-    
+
 
     private void OnDrawGizmos(){
 #if UNITY_EDITOR
@@ -269,11 +289,12 @@ public class Simulator : MonoBehaviour
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
+            HandleVertexPairing();
             FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
             UpdateMasks(faceData, prevFaceData, currentTime);
 
             //Logic to implement blendshape manipulation
-            
+
             /*FaceRecordingData.FaceData prevFaceData = faceRecordingData.faceRecording.faceDatas[i - 1];
             long prevTimeStamp = prevFaceData.timestamp;
             float[] prevBlendShape = prevFaceData.blendshapeData;
@@ -297,8 +318,9 @@ public class Simulator : MonoBehaviour
     #region Face Mask Control
 
     private List<SkinnedMeshRenderer> _faceMasks;
-    
+
     private int _maskCount;
+
     private void GetSkinnedMeshRenderers(){
         if (_maskCount == _faceMaskHolder.childCount) return;
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
@@ -320,7 +342,7 @@ public class Simulator : MonoBehaviour
                 if (_faceMasks[i] != null){
                     _faceMasks[i].SetBlendShapeWeight(j, nowValue);
                 }
-                
+
             }
         }
     }
@@ -328,9 +350,9 @@ public class Simulator : MonoBehaviour
     #endregion
 
     #region Face Mesh Control
-    
+
     private List<MeshFilter> _faceMeshes;
-    
+
     private int _faceCount;
 
     private void GetFaceMeshFilters(){
@@ -339,12 +361,10 @@ public class Simulator : MonoBehaviour
         _faceCount = _facesHolder.childCount;
     }
 
-    public Mesh mesh { get; private set; }
+    public Mesh mesh{ get; private set; }
 
-    void SetMeshTopology()
-    {
-        if (mesh == null)
-        {
+    void SetMeshTopology(){
+        if (mesh == null){
             return;
         }
 
@@ -363,10 +383,9 @@ public class Simulator : MonoBehaviour
             if (_faceMesh.uvs.Count > 0){
                 mesh.SetUVs(0, FaceData.Vector2Converter(_faceMesh.uvs));
             }
-            
+
             var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
-            if (meshFilter != null)
-            {
+            if (meshFilter != null){
                 meshFilter.sharedMesh = mesh;
             }
 
@@ -380,120 +399,157 @@ public class Simulator : MonoBehaviour
 
     #endregion
 
+    
+    #region Vertex Pairing
+
+    [NonSerialized]
+    public List<VertexComponent> vertexComponents;
+
+    private void HandleVertexPairing(){
+        if (vertexComponents == null)
+            return;
+        for (int i = 0; i < vertexComponents.Count; i++){
+            VertexComponent vertexComponent = vertexComponents[i];
+            if (vertexComponent.holder == null){
+                vertexComponent.holder = new GameObject();
+            }
+            vertexComponent.holder.transform.SetParent(_faceTracker);
+            vertexComponent.holder.name = $"VertexComponentIndex{vertexComponent.vertexIndex}";
+            vertexComponent.holder.transform.localPosition = _faceMesh.vertices[vertexComponent.vertexIndex];
+            if (vertexComponent.child == null)
+                continue;
+            vertexComponent.child.transform.SetParent(vertexComponent.holder.transform);
+        }
+    }
+    
+    
+
+    #endregion
+
     #region Class/Struct Definition
-    
+
+    [Serializable]
+    public class VertexComponent
+    {
+        public int vertexIndex;
+        public GameObject child;
+
+        [NonSerialized]
+        public GameObject holder;
+    }
+
+    [Serializable]
+    public struct FaceData
+    {
+        public long timestamp;
+        public float[] blendshapeData;
+        public FaceMesh faceMesh;
+        public Trans face;
+        public Trans leftEye;
+        public Trans rightEye;
+        public Trans camera;
+
         [Serializable]
-        public struct FaceData
+        public struct FaceMesh
         {
-            public long timestamp;
-            public float[] blendshapeData;
-            public FaceMesh faceMesh;
-            public Trans face;
-            public Trans leftEye;
-            public Trans rightEye;
-            public Trans camera;
-    
+            public List<Trans.Vector3Json> vertices;
+            public List<Trans.Vector3Json> normals;
+            public List<int> indices;
+            public List<Trans.Vector2Json> uvs;
+        }
+
+        [Serializable]
+        public struct Trans
+        {
+            public Vector3Json position;
+            public Vector3Json rotation;
+            public Vector3Json localPosition;
+            public Vector3Json localRotation;
+
+            public static implicit operator Trans(Transform trans){
+                return new Trans{
+                    position = trans.position, rotation = trans.eulerAngles, localPosition = trans.localPosition,
+                    localRotation = trans.localEulerAngles
+                };
+            }
+
             [Serializable]
-            public struct FaceMesh
+            public struct Vector3Json
             {
-                public List<Trans.Vector3Json> vertices;
-                public List<Trans.Vector3Json> normals;
-                public List<int> indices;
-                public List<Trans.Vector2Json> uvs;
+                public float x, y, z;
+
+                public static implicit operator Vector3Json(Vector3 vector){
+                    return new Vector3Json{x = vector.x, y = vector.y, z = vector.z};
+                }
+
+                public static implicit operator Vector3(Vector3Json vector){
+                    return new Vector3{x = vector.x, y = vector.y, z = vector.z};
+                }
             }
-    
+
             [Serializable]
-            public struct Trans
+            public struct Vector2Json
             {
-                public Vector3Json position;
-                public Vector3Json rotation;
-                public Vector3Json localPosition;
-                public Vector3Json localRotation;
-    
-                public static implicit operator Trans(Transform trans){
-                    return new Trans{
-                        position = trans.position, rotation = trans.eulerAngles, localPosition = trans.localPosition,
-                        localRotation = trans.localEulerAngles
-                    };
+                public float x, y;
+
+                public static implicit operator Vector2Json(Vector2 vector){
+                    return new Vector2Json{x = vector.x, y = vector.y};
                 }
-    
-                [Serializable]
-                public struct Vector3Json
-                {
-                    public float x, y, z;
-    
-                    public static implicit operator Vector3Json(Vector3 vector){
-                        return new Vector3Json{x = vector.x, y = vector.y, z = vector.z};
-                    }
-    
-                    public static implicit operator Vector3(Vector3Json vector){
-                        return new Vector3{x = vector.x, y = vector.y, z = vector.z};
-                    }
+
+                public static implicit operator Vector2(Vector2Json vector){
+                    return new Vector2{x = vector.x, y = vector.y};
                 }
-    
-                [Serializable]
-                public struct Vector2Json
-                {
-                    public float x, y;
-    
-                    public static implicit operator Vector2Json(Vector2 vector){
-                        return new Vector2Json{x = vector.x, y = vector.y};
-                    }
-    
-                    public static implicit operator Vector2(Vector2Json vector){
-                        return new Vector2{x = vector.x, y = vector.y};
-                    }
-                }
-            }
-    
-            public static List<Trans.Vector3Json> Vector3Converter(NativeArray<Vector3> nativeArray){
-                List<Trans.Vector3Json> vector3Jsons = new List<Trans.Vector3Json>(nativeArray.Length);
-                foreach (Vector3 vector in nativeArray){
-                    vector3Jsons.Add(vector);
-                }
-    
-                return vector3Jsons;
-            }
-                
-            public static List<Vector3> Vector3Converter(List<Trans.Vector3Json> nativeArray){
-                List<Vector3> vector3 = new List<Vector3>(nativeArray.Count);
-                foreach (Trans.Vector3Json vector in nativeArray){
-                    vector3.Add(vector);
-                }
-    
-                return vector3;
-            }
-                    
-            public static List<Trans.Vector2Json> Vector2Converter(NativeArray<Vector2> nativeArray){
-                List<Trans.Vector2Json> vector2Jsons = new List<Trans.Vector2Json>(nativeArray.Length);
-                foreach (Vector2 vector in nativeArray){
-                    vector2Jsons.Add(vector);
-                }
-    
-                return vector2Jsons;
-            }
-                
-            public static List<Vector2> Vector2Converter(List<Trans.Vector2Json> nativeArray){
-                List<Vector2> vector2 = new List<Vector2>(nativeArray.Count);
-                foreach (Trans.Vector2Json vector in nativeArray){
-                    vector2.Add(vector);
-                }
-    
-                return vector2;
             }
         }
-    
-        [Serializable]
-        public struct FaceRecording
-        {
-            public List<FaceData> faceDatas;
+
+        public static List<Trans.Vector3Json> Vector3Converter(NativeArray<Vector3> nativeArray){
+            List<Trans.Vector3Json> vector3Jsons = new List<Trans.Vector3Json>(nativeArray.Length);
+            foreach (Vector3 vector in nativeArray){
+                vector3Jsons.Add(vector);
+            }
+
+            return vector3Jsons;
         }
-    
-        #endregion
-        
-    #region Editor 
-    
-    #if UNITY_EDITOR
+
+        public static List<Vector3> Vector3Converter(List<Trans.Vector3Json> nativeArray){
+            List<Vector3> vector3 = new List<Vector3>(nativeArray.Count);
+            foreach (Trans.Vector3Json vector in nativeArray){
+                vector3.Add(vector);
+            }
+
+            return vector3;
+        }
+
+        public static List<Trans.Vector2Json> Vector2Converter(NativeArray<Vector2> nativeArray){
+            List<Trans.Vector2Json> vector2Jsons = new List<Trans.Vector2Json>(nativeArray.Length);
+            foreach (Vector2 vector in nativeArray){
+                vector2Jsons.Add(vector);
+            }
+
+            return vector2Jsons;
+        }
+
+        public static List<Vector2> Vector2Converter(List<Trans.Vector2Json> nativeArray){
+            List<Vector2> vector2 = new List<Vector2>(nativeArray.Count);
+            foreach (Trans.Vector2Json vector in nativeArray){
+                vector2.Add(vector);
+            }
+
+            return vector2;
+        }
+    }
+
+    [Serializable]
+    public struct FaceRecording
+    {
+        public List<FaceData> faceDatas;
+    }
+
+    #endregion
+
+    #region Editor
+
+#if UNITY_EDITOR
     [CustomEditor(typeof(Simulator))]
     public class SimulatorEditor : Editor
     {
@@ -511,19 +567,20 @@ public class Simulator : MonoBehaviour
                     sim.isPlaying = true;
                 }
             }
+
             if (!sim.IsSetUpProperly()){
                 if (GUILayout.Button("Automatically set up")){
                     sim.TryAutomaticSetup();
                 }
             }
-            
+
 
         }
     }
-    
-    
-    #endif
-    
+
+
+#endif
+
     #endregion
 
 }
