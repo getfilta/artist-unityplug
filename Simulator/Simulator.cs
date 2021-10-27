@@ -51,7 +51,7 @@ public class Simulator : MonoBehaviour
     private Transform _facesHolder;
 
     [SerializeField]
-    private Transform _vertexHolder;
+    private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
     [NonSerialized]
@@ -120,6 +120,8 @@ public class Simulator : MonoBehaviour
                 _facesHolder = _faceTracker.Find("Faces");
             if (_faceMaskHolder == null)
                 _faceMaskHolder = _faceTracker.Find("FaceMasks");
+            if (_vertices == null)
+                _vertices = _faceTracker.Find("Vertices");
         }
 
         if (IsSetUpProperly())
@@ -134,7 +136,7 @@ public class Simulator : MonoBehaviour
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
-               _facesHolder != null;
+               _facesHolder != null && _vertices != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
@@ -238,6 +240,7 @@ public class Simulator : MonoBehaviour
         _noseBridgeTracker.name = "NoseBridgeTracker";
         _faceMaskHolder.name = "FaceMasks";
         _facesHolder.name = "Faces";
+        _vertices.name = "Vertices";
         gameObject.name = "Simulator";
         _filterObject.name = "Filter";
         _filterObject.position = Vector3.zero;
@@ -411,30 +414,29 @@ public class Simulator : MonoBehaviour
         for (int i = 0; i < vertexComponents.Count; i++){
             VertexComponent vertexComponent = vertexComponents[i];
             if (vertexComponent.holder == null){
-                vertexComponent.holder = new GameObject();
+                vertexComponents.Remove(vertexComponent);
+                break;
             }
-            vertexComponent.holder.transform.SetParent(_faceTracker);
+            vertexComponent.holder.transform.SetParent(_vertices);
             vertexComponent.holder.name = $"VertexComponentIndex{vertexComponent.vertexIndex}";
             vertexComponent.holder.transform.localPosition = _faceMesh.vertices[vertexComponent.vertexIndex];
-            if (vertexComponent.child == null)
-                continue;
-            vertexComponent.child.transform.SetParent(vertexComponent.holder.transform);
         }
     }
-    
+
+    public void GenerateVertexComponent(int index){
+        GameObject vertex = new GameObject();
+        VertexComponent vertexComponent = new VertexComponent{vertexIndex = index, holder = vertex};
+        vertexComponents.Add(vertexComponent);
+    }
     
 
     #endregion
 
     #region Class/Struct Definition
-
-    [Serializable]
+    
     public class VertexComponent
     {
         public int vertexIndex;
-        public GameObject child;
-
-        [NonSerialized]
         public GameObject holder;
     }
 

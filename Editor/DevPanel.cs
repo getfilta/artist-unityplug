@@ -84,6 +84,7 @@ namespace Filta
             EditorApplication.playModeStateChanged -= FindSimulator;
         }
 
+        private int _vertexNumber;
         private void HandleSimulator(){
             if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
@@ -97,6 +98,17 @@ namespace Filta
                     _simulator.isPlaying = true;
                 }
             }
+
+            EditorGUILayout.LabelField("Create Vertex Component");
+            EditorGUILayout.BeginHorizontal();
+            _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
+            if (GUILayout.Button("Create")){
+                if (_simulator.vertexComponents == null){
+                    _simulator.vertexComponents = new List<Simulator.VertexComponent>();
+                }
+                _simulator.GenerateVertexComponent(_vertexNumber);
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         #endregion
