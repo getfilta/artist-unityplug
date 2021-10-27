@@ -419,7 +419,9 @@ public class Simulator : MonoBehaviour
             }
             vertexComponent.holder.transform.SetParent(_vertices);
             vertexComponent.holder.name = $"VertexComponentIndex{vertexComponent.vertexIndex}";
-            vertexComponent.holder.transform.localPosition = _faceMesh.vertices[vertexComponent.vertexIndex];
+            if (vertexComponent.vertexIndex < _faceMesh.vertices.Count){
+                vertexComponent.holder.transform.localPosition = _faceMesh.vertices[vertexComponent.vertexIndex];
+            }
         }
     }
 
