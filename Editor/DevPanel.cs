@@ -109,6 +109,7 @@ namespace Filta
                 _simulator.GenerateVertexComponent(_vertexNumber);
             }
             EditorGUILayout.EndHorizontal();
+            _simulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _simulator.showVertexNumbers);
         }
 
         #endregion

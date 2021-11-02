@@ -57,6 +57,9 @@ public class Simulator : MonoBehaviour
     [NonSerialized]
     public bool isPlaying;
 
+    [NonSerialized]
+    public bool showVertexNumbers;
+
     [SerializeField]
     private RawImage _videoFeed;
 
@@ -210,6 +213,13 @@ public class Simulator : MonoBehaviour
 
     private void OnDrawGizmos(){
 #if UNITY_EDITOR
+        if (showVertexNumbers){
+            Handles.matrix = _faceMeshVisualiser.transform.localToWorldMatrix;
+            for (int i = 0; i < _faceMesh.vertices.Count; i++){
+                Handles.Label(_faceMesh.vertices[i], i.ToString());
+            }
+        }
+        
         // Ensure continuous Update calls.
         if (!Application.isPlaying){
             UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
