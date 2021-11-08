@@ -97,8 +97,9 @@ public class Simulator : MonoBehaviour
 #endif
 
     private void TryAutomaticSetup(){
-        if (IsSetUpProperly())
+        if (IsSetUpProperly()){
             return;
+        }
         if (_faceMeshVisualiser == null){
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
@@ -113,22 +114,34 @@ public class Simulator : MonoBehaviour
         }
 
         if (_faceTracker != null){
-            if (_rightEyeTracker == null)
+            if (_rightEyeTracker == null){
                 _rightEyeTracker = _faceTracker.Find("RightEyeTracker");
-            if (_leftEyeTracker == null)
+            }
+
+            if (_leftEyeTracker == null){
                 _leftEyeTracker = _faceTracker.Find("LeftEyeTracker");
-            if (_noseBridgeTracker == null)
+            }
+
+            if (_noseBridgeTracker == null){
                 _noseBridgeTracker = _faceTracker.Find("NoseBridgeTracker");
-            if (_facesHolder == null)
+            }
+
+            if (_facesHolder == null){
                 _facesHolder = _faceTracker.Find("Faces");
-            if (_faceMaskHolder == null)
+            }
+
+            if (_faceMaskHolder == null){
                 _faceMaskHolder = _faceTracker.Find("FaceMasks");
-            if (_vertices == null)
+            }
+
+            if (_vertices == null){
                 _vertices = _faceTracker.Find("Vertices");
+            }
         }
 
-        if (IsSetUpProperly())
+        if (IsSetUpProperly()){
             Debug.Log("Successfully Set up");
+        }
         else{
             Debug.LogError("Failed to set up simulator");
         }
@@ -335,7 +348,9 @@ public class Simulator : MonoBehaviour
     private int _maskCount;
 
     private void GetSkinnedMeshRenderers(){
-        if (_maskCount == _faceMaskHolder.childCount) return;
+        if (_maskCount == _faceMaskHolder.childCount){
+            return;
+        }
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _maskCount = _faceMaskHolder.childCount;
     }
@@ -369,7 +384,9 @@ public class Simulator : MonoBehaviour
     private int _faceCount;
 
     private void GetFaceMeshFilters(){
-        if (_faceCount == _facesHolder.childCount) return;
+        if (_faceCount == _facesHolder.childCount){
+            return;
+        }
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         _faceCount = _facesHolder.childCount;
     }
@@ -419,8 +436,9 @@ public class Simulator : MonoBehaviour
     public List<VertexComponent> vertexComponents;
 
     private void HandleVertexPairing(){
-        if (vertexComponents == null)
+        if (vertexComponents == null){
             return;
+        }
         for (int i = 0; i < vertexComponents.Count; i++){
             VertexComponent vertexComponent = vertexComponents[i];
             if (vertexComponent.holder == null){
