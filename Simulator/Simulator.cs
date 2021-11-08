@@ -443,6 +443,8 @@ public class Simulator : MonoBehaviour
             VertexComponent vertexComponent = vertexComponents[i];
             if (vertexComponent.holder == null){
                 vertexComponents.Remove(vertexComponent);
+                // if a vertexComponent is removed, we break out of the loop to avoid throwing an exception.
+                // since this loop runs every frame, there is no negative impact.
                 break;
             }
             vertexComponent.holder.transform.SetParent(_vertices);
