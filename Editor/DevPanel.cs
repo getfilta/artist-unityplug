@@ -21,7 +21,7 @@ namespace Filta
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
         private const string REFRESH_KEY = "RefreshToken";
-        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadArtSource"; } }
+        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
@@ -219,9 +219,10 @@ namespace Filta
                 return;
             }
 
+            string pluginInfoPath = Path.Combine(Application.dataPath, "pluginInfo.json");
             try{
                 File.WriteAllText(
-                    Path.Combine(Application.dataPath, "pluginInfo.json"),JsonConvert.SerializeObject(_pluginInfo));
+                    pluginInfoPath,JsonConvert.SerializeObject(_pluginInfo));
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
@@ -230,7 +231,12 @@ namespace Filta
                 statusBar = "Failed to generate asset bundle.";
                 return;
             }
-            string assetBundleDirectory = "AssetBundles";
+
+            string[] packagePaths = {variantTempSave, pluginInfoPath};
+            AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
+                ExportPackageOptions.IncludeDependencies);
+            string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
+            /*string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
             {
                 Directory.CreateDirectory(assetBundleDirectory);
@@ -238,17 +244,18 @@ namespace Filta
             var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
-            assetBundlePath = $"{assetBundleDirectory}/filter";
+            assetBundlePath = $"{assetBundleDirectory}/filter";*/
             statusBar = "Asset bundle generated";
 
 
             statusBar = "Connecting...";
             Hash128 hash;
-            if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
+            hash = AssetDatabase.GetAssetDependencyHash(pathToPackage);
+            /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
             {
                 statusBar = "Asset bundle not found";
                 return;
-            }
+            }*/
             WWWForm postData = new WWWForm();
             if (selectedArtKey != "temp")
             {
@@ -273,7 +280,7 @@ namespace Filta
                 Debug.LogError(response);
                 return;
             }
-            var bytes = File.ReadAllBytes(assetBundlePath);
+            var bytes = File.ReadAllBytes(pathToPackage);
             var upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
