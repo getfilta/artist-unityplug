@@ -6,6 +6,7 @@ using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.IO;
+using System.Security.Policy;
 using Newtonsoft.Json;
 using Filta.Datatypes;
 using UnityEditor.SceneManagement;
@@ -26,7 +27,7 @@ namespace Filta
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
-        private const string variantTempSave = "Assets/FilterVariant.prefab";
+        private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
         private string assetBundlePath = "";
@@ -201,7 +202,10 @@ namespace Filta
             
             try{
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                PrefabUtility.SaveAsPrefabAsset(filterObject, variantTempSave, out bool success);
+                GameObject filterDuplicate = Instantiate(filterObject);
+                filterDuplicate.name = "Filter";
+                PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
+                DestroyImmediate(filterDuplicate);
                 if (success){
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
@@ -232,7 +236,7 @@ namespace Filta
                 return;
             }
 
-            string[] packagePaths = {variantTempSave, pluginInfoPath};
+            string[] packagePaths = {"Assets/pluginInfo.json", variantTempSave};
             AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
@@ -249,8 +253,8 @@ namespace Filta
 
 
             statusBar = "Connecting...";
-            Hash128 hash;
-            hash = AssetDatabase.GetAssetDependencyHash(pathToPackage);
+            byte[] bytes = File.ReadAllBytes(pathToPackage);
+            Hash128 hash = Hash128.Compute(bytes);
             /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
             {
                 statusBar = "Asset bundle not found";
@@ -280,8 +284,7 @@ namespace Filta
                 Debug.LogError(response);
                 return;
             }
-            var bytes = File.ReadAllBytes(pathToPackage);
-            var upload = UnityWebRequest.Put(parsed.url, bytes);
+            UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
