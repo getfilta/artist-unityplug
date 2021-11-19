@@ -31,7 +31,9 @@ namespace Filta {
         private bool runLocally = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
-        private Vector2 scrollPosition;
+        private Vector2 leftScrollPosition;
+        private Vector2 rightScrollPosition;
+
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
 
@@ -46,9 +48,9 @@ namespace Filta {
 
         #region Simulator
         private Simulator _simulator;
-
         private bool _activeSimulator;
         private bool _loggingIn;
+        private int _vertexNumber;
 
         private async void OnEnable() {
             EditorApplication.playModeStateChanged += FindSimulator;
@@ -80,7 +82,6 @@ namespace Filta {
             EditorApplication.playModeStateChanged -= FindSimulator;
         }
 
-        private int _vertexNumber;
         private void HandleSimulator() {
             if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
@@ -110,51 +111,76 @@ namespace Filta {
         #endregion
 
         void OnGUI() {
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
-            CreateNewScene();
             Login();
-            EditorGUILayout.Separator();
-            EditorGUILayout.Separator();
-
-            HandleSimulator();
-
-            if (loginData != null && loginData.idToken != "") {
-                if (selectedArtKey != "") {
-                    SelectedArt();
-                } else {
-                    PrivateCollection();
+            if (isLoggedIn()) {
+                EditorGUILayout.BeginHorizontal();
+                leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
+                if (loginData != null && loginData.idToken != "") {
+                    CreateNewScene();
+                    DrawUILine(Color.gray);
+                    HandleSimulator();
+                    DrawUILine(Color.gray);
                 }
-            }
 
-            GUILayout.FlexibleSpace();
-            GUILayout.EndScrollView();
+                GUILayout.FlexibleSpace();
+                AdvancedSettings();
+                GUILayout.EndScrollView();
+
+                rightScrollPosition = GUILayout.BeginScrollView(rightScrollPosition);
+
+                if (loginData != null && loginData.idToken != "") {
+                    if (selectedArtKey != "") {
+                        SelectedArt();
+                    } else {
+                        PrivateCollection();
+                    }
+                }
+                GUILayout.FlexibleSpace();
+                Logout();
+                GUILayout.EndScrollView();
+                EditorGUILayout.EndHorizontal();
+            } else {
+                GUILayout.FlexibleSpace();
+                AdvancedSettings();
+            }
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
+        }
+
+        private void AdvancedSettings() {
             runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
             if (GUILayout.Button("Get latest plugin version")) {
                 UpdatePanel();
             };
-
-            EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
         }
 
         private void UpdatePanel() {
             UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
         }
+        public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+            r.height = thickness;
+            r.y += padding / 2;
+            r.x -= 2;
+            r.width += 6;
+            EditorGUI.DrawRect(r, color);
+        }
 
         private string sceneName;
         void CreateNewScene() {
-            sceneName = (string)EditorGUILayout.TextField("filter name", sceneName);
-            if (GUILayout.Button("Create new filter")) {
+            sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", sceneName);
+            if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
                 if (string.IsNullOrEmpty(sceneName)) {
-                    statusBar = "Filter name cannot be empty";
-                    Debug.LogError("Filter name cannot be empty");
+                    statusBar = "Filter filename cannot be empty";
+                    Debug.LogError("Filter filename cannot be empty");
                     return;
                 }
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
-                    statusBar = "Failed to create new filter scene";
-                    Debug.LogError("Failed to create new filter scene");
+                    statusBar = "Failed to create new filter scene file";
+                    Debug.LogError("Failed to create new filter scene file");
                 } else {
                     if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
                         EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
@@ -174,7 +200,7 @@ namespace Filta {
                 return;
             }
 
-            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
+            bool assetBundleButton = GUILayout.Button($"Upload your filter to Filta");
             if (!assetBundleButton) { return; }
             if (DateTime.Now > _expiryTime) {
                 loginData = null;
@@ -311,8 +337,9 @@ namespace Filta {
             return success;
         }
 
-        private async void Login() {
-            if (loginData != null && !String.IsNullOrEmpty(loginData.idToken)) {
+        private async void Logout() {
+            if (isLoggedIn()) {
+                DrawUILine(Color.gray);
                 bool logout = GUILayout.Button("Logout");
                 if (logout) {
                     password = "";
@@ -321,6 +348,15 @@ namespace Filta {
                     PlayerPrefs.Save();
                     GUI.FocusControl(null);
                 }
+            }
+        }
+
+        private bool isLoggedIn() {
+            return loginData != null && !String.IsNullOrEmpty(loginData.idToken);
+        }
+
+        private async void Login() {
+            if (isLoggedIn()) {
                 return;
             }
             if (!_loggingIn) {
@@ -386,8 +422,8 @@ namespace Filta {
 
         private void PrivateCollection() {
             if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
-                EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
-                bool newClicked = GUILayout.Button("CREATE NEW PIECE");
+                EditorGUILayout.LabelField("Choose the Filta upload to update:", EditorStyles.boldLabel);
+                bool newClicked = GUILayout.Button("CREATE NEW FILTA UPLOAD");
                 EditorGUILayout.Space();
                 if (newClicked) {
                     selectedArtTitle = SceneManager.GetActiveScene().name;
