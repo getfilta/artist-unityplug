@@ -12,10 +12,8 @@ using Filta.Datatypes;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace Filta
-{
-    public class DevPanel : EditorWindow
-    {
+namespace Filta {
+    public class DevPanel : EditorWindow {
         private string email = "";
         private string password = "";
         private bool _stayLoggedIn;
@@ -34,6 +32,9 @@ namespace Filta
         private bool runLocally = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
+        private Vector2 leftScrollPosition;
+        private Vector2 rightScrollPosition;
+
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
 
@@ -41,61 +42,56 @@ namespace Filta
         private static DateTime _expiryTime;
 
         [MenuItem("Filta/Artist Panel")]
-        static void Init()
-        {
+        static void Init() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
             window.Show();
         }
-        
+
         #region Simulator
         private Simulator _simulator;
-
         private bool _activeSimulator;
         private bool _loggingIn;
+        private int _vertexNumber;
 
-        private async void OnEnable(){
+        private async void OnEnable() {
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            _pluginInfo = new PluginInfo{version = 1};
-            if (loginData == null || String.IsNullOrEmpty(loginData.idToken)){
+            _pluginInfo = new PluginInfo { version = 1 };
+            if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
-            }
-            else{
-                if (DateTime.Now > _expiryTime){
+            } else {
+                if (DateTime.Now > _expiryTime) {
                     loginData = null;
                     await LoginAutomatic();
-                }
-                else{
+                } else {
                     await GetPrivateCollection();
                 }
             }
         }
 
-        private void FindSimulator(PlayModeStateChange stateChange){
+        private void FindSimulator(PlayModeStateChange stateChange) {
             GameObject simulatorObject = GameObject.Find("Simulator");
-            if (simulatorObject != null){
+            if (simulatorObject != null) {
                 _simulator = simulatorObject.GetComponent<Simulator>();
-                if (_simulator != null){
+                if (_simulator != null) {
                     _activeSimulator = true;
                 }
             }
         }
 
-        private void OnDisable(){
+        private void OnDisable() {
             EditorApplication.playModeStateChanged -= FindSimulator;
         }
 
-        private int _vertexNumber;
-        private void HandleSimulator(){
+        private void HandleSimulator() {
             if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
-            if (_simulator.isPlaying){
-                if (GUILayout.Button("Stop")){
+            if (_simulator.isPlaying) {
+                if (GUILayout.Button("Stop")) {
                     _simulator.isPlaying = false;
                 }
-            }
-            else{
-                if (GUILayout.Button("Play")){
+            } else {
+                if (GUILayout.Button("Play")) {
                     _simulator.isPlaying = true;
                 }
             }
@@ -103,8 +99,8 @@ namespace Filta
             EditorGUILayout.LabelField("Create Vertex Component");
             EditorGUILayout.BeginHorizontal();
             _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
-            if (GUILayout.Button("Create")){
-                if (_simulator.vertexComponents == null){
+            if (GUILayout.Button("Create")) {
+                if (_simulator.vertexComponents == null) {
                     _simulator.vertexComponents = new List<Simulator.VertexComponent>();
                 }
                 _simulator.GenerateVertexComponent(_vertexNumber);
@@ -115,53 +111,79 @@ namespace Filta
 
         #endregion
 
-        void OnGUI()
-        {
-            CreateNewScene();
+        void OnGUI() {
             Login();
-            EditorGUILayout.Separator();
-            EditorGUILayout.Separator();
-            
-            HandleSimulator();
+            if (isLoggedIn()) {
+                EditorGUILayout.BeginHorizontal();
+                leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
+                if (loginData != null && loginData.idToken != "") {
+                    CreateNewScene();
+                    DrawUILine(Color.gray);
+                    HandleSimulator();
+                    DrawUILine(Color.gray);
+                }
 
-            if (loginData != null && loginData.idToken != "")
-            {
-                if (selectedArtKey != "")
-                {
-                    SelectedArt();
+                GUILayout.FlexibleSpace();
+                AdvancedSettings();
+                GUILayout.EndScrollView();
+
+                rightScrollPosition = GUILayout.BeginScrollView(rightScrollPosition);
+
+                if (loginData != null && loginData.idToken != "") {
+                    if (selectedArtKey != "") {
+                        SelectedArt();
+                    } else {
+                        PrivateCollection();
+                    }
                 }
-                else
-                {
-                    PrivateCollection();
-                }
+                GUILayout.FlexibleSpace();
+                Logout();
+                GUILayout.EndScrollView();
+                EditorGUILayout.EndHorizontal();
+            } else {
+                GUILayout.FlexibleSpace();
+                AdvancedSettings();
             }
-
-            GUILayout.FlexibleSpace();
-            runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
-            if (GUILayout.Button("Get latest plugin version"))
-            {
-                UpdatePanel();
-            };
-
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
         }
 
-        private void UpdatePanel()
-        {
+        private void AdvancedSettings() {
+            runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
+            if (GUILayout.Button("Get latest plugin version")) {
+                UpdatePanel();
+            };
+        }
+
+        private void UpdatePanel() {
             UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+        }
+        public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+            r.height = thickness;
+            r.y += padding / 2;
+            r.x -= 2;
+            r.width += 6;
+            EditorGUI.DrawRect(r, color);
         }
 
         private string sceneName;
-        void CreateNewScene(){
-            sceneName = (string)EditorGUILayout.TextField("filter name", sceneName);
-            if (GUILayout.Button("Create new filter")){
+        void CreateNewScene() {
+            sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", sceneName);
+            if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
+                if (string.IsNullOrEmpty(sceneName)) {
+                    statusBar = "Filter filename cannot be empty";
+                    Debug.LogError("Filter filename cannot be empty");
+                    return;
+                }
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
-                if (!success)
-                    statusBar = "Failed to create new filter scene";
-                else{
-                    if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
+                if (!success) {
+                    statusBar = "Failed to create new filter scene file";
+                    Debug.LogError("Failed to create new filter scene file");
+                } else {
+                    if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
                         EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                     }
 
@@ -169,38 +191,36 @@ namespace Filta
                 }
             }
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            
+
         }
 
-        private async void GenerateAndUploadAssetBundle()
-        {
-            if (String.IsNullOrEmpty(selectedArtKey)){
+        private async void GenerateAndUploadAssetBundle() {
+            if (String.IsNullOrEmpty(selectedArtKey)) {
                 //selectedArtKey = SceneManager.GetActiveScene().name;
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-            
-            bool assetBundleButton = GUILayout.Button($"Generate & upload asset bundle.");
+
+            bool assetBundleButton = GUILayout.Button($"Upload your filter to Filta");
             if (!assetBundleButton) { return; }
-            if (DateTime.Now > _expiryTime){
+            if (DateTime.Now > _expiryTime) {
                 loginData = null;
                 if (!await LoginAutomatic())
                     return;
             }
-            if (EditorApplication.isPlayingOrWillChangePlaymode){
+            if (EditorApplication.isPlayingOrWillChangePlaymode) {
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
             }
             statusBar = "Generating asset bundles";
 
             var filterObject = GameObject.Find("Filter");
-            if (filterObject == null)
-            {
+            if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
             }
-            
-            try{
+
+            try {
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
                 GameObject filterDuplicate = Instantiate(filterObject);
                 filterDuplicate.name = "Filter";
@@ -261,8 +281,7 @@ namespace Filta
                 return;
             }*/
             WWWForm postData = new WWWForm();
-            if (selectedArtKey != "temp")
-            {
+            if (selectedArtKey != "temp") {
                 Debug.LogWarning("Updating Art with artid: " + selectedArtKey);
                 postData.AddField("artid", selectedArtKey);
             }
@@ -274,12 +293,9 @@ namespace Filta
             statusBar = "Connected! Uploading...";
             var response = www.downloadHandler.text;
             UploadBundleResponse parsed;
-            try
-            {
+            try {
                 parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
-            }
-            catch
-            {
+            } catch {
                 statusBar = "Error! Check console for more information";
                 Debug.LogError(response);
                 return;
@@ -292,9 +308,9 @@ namespace Filta
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
-        private async Task<bool> LoginAutomatic(){
+        private async Task<bool> LoginAutomatic() {
             string token = PlayerPrefs.GetString(REFRESH_KEY, null);
-            if (String.IsNullOrEmpty(token)){
+            if (String.IsNullOrEmpty(token)) {
                 return false;
             }
 
@@ -308,38 +324,27 @@ namespace Filta
             await www.SendWebRequest();
             _loggingIn = false;
             string response = www.downloadHandler.text;
-            if (response.Contains("TOKEN_EXPIRED"))
-            {
+            if (response.Contains("TOKEN_EXPIRED")) {
                 statusBar = "Error: Token has expired";
-            }
-            else if (response.Contains("USER_NOT_FOUND"))
-            {
+            } else if (response.Contains("USER_NOT_FOUND")) {
                 statusBar = "Error: User was not found";
-            }
-            else if (response.Contains("INVALID_REFRESH_TOKEN"))
-            {
+            } else if (response.Contains("INVALID_REFRESH_TOKEN")) {
                 statusBar = "Error: Invalid token provided";
-            }
-            else if (response.Contains("id_token")){
+            } else if (response.Contains("id_token")) {
                 RefreshResponse refreshData = JsonUtility.FromJson<RefreshResponse>(response);
-                loginData = new LoginResponse{refreshToken = refreshData.refresh_token, idToken = refreshData.id_token, expiresIn = refreshData.expires_in, localId = refreshData.user_id};
+                loginData = new LoginResponse { refreshToken = refreshData.refresh_token, idToken = refreshData.id_token, expiresIn = refreshData.expires_in, localId = refreshData.user_id };
                 statusBar = $"Login successful!";
                 _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
                 PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
                 PlayerPrefs.Save();
                 success = true;
-                try
-                {
+                try {
                     await GetPrivateCollection();
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
                 }
-            }
-            else
-            {
+            } else {
                 statusBar = "Unknown Error. Check console for more information.";
                 Debug.LogError(response);
             }
@@ -347,22 +352,29 @@ namespace Filta
             return success;
         }
 
-        private async void Login()
-        {
-            if (loginData != null && !String.IsNullOrEmpty(loginData.idToken))
-            {
+        private async void Logout() {
+            if (isLoggedIn()) {
+                DrawUILine(Color.gray);
                 bool logout = GUILayout.Button("Logout");
-                if (logout)
-                {
+                if (logout) {
                     password = "";
                     loginData = null;
                     PlayerPrefs.SetString(REFRESH_KEY, null);
                     PlayerPrefs.Save();
                     GUI.FocusControl(null);
                 }
+            }
+        }
+
+        private bool isLoggedIn() {
+            return loginData != null && !String.IsNullOrEmpty(loginData.idToken);
+        }
+
+        private async void Login() {
+            if (isLoggedIn()) {
                 return;
             }
-            if (!_loggingIn){
+            if (!_loggingIn) {
                 EditorGUILayout.LabelField("Login to your user account", EditorStyles.boldLabel);
                 email = (string)EditorGUILayout.TextField("email", email);
                 password = (string)EditorGUILayout.PasswordField("password", password);
@@ -370,7 +382,7 @@ namespace Filta
             }
             bool submitButton = !_loggingIn && GUILayout.Button("Login");
             if (!submitButton) { return; }
-            
+
             selectedArtKey = "";
             _loggingIn = true;
             WWWForm postData = new WWWForm();
@@ -383,53 +395,38 @@ namespace Filta
             await www.SendWebRequest();
             _loggingIn = false;
             var response = www.downloadHandler.text;
-            if (response.Contains("EMAIL_NOT_FOUND"))
-            {
+            if (response.Contains("EMAIL_NOT_FOUND")) {
                 statusBar = "Error: Email not found";
-            }
-            else if (response.Contains("MISSING_PASSWORD"))
-            {
+            } else if (response.Contains("MISSING_PASSWORD")) {
                 statusBar = "Error: Missing Password";
-            }
-            else if (response.Contains("INVALID_PASSWORD"))
-            {
+            } else if (response.Contains("INVALID_PASSWORD")) {
                 statusBar = "Error: Invalid Password";
-            }
-            else if (response.Contains("idToken"))
-            {
+            } else if (response.Contains("idToken")) {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
                 statusBar = $"Login successful!";
                 _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
-                if (_stayLoggedIn){
+                if (_stayLoggedIn) {
                     PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
                     PlayerPrefs.Save();
                 }
-                
-                try
-                {
+
+                try {
                     await GetPrivateCollection();
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
                 }
-            }
-            else
-            {
+            } else {
                 statusBar = "Unknown Error. Check console for more information.";
                 Debug.LogError(response);
             }
         }
 
-        private async Task GetPrivateCollection()
-        {
+        private async Task GetPrivateCollection() {
             string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
-            {
+            using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 await req.SendWebRequest();
-                if (req.isNetworkError || req.isHttpError)
-                {
+                if (req.isNetworkError || req.isHttpError) {
                     throw new Exception(req.error.ToString());
                 }
                 var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
@@ -438,23 +435,19 @@ namespace Filta
             }
         }
 
-        private void PrivateCollection()
-        {
-            if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)){
-                EditorGUILayout.LabelField("Choose the filter to update:", EditorStyles.boldLabel);
-                bool newClicked = GUILayout.Button("CREATE NEW PIECE");
+        private void PrivateCollection() {
+            if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
+                EditorGUILayout.LabelField("Choose the Filta upload to update:", EditorStyles.boldLabel);
+                bool newClicked = GUILayout.Button("CREATE NEW FILTA UPLOAD");
                 EditorGUILayout.Space();
-                if (newClicked)
-                {
+                if (newClicked) {
                     selectedArtTitle = SceneManager.GetActiveScene().name;
                     selectedArtKey = "temp";
                 }
                 if (privateCollection == null || privateCollection.Count < 1) { return; }
-                foreach (var item in privateCollection)
-                {
+                foreach (var item in privateCollection) {
                     bool clicked = GUILayout.Button(item.Value.title);
-                    if (clicked)
-                    {
+                    if (clicked) {
                         selectedArtTitle = item.Value.title;
                         selectedArtKey = item.Key;
                     }
@@ -462,55 +455,47 @@ namespace Filta
             }
         }
 
-        private async void DeletePrivArt(string artId)
-        {
-            if (GUILayout.Button("Delete upload from Filta"))
-            {
-                if (!EditorUtility.DisplayDialog("Delete", "Are you sure you want to delete this from Filta?", "yes", "cancel"))
-                {
+        private async void DeletePrivArt(string artId) {
+            if (GUILayout.Button("Delete upload from Filta")) {
+                if (!EditorUtility.DisplayDialog("Delete", "Are you sure you want to delete this from Filta?", "yes", "cancel")) {
                     return;
                 }
-            }
-            else
-            {
+            } else {
                 return;
             }
-            if (DateTime.Now > _expiryTime){
+            if (DateTime.Now > _expiryTime) {
                 loginData = null;
                 if (!await LoginAutomatic())
                     return;
             }
             statusBar = "Deleting...";
-            try
-            {
+            try {
                 WWWForm postData = new WWWForm();
                 postData.AddField("uid", loginData.idToken);
                 postData.AddField("artid", artId);
                 var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
                 await www.SendWebRequest();
                 var response = www.downloadHandler.text;
-                if (www.isHttpError || www.isNetworkError)
-                {
+                if (www.isHttpError || www.isNetworkError) {
                     statusBar = $"Error Deleting. Check console for details.";
                     Debug.LogError(www.error + " " + www.downloadHandler.text);
                     return;
                 }
                 statusBar = $"Delete: {response}";
-            }
-            finally
-            {
+            } finally {
                 privateCollection.Remove(selectedArtKey);
                 selectedArtKey = "";
             }
         }
 
-        private void SelectedArt(){
-            if (GUILayout.Button("Back")){
+        private void SelectedArt() {
+            if (GUILayout.Button("Back")) {
                 selectedArtKey = "";
+                return;
             }
 
             EditorGUILayout.Space();
-            selectedArtTitle = (string) EditorGUILayout.TextField("Title", selectedArtTitle);
+            selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
             EditorGUILayout.Space();
             GenerateAndUploadAssetBundle();
             EditorGUILayout.Space();
@@ -521,8 +506,7 @@ namespace Filta
     }
 
     [Serializable]
-    public class LoginResponse
-    {
+    public class LoginResponse {
         public string localId;
         public string displayName;
         public string idToken;
@@ -531,8 +515,7 @@ namespace Filta
     }
 
     [Serializable]
-    public class RefreshResponse
-    {
+    public class RefreshResponse {
         public string id_token;
         public string refresh_token;
         public int expires_in;
@@ -540,19 +523,16 @@ namespace Filta
     }
 
     [Serializable]
-    public class UploadBundleResponse
-    {
+    public class UploadBundleResponse {
         public string url;
         public string artid;
     }
 
-    public class UnityWebRequestAwaiter : INotifyCompletion
-    {
+    public class UnityWebRequestAwaiter : INotifyCompletion {
         private UnityWebRequestAsyncOperation asyncOp;
         private Action continuation;
 
-        public UnityWebRequestAwaiter(UnityWebRequestAsyncOperation asyncOp)
-        {
+        public UnityWebRequestAwaiter(UnityWebRequestAsyncOperation asyncOp) {
             this.asyncOp = asyncOp;
             asyncOp.completed += OnRequestCompleted;
         }
@@ -561,27 +541,22 @@ namespace Filta
 
         public void GetResult() { }
 
-        public void OnCompleted(Action continuation)
-        {
+        public void OnCompleted(Action continuation) {
             this.continuation = continuation;
         }
 
-        private void OnRequestCompleted(AsyncOperation obj)
-        {
+        private void OnRequestCompleted(AsyncOperation obj) {
             continuation();
         }
     }
 
-    public static class ExtensionMethods
-    {
-        public static UnityWebRequestAwaiter GetAwaiter(this UnityWebRequestAsyncOperation asyncOp)
-        {
+    public static class ExtensionMethods {
+        public static UnityWebRequestAwaiter GetAwaiter(this UnityWebRequestAsyncOperation asyncOp) {
             return new UnityWebRequestAwaiter(asyncOp);
         }
     }
 
-    public struct PluginInfo
-    {
+    public struct PluginInfo {
         public int version;
     }
 }
