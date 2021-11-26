@@ -28,7 +28,6 @@ namespace Filta {
         private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-        private string assetBundlePath = "";
         private bool runLocally = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
@@ -352,7 +351,7 @@ namespace Filta {
             return success;
         }
 
-        private async void Logout() {
+        private void Logout() {
             if (isLoggedIn()) {
                 DrawUILine(Color.gray);
                 bool logout = GUILayout.Button("Logout");
