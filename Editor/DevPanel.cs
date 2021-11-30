@@ -69,7 +69,6 @@ namespace Filta {
                     await GetPrivateCollection();
                 }
             }
-            GetFiltersOnQueue();
         }
 
         private void FindSimulator(PlayModeStateChange stateChange) {
@@ -441,6 +440,8 @@ namespace Filta {
                 success = true;
                 try {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
+                    GetFiltersOnQueue();
                 } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
@@ -513,6 +514,7 @@ namespace Filta {
 
                 try {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
                 } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
