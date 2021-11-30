@@ -6,11 +6,13 @@ using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.IO;
-using System.Security.Policy;
+using EvtSource;
 using Newtonsoft.Json;
 using Filta.Datatypes;
+using Newtonsoft.Json.Linq;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
+using Object = System.Object;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
@@ -39,6 +41,7 @@ namespace Filta {
 
         private PluginInfo _pluginInfo;
         private static DateTime _expiryTime;
+        private bool _watchingQueue;
 
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
@@ -66,6 +69,7 @@ namespace Filta {
                     await GetPrivateCollection();
                 }
             }
+            GetFiltersOnQueue();
         }
 
         private void FindSimulator(PlayModeStateChange stateChange) {
@@ -80,6 +84,7 @@ namespace Filta {
 
         private void OnDisable() {
             EditorApplication.playModeStateChanged -= FindSimulator;
+            DisposeQueue();
         }
 
         private void HandleSimulator() {
@@ -110,6 +115,101 @@ namespace Filta {
 
         #endregion
 
+        #region Bundle Queue
+        
+        private Dictionary<string, Bundle> _bundles;
+        private EventSourceReader _evt;
+        private async void GetFiltersOnQueue(){
+            _bundles = new Dictionary<string, Bundle>();
+            string getUrlQueue = $"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
+            UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
+            await request.SendWebRequest();
+            JObject results = JObject.Parse(request.downloadHandler.text);
+            foreach (JProperty prop in results.Properties()){
+                string id = prop.Name;
+                string bundleTitle = prop.Value["title"].Value<string>();
+                int queue = prop.Value["queue"].Value<int>();
+                _bundles.Add(id, new Bundle{queue = queue, title = bundleTitle});
+            }
+            ListenToQueue();
+        }
+
+        private void ListenToQueue(){
+            _evt = new EventSourceReader(new Uri($"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
+            _evt.MessageReceived += (sender, e) =>
+            {
+                if (e.Event == "put"){
+                    try{
+                        QueueResponse response = JsonConvert.DeserializeObject<QueueResponse>(e.Message);
+                        string[] paths = response.path.Split('/');
+                        if (response.data is int queue){
+                            _bundles[paths[1]].queue = queue;
+                        }
+                        else{
+                            _bundles.Remove(paths[1]);
+                        }
+                        
+                    }
+                    catch(Exception exception){
+                        if (exception is JsonReaderException){
+                            return;
+                        }
+                        Debug.LogError(exception.Message);
+                    }
+                }
+            };
+            _evt.Disconnected += async (sender, e) => {
+                await Task.Delay(e.ReconnectDelay);
+                try{
+                    if (!_evt.IsDisposed){
+                        _evt.Start(); // Reconnect to the same URL
+                    }
+                }
+                catch (Exception exception){
+                    Debug.LogError(exception.Message);
+                }
+
+            };
+        }
+
+        private void DisplayQueue(){
+            if (_bundles == null || _bundles.Count <= 0)
+                return;
+            GUILayout.Label("Filters being processed");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Filter name");
+            GUILayout.Label("Queue number");
+            GUILayout.EndHorizontal();
+            foreach (KeyValuePair<string, Bundle> bundle in _bundles){
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(bundle.Value.title);
+                GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" :bundle.Value.queue.ToString());
+                GUILayout.EndHorizontal();
+            }
+            DrawUILine(Color.gray);
+        }
+
+        private void DisposeQueue(){
+            _evt.Dispose();
+        }
+
+        private void OnInspectorUpdate(){
+            Repaint();
+        }
+
+        public class Bundle
+        {
+            public string title;
+            public int queue;
+        }
+
+        public class QueueResponse
+        {
+            public string path;
+            public int? data;
+        }
+
+        #endregion
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
@@ -120,6 +220,7 @@ namespace Filta {
                     DrawUILine(Color.gray);
                     HandleSimulator();
                     DrawUILine(Color.gray);
+                    DisplayQueue();
                 }
 
                 GUILayout.FlexibleSpace();
@@ -299,6 +400,7 @@ namespace Filta {
                 Debug.LogError(response);
                 return;
             }
+            _bundles.Add(parsed.artid, new Bundle{queue = 999, title = selectedArtTitle});
             UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
