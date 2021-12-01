@@ -67,6 +67,7 @@ namespace Filta {
                     await LoginAutomatic();
                 } else {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
                 }
             }
         }
