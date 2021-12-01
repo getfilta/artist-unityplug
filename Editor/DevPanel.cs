@@ -22,6 +22,7 @@ namespace Filta {
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
         private const string REFRESH_KEY = "RefreshToken";
+        private const long UPLOAD_LIMIT = 100000000;
         private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
@@ -360,6 +361,11 @@ namespace Filta {
             AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
+            FileInfo fileInfo = new FileInfo(pathToPackage);
+            if (fileInfo.Length > UPLOAD_LIMIT){
+                EditorUtility.DisplayDialog("Error", "Your filter is over 100MB, please reduce the size", "Ok");
+                return;
+            }
             /*string assetBundleDirectory = "AssetBundles";
             if (!Directory.Exists(assetBundleDirectory))
             {
