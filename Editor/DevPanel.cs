@@ -6,10 +6,13 @@ using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.IO;
+using EvtSource;
 using Newtonsoft.Json;
 using Filta.Datatypes;
+using Newtonsoft.Json.Linq;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
+using Object = System.Object;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
@@ -19,15 +22,15 @@ namespace Filta {
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
         private const string REFRESH_KEY = "RefreshToken";
-        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadArtSource"; } }
+        private const long UPLOAD_LIMIT = 100000000;
+        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
-        private const string variantTempSave = "Assets/FilterVariant.prefab";
+        private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-        private string assetBundlePath = "";
         private bool runLocally = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
@@ -39,6 +42,7 @@ namespace Filta {
 
         private PluginInfo _pluginInfo;
         private static DateTime _expiryTime;
+        private bool _watchingQueue;
 
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
@@ -64,6 +68,7 @@ namespace Filta {
                     await LoginAutomatic();
                 } else {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
                 }
             }
         }
@@ -80,6 +85,7 @@ namespace Filta {
 
         private void OnDisable() {
             EditorApplication.playModeStateChanged -= FindSimulator;
+            DisposeQueue();
         }
 
         private void HandleSimulator() {
@@ -110,6 +116,102 @@ namespace Filta {
 
         #endregion
 
+        #region Bundle Queue
+        
+        private Dictionary<string, Bundle> _bundles;
+        private EventSourceReader _evt;
+        private async void GetFiltersOnQueue(){
+            _bundles = new Dictionary<string, Bundle>();
+            string getUrlQueue = $"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
+            UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
+            await request.SendWebRequest();
+            JObject results = JObject.Parse(request.downloadHandler.text);
+            foreach (JProperty prop in results.Properties()){
+                string id = prop.Name;
+                string bundleTitle = prop.Value["title"].Value<string>();
+                int queue = prop.Value["queue"].Value<int>();
+                _bundles.Add(id, new Bundle{queue = queue, title = bundleTitle});
+            }
+            ListenToQueue();
+        }
+
+        private void ListenToQueue(){
+            _evt = new EventSourceReader(new Uri($"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
+            _evt.MessageReceived += (sender, e) =>
+            {
+                if (e.Event == "put"){
+                    try{
+                        QueueResponse response = JsonConvert.DeserializeObject<QueueResponse>(e.Message);
+                        string[] paths = response.path.Split('/');
+                        if (response.data is int queue){
+                            _bundles[paths[1]].queue = queue;
+                        }
+                        else{
+                            statusBar = $"{_bundles[paths[1]].title} successfully bundled!";
+                            _bundles.Remove(paths[1]);
+                        }
+                        
+                    }
+                    catch(Exception exception){
+                        if (exception is JsonReaderException){
+                            return;
+                        }
+                        Debug.LogError(exception.Message);
+                    }
+                }
+            };
+            _evt.Disconnected += async (sender, e) => {
+                await Task.Delay(e.ReconnectDelay);
+                try{
+                    if (!_evt.IsDisposed){
+                        _evt.Start(); // Reconnect to the same URL
+                    }
+                }
+                catch (Exception exception){
+                    Debug.LogError(exception.Message);
+                }
+
+            };
+        }
+
+        private void DisplayQueue(){
+            if (_bundles == null || _bundles.Count <= 0)
+                return;
+            GUILayout.Label("Filters being processed");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Filter name");
+            GUILayout.Label("Queue number");
+            GUILayout.EndHorizontal();
+            foreach (KeyValuePair<string, Bundle> bundle in _bundles){
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(bundle.Value.title);
+                GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" :bundle.Value.queue.ToString());
+                GUILayout.EndHorizontal();
+            }
+            DrawUILine(Color.gray);
+        }
+
+        private void DisposeQueue(){
+            _evt.Dispose();
+        }
+
+        private void OnInspectorUpdate(){
+            Repaint();
+        }
+
+        public class Bundle
+        {
+            public string title;
+            public int queue;
+        }
+
+        public class QueueResponse
+        {
+            public string path;
+            public int? data;
+        }
+
+        #endregion
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
@@ -120,6 +222,7 @@ namespace Filta {
                     DrawUILine(Color.gray);
                     HandleSimulator();
                     DrawUILine(Color.gray);
+                    DisplayQueue();
                 }
 
                 GUILayout.FlexibleSpace();
@@ -221,49 +324,69 @@ namespace Filta {
 
             try {
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                PrefabUtility.SaveAsPrefabAsset(filterObject, variantTempSave, out bool success);
-                if (success) {
+                GameObject filterDuplicate = Instantiate(filterObject);
+                filterDuplicate.name = "Filter";
+                PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
+                DestroyImmediate(filterDuplicate);
+                if (success){
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
-                } else {
+                }
+                else{
                     EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                     statusBar = "Failed to generate asset bundle.";
                     return;
                 }
-
-            } catch {
+                
+            } catch
+            {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                 statusBar = "Failed to generate asset bundle.";
                 return;
             }
 
-            try {
+            string pluginInfoPath = Path.Combine(Application.dataPath, "pluginInfo.json");
+            try{
                 File.WriteAllText(
-                    Path.Combine(Application.dataPath, "pluginInfo.json"), JsonConvert.SerializeObject(_pluginInfo));
+                    pluginInfoPath,JsonConvert.SerializeObject(_pluginInfo));
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-            } catch {
+            }
+            catch{
                 EditorUtility.DisplayDialog("Error", "There was a problem editing the pluginInfo.json. Did you delete it from your assets?", "Ok");
                 statusBar = "Failed to generate asset bundle.";
                 return;
             }
-            string assetBundleDirectory = "AssetBundles";
-            if (!Directory.Exists(assetBundleDirectory)) {
+
+            string[] packagePaths = {"Assets/pluginInfo.json", variantTempSave};
+            AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
+                ExportPackageOptions.IncludeDependencies);
+            string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
+            FileInfo fileInfo = new FileInfo(pathToPackage);
+            if (fileInfo.Length > UPLOAD_LIMIT){
+                EditorUtility.DisplayDialog("Error", "Your filter is over 100MB, please reduce the size", "Ok");
+                return;
+            }
+            /*string assetBundleDirectory = "AssetBundles";
+            if (!Directory.Exists(assetBundleDirectory))
+            {
                 Directory.CreateDirectory(assetBundleDirectory);
             }
             var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
-            assetBundlePath = $"{assetBundleDirectory}/filter";
+            assetBundlePath = $"{assetBundleDirectory}/filter";*/
             statusBar = "Asset bundle generated";
 
 
             statusBar = "Connecting...";
-            Hash128 hash;
-            if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash)) {
+            byte[] bytes = File.ReadAllBytes(pathToPackage);
+            Hash128 hash = Hash128.Compute(bytes);
+            /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
+            {
                 statusBar = "Asset bundle not found";
                 return;
-            }
+            }*/
             WWWForm postData = new WWWForm();
             if (selectedArtKey != "temp") {
                 Debug.LogWarning("Updating Art with artid: " + selectedArtKey);
@@ -284,8 +407,8 @@ namespace Filta {
                 Debug.LogError(response);
                 return;
             }
-            var bytes = File.ReadAllBytes(assetBundlePath);
-            var upload = UnityWebRequest.Put(parsed.url, bytes);
+            _bundles.Add(parsed.artid, new Bundle{queue = 999, title = selectedArtTitle});
+            UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
@@ -325,6 +448,7 @@ namespace Filta {
                 success = true;
                 try {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
                 } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
@@ -337,7 +461,7 @@ namespace Filta {
             return success;
         }
 
-        private async void Logout() {
+        private void Logout() {
             if (isLoggedIn()) {
                 DrawUILine(Color.gray);
                 bool logout = GUILayout.Button("Logout");
@@ -397,6 +521,7 @@ namespace Filta {
 
                 try {
                     await GetPrivateCollection();
+                    GetFiltersOnQueue();
                 } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
                     Debug.LogError("Error downloading: " + e.Message);
