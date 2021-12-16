@@ -147,6 +147,7 @@ namespace Filta {
                             _bundles[paths[1]].queue = queue;
                         }
                         else{
+                            statusBar = $"{_bundles[paths[1]].title} successfully bundled!";
                             _bundles.Remove(paths[1]);
                         }
                         
@@ -447,7 +448,6 @@ namespace Filta {
                 success = true;
                 try {
                     await GetPrivateCollection();
-                    GetFiltersOnQueue();
                     GetFiltersOnQueue();
                 } catch (Exception e) {
                     statusBar = "Error downloading collection. Try again. Check console for more information.";
