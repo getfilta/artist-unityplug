@@ -275,13 +275,9 @@ namespace Filta {
         private string sceneName;
         void CreateNewScene() {
             sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", sceneName);
+            GUI.enabled = !String.IsNullOrWhiteSpace(sceneName);
             if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
-                if (string.IsNullOrEmpty(sceneName)) {
-                    SetStatusMessage("Filter filename cannot be empty", true);
-                    Debug.LogError("Filter filename cannot be empty");
-                    return;
-                }
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
@@ -295,6 +291,8 @@ namespace Filta {
                     EditorSceneManager.OpenScene($"Assets/Filters/{sceneName}.unity", OpenSceneMode.Single);
                 }
             }
+
+            GUI.enabled = true;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
 
         }
