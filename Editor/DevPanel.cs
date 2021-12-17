@@ -147,7 +147,7 @@ namespace Filta {
                             _bundles[paths[1]].queue = queue;
                         }
                         else{
-                            statusBar = $"{_bundles[paths[1]].title} successfully bundled!";
+                            SetStatusMessage($"{_bundles[paths[1]].title} successfully bundled!");
                             _bundles.Remove(paths[1]);
                         }
                         
@@ -212,6 +212,8 @@ namespace Filta {
         }
 
         #endregion
+        
+        GUIStyle s = new GUIStyle(EditorStyles.boldLabel);
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
@@ -247,7 +249,8 @@ namespace Filta {
                 AdvancedSettings();
             }
             DrawUILine(Color.gray);
-            EditorGUILayout.LabelField(statusBar, EditorStyles.boldLabel);
+            
+            EditorGUILayout.LabelField(statusBar, s);
         }
 
         private void AdvancedSettings() {
@@ -275,14 +278,14 @@ namespace Filta {
             if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
                 if (string.IsNullOrEmpty(sceneName)) {
-                    statusBar = "Filter filename cannot be empty";
+                    SetStatusMessage("Filter filename cannot be empty", true);
                     Debug.LogError("Filter filename cannot be empty");
                     return;
                 }
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
-                    statusBar = "Failed to create new filter scene file";
+                    SetStatusMessage("Failed to create new filter scene file", true);
                     Debug.LogError("Failed to create new filter scene file");
                 } else {
                     if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
@@ -314,7 +317,7 @@ namespace Filta {
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
             }
-            statusBar = "Generating asset bundles";
+            SetStatusMessage("Generating asset bundles");
 
             var filterObject = GameObject.Find("Filter");
             if (filterObject == null) {
@@ -334,14 +337,14 @@ namespace Filta {
                 }
                 else{
                     EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
-                    statusBar = "Failed to generate asset bundle.";
+                    SetStatusMessage("Failed to generate asset bundle.", true);
                     return;
                 }
                 
             } catch
             {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
-                statusBar = "Failed to generate asset bundle.";
+                SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
             }
 
@@ -354,7 +357,7 @@ namespace Filta {
             }
             catch{
                 EditorUtility.DisplayDialog("Error", "There was a problem editing the pluginInfo.json. Did you delete it from your assets?", "Ok");
-                statusBar = "Failed to generate asset bundle.";
+                SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
             }
 
@@ -376,10 +379,9 @@ namespace Filta {
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
             assetBundlePath = $"{assetBundleDirectory}/filter";*/
-            statusBar = "Asset bundle generated";
-
-
-            statusBar = "Connecting...";
+            SetStatusMessage("Asset bundle generated");
+            
+            SetStatusMessage("Connecting...");
             byte[] bytes = File.ReadAllBytes(pathToPackage);
             Hash128 hash = Hash128.Compute(bytes);
             /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
@@ -397,13 +399,13 @@ namespace Filta {
             postData.AddField("title", selectedArtTitle);
             var www = UnityWebRequest.Post(UPLOAD_URL, postData);
             await www.SendWebRequest();
-            statusBar = "Connected! Uploading...";
+            SetStatusMessage("Connected! Uploading...");
             var response = www.downloadHandler.text;
             UploadBundleResponse parsed;
             try {
                 parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
             } catch {
-                statusBar = "Error! Check console for more information";
+                SetStatusMessage("Error! Check console for more information", true);
                 Debug.LogError(response);
                 return;
             }
@@ -412,7 +414,7 @@ namespace Filta {
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
-            statusBar = "Upload successful";
+            SetStatusMessage("Upload successful");
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
@@ -428,20 +430,20 @@ namespace Filta {
             postData.AddField("grant_type", "refresh_token");
             postData.AddField("refresh_token", token);
             UnityWebRequest www = UnityWebRequest.Post(refreshURL + fbaseKey, postData);
-            statusBar = "Logging you in...";
+            SetStatusMessage("Logging you in...");
             await www.SendWebRequest();
             _loggingIn = false;
             string response = www.downloadHandler.text;
             if (response.Contains("TOKEN_EXPIRED")) {
-                statusBar = "Error: Token has expired";
+                SetStatusMessage("Error: Token has expired", true);
             } else if (response.Contains("USER_NOT_FOUND")) {
-                statusBar = "Error: User was not found";
+                SetStatusMessage("Error: User was not found", true);
             } else if (response.Contains("INVALID_REFRESH_TOKEN")) {
-                statusBar = "Error: Invalid token provided";
+                SetStatusMessage("Error: Invalid token provided", true);
             } else if (response.Contains("id_token")) {
                 RefreshResponse refreshData = JsonUtility.FromJson<RefreshResponse>(response);
                 loginData = new LoginResponse { refreshToken = refreshData.refresh_token, idToken = refreshData.id_token, expiresIn = refreshData.expires_in, localId = refreshData.user_id };
-                statusBar = $"Login successful!";
+                SetStatusMessage("Login successful!");
                 _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
                 PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
                 PlayerPrefs.Save();
@@ -450,11 +452,11 @@ namespace Filta {
                     await GetPrivateCollection();
                     GetFiltersOnQueue();
                 } catch (Exception e) {
-                    statusBar = "Error downloading collection. Try again. Check console for more information.";
+                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
                     Debug.LogError("Error downloading: " + e.Message);
                 }
             } else {
-                statusBar = "Unknown Error. Check console for more information.";
+                SetStatusMessage("Unknown Error. Check console for more information.", true);
                 Debug.LogError(response);
             }
 
@@ -499,20 +501,20 @@ namespace Filta {
             postData.AddField("password", password);
             postData.AddField("returnSecureToken", "true");
             var www = UnityWebRequest.Post(loginURL + fbaseKey, postData);
-            statusBar = "Connecting...";
+            SetStatusMessage("Connecting...");
 
             await www.SendWebRequest();
             _loggingIn = false;
             var response = www.downloadHandler.text;
             if (response.Contains("EMAIL_NOT_FOUND")) {
-                statusBar = "Error: Email not found";
+                SetStatusMessage("Error: Email not found", true);
             } else if (response.Contains("MISSING_PASSWORD")) {
-                statusBar = "Error: Missing Password";
+                SetStatusMessage("Error: Missing Password", true);
             } else if (response.Contains("INVALID_PASSWORD")) {
-                statusBar = "Error: Invalid Password";
+                SetStatusMessage("Error: Invalid Password", true);
             } else if (response.Contains("idToken")) {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
-                statusBar = $"Login successful!";
+                SetStatusMessage("Login successful!");
                 _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
                 if (_stayLoggedIn) {
                     PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
@@ -523,11 +525,11 @@ namespace Filta {
                     await GetPrivateCollection();
                     GetFiltersOnQueue();
                 } catch (Exception e) {
-                    statusBar = "Error downloading collection. Try again. Check console for more information.";
+                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
                     Debug.LogError("Error downloading: " + e.Message);
                 }
             } else {
-                statusBar = "Unknown Error. Check console for more information.";
+                SetStatusMessage("Unknown Error. Check console for more information.", true);
                 Debug.LogError(response);
             }
         }
@@ -578,7 +580,7 @@ namespace Filta {
                 if (!await LoginAutomatic())
                     return;
             }
-            statusBar = "Deleting...";
+            SetStatusMessage("Deleting...");
             try {
                 WWWForm postData = new WWWForm();
                 postData.AddField("uid", loginData.idToken);
@@ -587,11 +589,11 @@ namespace Filta {
                 await www.SendWebRequest();
                 var response = www.downloadHandler.text;
                 if (www.isHttpError || www.isNetworkError) {
-                    statusBar = $"Error Deleting. Check console for details.";
+                    SetStatusMessage("Error Deleting. Check console for details.", true);
                     Debug.LogError(www.error + " " + www.downloadHandler.text);
                     return;
                 }
-                statusBar = $"Delete: {response}";
+                SetStatusMessage($"Delete: {response}");
             } finally {
                 privateCollection.Remove(selectedArtKey);
                 selectedArtKey = "";
@@ -612,6 +614,15 @@ namespace Filta {
             EditorGUILayout.Space();
 
             DeletePrivArt(selectedArtKey);
+        }
+
+        private void SetStatusMessage(string message, bool isError = false){
+            if (isError){
+                s.normal.textColor = Color.red;
+                return;
+            }
+            s.normal.textColor = Color.white;
+            statusBar = message;
         }
     }
 
