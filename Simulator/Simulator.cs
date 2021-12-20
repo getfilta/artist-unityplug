@@ -184,7 +184,7 @@ public class Simulator : MonoBehaviour {
             return;
         }
 
-        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds;
+        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         Playback(time);
     }
 
@@ -275,6 +275,16 @@ public class Simulator : MonoBehaviour {
         HandleVertexPairing();
     }
 
+    public long _pauseTime;
+    public void PauseSimulator(){
+        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        isPlaying = false;
+    }
+
+    public void ResumeSimulator(){
+        isPlaying = true;
+    }
+
     private void Playback(long currentTime) {
         if (_recordingLength <= 0) {
             return;
@@ -282,6 +292,7 @@ public class Simulator : MonoBehaviour {
 
         if (currentTime > _recordingLength) {
             Replay();
+            _pauseTime = 0;
             return;
         }
 
@@ -591,11 +602,11 @@ public class Simulator : MonoBehaviour {
             Simulator sim = (Simulator)target;
             if (sim.isPlaying) {
                 if (GUILayout.Button("Stop")) {
-                    sim.isPlaying = false;
+                    sim.PauseSimulator();
                 }
             } else {
                 if (GUILayout.Button("Play")) {
-                    sim.isPlaying = true;
+                    sim.ResumeSimulator();
                 }
             }
 

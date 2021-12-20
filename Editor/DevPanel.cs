@@ -93,11 +93,11 @@ namespace Filta {
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator.isPlaying) {
                 if (GUILayout.Button("Stop")) {
-                    _simulator.isPlaying = false;
+                    _simulator.PauseSimulator();
                 }
             } else {
                 if (GUILayout.Button("Play")) {
-                    _simulator.isPlaying = true;
+                    _simulator.ResumeSimulator();
                 }
             }
 
