@@ -272,6 +272,7 @@ public class Simulator : MonoBehaviour {
         _filterObject.position = Vector3.zero;
         _filterObject.rotation = Quaternion.identity;
         _filterObject.localScale = Vector3.one;
+        HandleVertexPairing();
     }
 
     private void Playback(long currentTime) {
@@ -318,7 +319,6 @@ public class Simulator : MonoBehaviour {
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
-            HandleVertexPairing();
             FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
             UpdateMasks(faceData, prevFaceData, currentTime);
 
@@ -461,6 +461,7 @@ public class Simulator : MonoBehaviour {
         GameObject vertex = new GameObject();
         VertexComponent vertexComponent = new VertexComponent { vertexIndex = index, holder = vertex };
         vertexComponents.Add(vertexComponent);
+        HandleVertexPairing();
         return vertex;
     }
 
