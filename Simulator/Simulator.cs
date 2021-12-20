@@ -457,10 +457,11 @@ public class Simulator : MonoBehaviour {
         }
     }
 
-    public void GenerateVertexComponent(int index) {
+    public GameObject GenerateVertexComponent(int index) {
         GameObject vertex = new GameObject();
         VertexComponent vertexComponent = new VertexComponent { vertexIndex = index, holder = vertex };
         vertexComponents.Add(vertexComponent);
+        return vertex;
     }
 
 

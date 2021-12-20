@@ -108,7 +108,8 @@ namespace Filta {
                 if (_simulator.vertexComponents == null) {
                     _simulator.vertexComponents = new List<Simulator.VertexComponent>();
                 }
-                _simulator.GenerateVertexComponent(_vertexNumber);
+                GameObject newVertex = _simulator.GenerateVertexComponent(_vertexNumber);
+                Selection.activeGameObject = newVertex;
             }
             EditorGUILayout.EndHorizontal();
             _simulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _simulator.showVertexNumbers);
