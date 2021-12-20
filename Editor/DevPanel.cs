@@ -109,7 +109,11 @@ namespace Filta {
                     _simulator.vertexTrackers = new List<Simulator.VertexTracker>();
                 }
                 GameObject newVertex = _simulator.GenerateVertexTracker(_vertexNumber);
+                //To select the newly created vertex tracker so that the user would be aware it has been selected.
                 Selection.activeGameObject = newVertex;
+                _vertexNumber = 0;
+                //takes away keyboard control from the input field (for the vertex number) so it actually shows the reset vertex number
+                EditorGUI.FocusTextInControl(null);
             }
             EditorGUILayout.EndHorizontal();
             _simulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _simulator.showVertexNumbers);
