@@ -101,14 +101,14 @@ namespace Filta {
                 }
             }
 
-            EditorGUILayout.LabelField("Create Vertex Component");
+            EditorGUILayout.LabelField("Create Vertex Trackers");
             EditorGUILayout.BeginHorizontal();
             _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
             if (GUILayout.Button("Create")) {
-                if (_simulator.vertexComponents == null) {
-                    _simulator.vertexComponents = new List<Simulator.VertexComponent>();
+                if (_simulator.vertexTrackers == null) {
+                    _simulator.vertexTrackers = new List<Simulator.VertexTracker>();
                 }
-                GameObject newVertex = _simulator.GenerateVertexComponent(_vertexNumber);
+                GameObject newVertex = _simulator.GenerateVertexTracker(_vertexNumber);
                 Selection.activeGameObject = newVertex;
             }
             EditorGUILayout.EndHorizontal();
