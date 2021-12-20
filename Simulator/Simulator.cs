@@ -184,7 +184,7 @@ public class Simulator : MonoBehaviour {
             return;
         }
 
-        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds;
+        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         Playback(time);
     }
 
@@ -272,6 +272,17 @@ public class Simulator : MonoBehaviour {
         _filterObject.position = Vector3.zero;
         _filterObject.rotation = Quaternion.identity;
         _filterObject.localScale = Vector3.one;
+        HandleVertexPairing();
+    }
+
+    public long _pauseTime;
+    public void PauseSimulator(){
+        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        isPlaying = false;
+    }
+
+    public void ResumeSimulator(){
+        isPlaying = true;
     }
 
     private void Playback(long currentTime) {
@@ -281,6 +292,7 @@ public class Simulator : MonoBehaviour {
 
         if (currentTime > _recordingLength) {
             Replay();
+            _pauseTime = 0;
             return;
         }
 
@@ -318,7 +330,6 @@ public class Simulator : MonoBehaviour {
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
-            HandleVertexPairing();
             FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
             UpdateMasks(faceData, prevFaceData, currentTime);
 
@@ -435,32 +446,34 @@ public class Simulator : MonoBehaviour {
     #region Vertex Pairing
 
     [NonSerialized]
-    public List<VertexComponent> vertexComponents;
+    public List<VertexTracker> vertexTrackers;
 
     private void HandleVertexPairing() {
-        if (vertexComponents == null) {
+        if (vertexTrackers == null) {
             return;
         }
-        for (int i = 0; i < vertexComponents.Count; i++) {
-            VertexComponent vertexComponent = vertexComponents[i];
-            if (vertexComponent.holder == null) {
-                vertexComponents.Remove(vertexComponent);
-                // if a vertexComponent is removed, we break out of the loop to avoid throwing an exception.
+        for (int i = 0; i < vertexTrackers.Count; i++) {
+            VertexTracker vertexTracker = vertexTrackers[i];
+            if (vertexTracker.holder == null) {
+                vertexTrackers.Remove(vertexTracker);
+                // if a vertexTracker is removed, we break out of the loop to avoid throwing an exception.
                 // since this loop runs every frame, there is no negative impact.
                 break;
             }
-            vertexComponent.holder.transform.SetParent(_vertices);
-            vertexComponent.holder.name = $"VertexComponentIndex_{vertexComponent.vertexIndex}";
-            if (vertexComponent.vertexIndex < _faceMesh.vertices.Count) {
-                vertexComponent.holder.transform.localPosition = _faceMesh.vertices[vertexComponent.vertexIndex];
+            vertexTracker.holder.transform.SetParent(_vertices);
+            vertexTracker.holder.name = $"VertexTrackerIndex_{vertexTracker.vertexIndex}";
+            if (vertexTracker.vertexIndex < _faceMesh.vertices.Count) {
+                vertexTracker.holder.transform.localPosition = _faceMesh.vertices[vertexTracker.vertexIndex];
             }
         }
     }
 
-    public void GenerateVertexComponent(int index) {
+    public GameObject GenerateVertexTracker(int index) {
         GameObject vertex = new GameObject();
-        VertexComponent vertexComponent = new VertexComponent { vertexIndex = index, holder = vertex };
-        vertexComponents.Add(vertexComponent);
+        VertexTracker vertexTracker = new VertexTracker { vertexIndex = index, holder = vertex };
+        vertexTrackers.Add(vertexTracker);
+        HandleVertexPairing();
+        return vertex;
     }
 
 
@@ -468,7 +481,7 @@ public class Simulator : MonoBehaviour {
 
     #region Class/Struct Definition
 
-    public class VertexComponent {
+    public class VertexTracker {
         public int vertexIndex;
         public GameObject holder;
     }
@@ -589,11 +602,11 @@ public class Simulator : MonoBehaviour {
             Simulator sim = (Simulator)target;
             if (sim.isPlaying) {
                 if (GUILayout.Button("Stop")) {
-                    sim.isPlaying = false;
+                    sim.PauseSimulator();
                 }
             } else {
                 if (GUILayout.Button("Play")) {
-                    sim.isPlaying = true;
+                    sim.ResumeSimulator();
                 }
             }
 
