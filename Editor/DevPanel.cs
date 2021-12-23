@@ -197,7 +197,7 @@ namespace Filta {
         }
 
         private void DisposeQueue(){
-            _evt.Dispose();
+            _evt?.Dispose();
         }
 
         private void OnInspectorUpdate(){
