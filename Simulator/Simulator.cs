@@ -59,6 +59,9 @@ public class Simulator : MonoBehaviour {
     [NonSerialized]
     public bool showVertexNumbers;
 
+    [NonSerialized]
+    public bool showFaceMeshVisualiser;
+
     [SerializeField]
     private RawImage _videoFeed;
 
@@ -169,6 +172,7 @@ public class Simulator : MonoBehaviour {
             return;
         }
 
+        _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
         if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0) && !_skipFaceRecording) {
             try {
