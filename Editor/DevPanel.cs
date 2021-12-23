@@ -101,7 +101,9 @@ namespace Filta {
                 }
             }
 
-            EditorGUILayout.LabelField("Create Vertex Trackers");
+            _simulator.showFaceMeshVisualiser =
+                EditorGUILayout.Toggle("Show Face Mesh Visualiser", _simulator.showFaceMeshVisualiser);
+            EditorGUILayout.LabelField("Create Vertex Trackers", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
             if (GUILayout.Button("Create")) {
@@ -197,7 +199,7 @@ namespace Filta {
         }
 
         private void DisposeQueue(){
-            _evt.Dispose();
+            _evt?.Dispose();
         }
 
         private void OnInspectorUpdate(){
