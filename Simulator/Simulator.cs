@@ -278,8 +278,8 @@ public class Simulator : MonoBehaviour {
         _filterObject.localScale = Vector3.one;
         HandleVertexPairing();
     }
-
-    public long _pauseTime;
+    
+    private long _pauseTime;
     public void PauseSimulator(){
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
