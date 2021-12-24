@@ -60,7 +60,7 @@ public class Simulator : MonoBehaviour {
     public bool showVertexNumbers;
 
     [NonSerialized]
-    public bool showFaceMeshVisualiser;
+    public bool showFaceMeshVisualiser = true;
 
     [SerializeField]
     private RawImage _videoFeed;
