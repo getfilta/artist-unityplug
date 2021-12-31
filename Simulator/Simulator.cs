@@ -230,13 +230,19 @@ public class Simulator : MonoBehaviour {
         _startTime = DateTime.Now;
     }
 
-
+    //added Y-offset because text labels are rendered below the actual point specified.
+    //seems to be a Unity 2021.2 issue/change
+    private float _offsetY = -45;
     private void OnDrawGizmos() {
 #if UNITY_EDITOR
-        if (showVertexNumbers) {
+        if (showVertexNumbers){
+            GUIStyle handleStyle = new GUIStyle();
+            handleStyle.alignment = TextAnchor.MiddleCenter;
+            handleStyle.normal.textColor = Color.white;
+            handleStyle.contentOffset = new Vector2(0, _offsetY);
             Handles.matrix = _faceMeshVisualiser.transform.localToWorldMatrix;
             for (int i = 0; i < _faceMesh.vertices.Count; i++) {
-                Handles.Label(_faceMesh.vertices[i], i.ToString());
+                Handles.Label(_faceMesh.vertices[i], i.ToString(), handleStyle);
             }
         }
 
@@ -278,8 +284,8 @@ public class Simulator : MonoBehaviour {
         _filterObject.localScale = Vector3.one;
         HandleVertexPairing();
     }
-
-    public long _pauseTime;
+    
+    private long _pauseTime;
     public void PauseSimulator(){
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
