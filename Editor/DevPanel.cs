@@ -552,6 +552,7 @@ namespace Filta {
             }
         }
 
+        private bool _showPrivCollection = true;
         private void PrivateCollection() {
             if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
                 EditorGUILayout.LabelField("Choose the Filta upload to update:", EditorStyles.boldLabel);
@@ -562,6 +563,10 @@ namespace Filta {
                     selectedArtKey = "temp";
                 }
                 if (privateCollection == null || privateCollection.Count < 1) { return; }
+
+                _showPrivCollection = EditorGUILayout.Foldout(_showPrivCollection, "Private Filta Collection");
+                if (!_showPrivCollection)
+                    return;
                 foreach (var item in privateCollection) {
                     bool clicked = GUILayout.Button(item.Value.title);
                     if (clicked) {
