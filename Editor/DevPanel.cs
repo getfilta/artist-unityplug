@@ -228,9 +228,11 @@ namespace Filta {
                 leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
                 if (loginData != null && loginData.idToken != "") {
                     CreateNewScene();
-                    DrawUILine(Color.gray);
-                    HandleSimulator();
-                    DrawUILine(Color.gray);
+                    if (_activeSimulator){
+                        DrawUILine(Color.gray);
+                        HandleSimulator();
+                        DrawUILine(Color.gray);
+                    }
                     DisplayQueue();
                 }
 
@@ -285,6 +287,10 @@ namespace Filta {
             GUI.enabled = !String.IsNullOrWhiteSpace(sceneName);
             if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
+                if (!AssetDatabase.IsValidFolder("Assets/Filters")){
+                    AssetDatabase.CreateFolder("Assets", "Filters");
+                }
+                
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
@@ -552,6 +558,7 @@ namespace Filta {
             }
         }
 
+        private bool _showPrivCollection = true;
         private void PrivateCollection() {
             if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
                 EditorGUILayout.LabelField("Choose the Filta upload to update:", EditorStyles.boldLabel);
@@ -562,6 +569,10 @@ namespace Filta {
                     selectedArtKey = "temp";
                 }
                 if (privateCollection == null || privateCollection.Count < 1) { return; }
+
+                _showPrivCollection = EditorGUILayout.Foldout(_showPrivCollection, "Private Filta Collection");
+                if (!_showPrivCollection)
+                    return;
                 foreach (var item in privateCollection) {
                     bool clicked = GUILayout.Button(item.Value.title);
                     if (clicked) {
