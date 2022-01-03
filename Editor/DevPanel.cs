@@ -287,6 +287,10 @@ namespace Filta {
             GUI.enabled = !String.IsNullOrWhiteSpace(sceneName);
             if (GUILayout.Button("Create new filter scene file")) {
                 bool success;
+                if (!AssetDatabase.IsValidFolder("Assets/Filters")){
+                    AssetDatabase.CreateFolder("Assets", "Filters");
+                }
+                
                 success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
