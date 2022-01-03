@@ -228,9 +228,11 @@ namespace Filta {
                 leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
                 if (loginData != null && loginData.idToken != "") {
                     CreateNewScene();
-                    DrawUILine(Color.gray);
-                    HandleSimulator();
-                    DrawUILine(Color.gray);
+                    if (_activeSimulator){
+                        DrawUILine(Color.gray);
+                        HandleSimulator();
+                        DrawUILine(Color.gray);
+                    }
                     DisplayQueue();
                 }
 
