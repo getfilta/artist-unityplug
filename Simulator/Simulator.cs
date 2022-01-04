@@ -89,6 +89,12 @@ public class Simulator : MonoBehaviour {
 #if UNITY_EDITOR
     private void OnEnable() {
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
+        bool packagePluginExists = AssetDatabase.IsValidFolder("Packages/com.getfilta.artist-unityplug");
+        bool assetPluginExists = AssetDatabase.IsValidFolder("Assets/artist-unityplug");
+        if (!packagePluginExists && assetPluginExists) {
+            _filePath = Path.GetFullPath("Assets/artist-unityplug");
+        }
+        
         //_filePath = Application.dataPath;
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
@@ -215,7 +221,9 @@ public class Simulator : MonoBehaviour {
         string[] textureFiles =
             Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
         foreach (string textFile in textureFiles) {
-            string prefix = _filePath == Application.dataPath ? "Assets" : "Packages/com.getfilta.artist-unityplug";
+            string prefix = AssetDatabase.IsValidFolder("Assets/artist-unityplug") 
+                ? "Assets/artist-unityplug" 
+                : "Packages/com.getfilta.artist-unityplug";
             string assetPath = prefix + textFile.Replace(_filePath, "").Replace('\\', '/');
             Texture sourceText = (Texture)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture));
             _frames.Add(sourceText);

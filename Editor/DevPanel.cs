@@ -36,6 +36,7 @@ namespace Filta {
         private string selectedArtKey = "";
         private Vector2 leftScrollPosition;
         private Vector2 rightScrollPosition;
+        private string assetPrefix = "Packages/com.getfilta.artist-unityplug";
 
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
@@ -57,6 +58,9 @@ namespace Filta {
         private int _vertexNumber;
 
         private async void OnEnable() {
+            assetPrefix = AssetDatabase.IsValidFolder("Packages/com.getfilta.artist-unityplug") 
+                ? "Packages/com.getfilta.artist-unityplug"
+                : "Assets/artist-unityplug"; 
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
             _pluginInfo = new PluginInfo { version = 1 };
@@ -290,8 +294,7 @@ namespace Filta {
                 if (!AssetDatabase.IsValidFolder("Assets/Filters")){
                     AssetDatabase.CreateFolder("Assets", "Filters");
                 }
-                
-                success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
+                success = AssetDatabase.CopyAsset($"{assetPrefix}/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
                 if (!success) {
                     SetStatusMessage("Failed to create new filter scene file", true);
