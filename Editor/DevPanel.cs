@@ -553,7 +553,7 @@ namespace Filta {
             string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 await req.SendWebRequest();
-                if (req.isNetworkError || req.isHttpError) {
+                if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
                 var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
@@ -608,7 +608,7 @@ namespace Filta {
                 var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
                 await www.SendWebRequest();
                 var response = www.downloadHandler.text;
-                if (www.isHttpError || www.isNetworkError) {
+                if (www.result == UnityWebRequest.Result.ProtocolError || www.result == UnityWebRequest.Result.ConnectionError) {
                     SetStatusMessage("Error Deleting. Check console for details.", true);
                     Debug.LogError(www.error + " " + www.downloadHandler.text);
                     return;
