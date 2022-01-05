@@ -328,7 +328,7 @@ namespace Filta {
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
             }
-            SetStatusMessage("Generating asset bundles");
+            
 
             var filterObject = GameObject.Find("Filter");
             if (filterObject == null) {
@@ -336,6 +336,10 @@ namespace Filta {
                 return;
             }
 
+            if (CheckForUnreadableMeshes(filterObject)){
+                return;
+            }
+            SetStatusMessage("Generating asset bundles");
             try {
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
                 GameObject filterDuplicate = Instantiate(filterObject);
@@ -639,6 +643,24 @@ namespace Filta {
             }
             s.normal.textColor = Color.white;
             statusBar = message;
+        }
+
+        private bool CheckForUnreadableMeshes(GameObject filterParent){
+            bool result = false;
+            string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: " ;
+            SkinnedMeshRenderer[] skinnedMeshRenderers = filterParent.GetComponentsInChildren<SkinnedMeshRenderer>();
+            for (int i = 0; i < skinnedMeshRenderers.Length; i++){
+                if (!skinnedMeshRenderers[i].sharedMesh.isReadable){
+                    result = true;
+                    dialog += $" {skinnedMeshRenderers[i].gameObject.name},";
+                }
+            }
+
+            if (result){
+                EditorUtility.DisplayDialog("Error", dialog, "Ok");
+            }
+            
+            return result;
         }
     }
 
