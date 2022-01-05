@@ -337,9 +337,6 @@ namespace Filta {
             }
 
             if (CheckForUnreadableMeshes(filterObject)){
-                EditorUtility.DisplayDialog("Error",
-                    "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh and set Read/Write to true in the Inspector",
-                    "Ok");
                 return;
             }
             SetStatusMessage("Generating asset bundles");
@@ -649,13 +646,21 @@ namespace Filta {
         }
 
         private bool CheckForUnreadableMeshes(GameObject filterParent){
+            bool result = false;
+            string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: " ;
             SkinnedMeshRenderer[] skinnedMeshRenderers = filterParent.GetComponentsInChildren<SkinnedMeshRenderer>();
             for (int i = 0; i < skinnedMeshRenderers.Length; i++){
                 if (!skinnedMeshRenderers[i].sharedMesh.isReadable){
-                    return true;
+                    result = true;
+                    dialog += $" {skinnedMeshRenderers[i].gameObject.name},";
                 }
             }
-            return false;
+
+            if (result){
+                EditorUtility.DisplayDialog("Error", dialog, "Ok");
+            }
+            
+            return result;
         }
     }
 
