@@ -103,6 +103,7 @@ namespace Filta {
 
             _simulator.showFaceMeshVisualiser =
                 EditorGUILayout.Toggle("Show Face Mesh Visualiser", _simulator.showFaceMeshVisualiser);
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Vertex Trackers", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
@@ -119,6 +120,12 @@ namespace Filta {
             }
             EditorGUILayout.EndHorizontal();
             _simulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _simulator.showVertexNumbers);
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField("Create Face Mesh", EditorStyles.boldLabel);
+            if (GUILayout.Button("Create")){
+                GameObject newFace = _simulator.SpawnNewFaceMesh();
+                Selection.activeGameObject = newFace;
+            }
         }
 
         #endregion
@@ -184,7 +191,7 @@ namespace Filta {
         private void DisplayQueue(){
             if (_bundles == null || _bundles.Count <= 0)
                 return;
-            GUILayout.Label("Filters being processed");
+            GUILayout.Label("Filters being processed", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Filter name");
             GUILayout.Label("Queue number");

@@ -171,7 +171,6 @@ public class Simulator : MonoBehaviour {
             _skipFaceSimulator = true;
             return;
         }
-
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
         if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0) && !_skipFaceRecording) {
@@ -235,6 +234,10 @@ public class Simulator : MonoBehaviour {
     private float _offsetY = -45;
     private void OnDrawGizmos() {
 #if UNITY_EDITOR
+        if (!Application.isPlaying) {
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
+        }
         if (showVertexNumbers){
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
@@ -247,10 +250,7 @@ public class Simulator : MonoBehaviour {
         }
 
         // Ensure continuous Update calls.
-        if (!Application.isPlaying) {
-            UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
-            UnityEditor.SceneView.RepaintAll();
-        }
+        
 #endif
     }
 
@@ -407,6 +407,17 @@ public class Simulator : MonoBehaviour {
 
     private int _faceCount;
 
+    public GameObject SpawnNewFaceMesh(){
+        GameObject newFace = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        newFace.name = "FaceMesh";
+        Collider col = newFace.GetComponent<Collider>();
+        DestroyImmediate(col);
+        newFace.transform.parent = _facesHolder;
+        newFace.transform.localPosition = Vector3.zero;
+        newFace.transform.localRotation = Quaternion.identity;
+        SetMeshTopology();
+        return newFace;
+    }
     private void GetFaceMeshFilters() {
         if (_faceCount == _facesHolder.childCount) {
             return;
