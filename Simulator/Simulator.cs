@@ -234,6 +234,7 @@ public class Simulator : MonoBehaviour {
     private float _offsetY = -45;
     private void OnDrawGizmos() {
 #if UNITY_EDITOR
+        // Ensure continuous Update calls.
         if (!Application.isPlaying) {
             EditorApplication.QueuePlayerLoopUpdate();
             SceneView.RepaintAll();
@@ -249,7 +250,7 @@ public class Simulator : MonoBehaviour {
             }
         }
 
-        // Ensure continuous Update calls.
+        
         
 #endif
     }
