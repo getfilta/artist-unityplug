@@ -228,17 +228,22 @@ public class Simulator : MonoBehaviour {
     void Replay() {
         _startTime = DateTime.Now;
     }
+    
+    private void OnRenderObject(){
+#if UNITY_EDITOR
+        // Ensure continuous Update calls.
+        if (!Application.isPlaying){
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
+        }
+#endif
+    }
 
     //added Y-offset because text labels are rendered below the actual point specified.
     //seems to be a Unity 2021.2 issue/change
     private float _offsetY = -45;
     private void OnDrawGizmos() {
 #if UNITY_EDITOR
-        // Ensure continuous Update calls.
-        if (!Application.isPlaying) {
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
         if (showVertexNumbers){
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
