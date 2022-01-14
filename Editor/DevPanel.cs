@@ -44,9 +44,16 @@ namespace Filta {
         private static DateTime _expiryTime;
         private bool _watchingQueue;
 
+        //Version number for changes in plugin that need accommodating on the app.
+        private const int pluginAppVersion = 1;
+        //Plugin major version number.
+        private const int pluginMajorVersion = 4;
+        //Plugin minor version number.
+        private const int pluginMinorVersion = 0;
+
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
-            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, "Filta: Artist Panel");
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
         }
 
@@ -56,10 +63,14 @@ namespace Filta {
         private bool _loggingIn;
         private int _vertexNumber;
 
+        private static string GetVersionNumber(){
+            return $"v{pluginAppVersion}.{pluginMajorVersion}.{pluginMinorVersion}";
+        }
+
         private async void OnEnable() {
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            _pluginInfo = new PluginInfo { version = 1 };
+            _pluginInfo = new PluginInfo { version = pluginAppVersion };
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
