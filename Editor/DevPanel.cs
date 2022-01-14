@@ -47,7 +47,7 @@ namespace Filta {
         //Version number for changes in plugin that need accommodating on the app.
         private const int pluginAppVersion = 1;
         //Plugin major version number.
-        private const int pluginMajorVersion = 0;
+        private const int pluginMajorVersion = 4;
         //Plugin minor version number.
         private const int pluginMinorVersion = 0;
 
