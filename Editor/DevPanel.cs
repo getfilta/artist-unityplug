@@ -53,7 +53,7 @@ namespace Filta {
 
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
-            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
         }
 

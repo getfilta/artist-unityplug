@@ -421,7 +421,6 @@ public class Simulator : MonoBehaviour {
         newFace.transform.parent = _facesHolder;
         newFace.transform.localPosition = Vector3.zero;
         newFace.transform.localRotation = Quaternion.identity;
-        GetFaceMeshFilters();
         SetMeshTopology();
         return newFace;
     }
