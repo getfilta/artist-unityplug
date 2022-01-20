@@ -43,6 +43,7 @@ namespace Filta {
         private PluginInfo _pluginInfo;
         private static DateTime _expiryTime;
         private bool _watchingQueue;
+        private GUIStyle s;
 
         //Version number for changes in plugin that need accommodating on the app.
         private const int pluginAppVersion = 1;
@@ -50,6 +51,7 @@ namespace Filta {
         private const int pluginMajorVersion = 4;
         //Plugin minor version number.
         private const int pluginMinorVersion = 0;
+        
 
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
@@ -67,7 +69,8 @@ namespace Filta {
             return $"v{pluginAppVersion}.{pluginMajorVersion}.{pluginMinorVersion}";
         }
 
-        private async void OnEnable() {
+        private async void OnEnable(){
+            s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
             _pluginInfo = new PluginInfo { version = pluginAppVersion };
@@ -237,8 +240,6 @@ namespace Filta {
         }
 
         #endregion
-        
-        GUIStyle s = new GUIStyle(EditorStyles.boldLabel);
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
@@ -277,7 +278,7 @@ namespace Filta {
             }
             DrawUILine(Color.gray);
             
-            EditorGUILayout.LabelField(statusBar, s);
+            EditorGUILayout.LabelField(statusBar);
         }
 
         private void AdvancedSettings() {
