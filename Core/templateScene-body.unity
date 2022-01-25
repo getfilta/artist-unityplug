@@ -912,6 +912,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e444de38e15c44e7c88b31441b0c69b0, type: 3}
+--- !u!4 &2047925288851217777 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5881353270091540675, guid: e444de38e15c44e7c88b31441b0c69b0, type: 3}
+  m_PrefabInstance: {fileID: 2047925288851217776}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5464935147958940844 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6322183764472998364, guid: e444de38e15c44e7c88b31441b0c69b0, type: 3}
+  m_PrefabInstance: {fileID: 2047925288851217776}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5793920084974019324 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5477382845710516108, guid: e444de38e15c44e7c88b31441b0c69b0, type: 3}
+  m_PrefabInstance: {fileID: 2047925288851217776}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5793920085007907109
 GameObject:
   m_ObjectHideFlags: 0
@@ -1043,3 +1058,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c818cded3d02549368d5d72ee1880859, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _filterObject: {fileID: 5464935147958940844}
+  _bodyTracker: {fileID: 5793920084974019324}
+  _wristTracker: {fileID: 2047925288851217777}

@@ -14,15 +14,12 @@ using UnityEditor;
 
 
 [ExecuteAlways]
-public class Simulator : MonoBehaviour {
+public class Simulator : SimulatorBase {
     private string _filePath;
 
     private long _recordingLength;
 
     private FaceRecording _faceRecording;
-
-    [FormerlySerializedAs("filterObject"), SerializeField]
-    private Transform _filterObject;
 
     [FormerlySerializedAs("faceMeshVisualiser"), SerializeField]
     private GameObject _faceMeshVisualiser;
@@ -87,7 +84,8 @@ public class Simulator : MonoBehaviour {
     }
 
 #if UNITY_EDITOR
-    private void OnEnable() {
+    private void OnEnable(){
+        _simulatorType = SimulatorType.Face;
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
         //_filePath = Application.dataPath;
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
@@ -153,7 +151,7 @@ public class Simulator : MonoBehaviour {
 
     }
 
-    private bool IsSetUpProperly() {
+    protected override bool IsSetUpProperly() {
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
@@ -161,7 +159,7 @@ public class Simulator : MonoBehaviour {
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
-    private void Update() {
+    protected override void Update() {
         if (_skipFaceSimulator) {
             return;
         }
@@ -228,16 +226,6 @@ public class Simulator : MonoBehaviour {
     void Replay() {
         _startTime = DateTime.Now;
     }
-    
-    private void OnRenderObject(){
-#if UNITY_EDITOR
-        // Ensure continuous Update calls.
-        if (!Application.isPlaying){
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
-#endif
-    }
 
     //added Y-offset because text labels are rendered below the actual point specified.
     //seems to be a Unity 2021.2 issue/change
@@ -275,7 +263,7 @@ public class Simulator : MonoBehaviour {
         Camera.main.transform.eulerAngles = faceData.camera.rotation;
     }
 
-    void EnforceObjectStructure() {
+    protected override void EnforceObjectStructure() {
         _faceTracker.name = "FaceTracker";
         _leftEyeTracker.name = "LeftEyeTracker";
         _rightEyeTracker.name = "RightEyeTracker";
@@ -652,5 +640,4 @@ public class Simulator : MonoBehaviour {
 #endif
 
     #endregion
-
 }
