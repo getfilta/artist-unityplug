@@ -16,7 +16,9 @@ public class BodySimulator : SimulatorBase
     [SerializeField]
     private Transform _wristTracker;
 
-    protected override bool IsSetUpProperly(){
+    private bool _skipBodySimulator;
+
+    public override bool IsSetUpProperly(){
         return _filterObject != null;
     }
 
@@ -36,11 +38,19 @@ public class BodySimulator : SimulatorBase
 #endif
     }
     protected override void Update(){
+        if (_skipBodySimulator)
+            return;
+        if (!IsSetUpProperly()) {
+            Debug.LogError(
+                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
+            _skipBodySimulator = true;
+            return;
+        }
         EnforceObjectStructure();
         PositionTrackers();
     }
 
-    protected override void TryAutomaticSetup(){
+    public override void TryAutomaticSetup(){
         if (IsSetUpProperly()){
             return;
         }
@@ -69,6 +79,14 @@ public class BodySimulator : SimulatorBase
             if (_wristTracker == null){
                 _wristTracker = _bodyTracker.Find("WristTracker");
             }
+        }
+        
+        if (IsSetUpProperly()) {
+            _skipBodySimulator = false;
+            Debug.Log("Successfully Set up");
+        } else {
+            _skipBodySimulator = true;
+            Debug.LogError("Failed to set up simulator");
         }
     }
     private void Awake(){

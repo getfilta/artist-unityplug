@@ -75,7 +75,8 @@ namespace Filta {
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            _pluginInfo = new PluginInfo { version = pluginAppVersion };
+            _pluginInfo = new PluginInfo
+                {version = pluginAppVersion, isBody = _simulator._simulatorType == SimulatorBase.SimulatorType.Body};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
@@ -113,6 +114,13 @@ namespace Filta {
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
                 HandleFaceSimulator();
+            }
+
+            if (!_simulator.IsSetUpProperly()){
+                EditorGUILayout.LabelField("Simulator is not set up properly");
+                if (GUILayout.Button("Try Automatic Setup")){
+                    _simulator.TryAutomaticSetup();
+                }
             }
             
         }
@@ -374,9 +382,9 @@ namespace Filta {
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
             }
-            
 
-            var filterObject = GameObject.Find("Filter");
+
+            GameObject filterObject = _simulator._filterObject.gameObject;
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
@@ -763,5 +771,6 @@ namespace Filta {
 
     public struct PluginInfo {
         public int version;
+        public bool isBody;
     }
 }

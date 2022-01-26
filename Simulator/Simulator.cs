@@ -96,7 +96,7 @@ public class Simulator : SimulatorBase {
     }
 #endif
 
-    protected override void TryAutomaticSetup() {
+    public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
             return;
         }
@@ -149,7 +149,7 @@ public class Simulator : SimulatorBase {
 
     }
 
-    protected override bool IsSetUpProperly() {
+    public override bool IsSetUpProperly() {
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
@@ -602,40 +602,6 @@ public class Simulator : SimulatorBase {
     public struct FaceRecording {
         public List<FaceData> faceDatas;
     }
-
-    #endregion
-
-    #region Editor
-
-#if UNITY_EDITOR
-    [CustomEditor(typeof(Simulator))]
-    public class SimulatorEditor : Editor {
-        public override void OnInspectorGUI() {
-            DrawDefaultInspector();
-            EditorGUILayout.Separator();
-            Simulator sim = (Simulator)target;
-            if (sim.isPlaying) {
-                if (GUILayout.Button("Stop")) {
-                    sim.PauseSimulator();
-                }
-            } else {
-                if (GUILayout.Button("Play")) {
-                    sim.ResumeSimulator();
-                }
-            }
-
-            if (!sim.IsSetUpProperly()) {
-                if (GUILayout.Button("Automatically set up")) {
-                    sim.TryAutomaticSetup();
-                }
-            }
-
-
-        }
-    }
-
-
-#endif
 
     #endregion
 }

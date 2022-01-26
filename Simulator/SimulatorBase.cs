@@ -14,7 +14,7 @@ public abstract class SimulatorBase : MonoBehaviour
 
     public Transform _filterObject;
 
-    protected virtual bool IsSetUpProperly(){
+    public virtual bool IsSetUpProperly(){
         return false;
     }
 
@@ -36,7 +36,7 @@ public abstract class SimulatorBase : MonoBehaviour
 
     }
 
-    protected virtual void TryAutomaticSetup(){
+    public virtual void TryAutomaticSetup(){
         
     }
 }
