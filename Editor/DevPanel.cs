@@ -89,18 +89,16 @@ namespace Filta {
             }
         }
 
-        private void FindSimulator(PlayModeStateChange stateChange) {
-            GameObject simulatorObject = GameObject.Find("Simulator");
-            if (simulatorObject != null) {
-                _simulator = simulatorObject.GetComponent<SimulatorBase>();
-                if (_simulator != null) {
-                    _activeSimulator = true;
-                    if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
-                        _faceSimulator = simulatorObject.GetComponent<Simulator>();
-                    }
-                    else{
-                        _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
-                    }
+        private void FindSimulator(PlayModeStateChange stateChange){
+            _simulator = FindObjectOfType<SimulatorBase>();
+            GameObject simulatorObject = _simulator.gameObject;
+            if (_simulator != null){
+                _activeSimulator = true;
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
+                    _faceSimulator = simulatorObject.GetComponent<Simulator>();
+                }
+                else{
+                    _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
                 }
             }
         }
