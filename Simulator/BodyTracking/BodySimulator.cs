@@ -73,7 +73,6 @@ public class BodySimulator : SimulatorBase
     }
     private void Awake(){
         TryAutomaticSetup();
-        Debug.Log("Yo");
     }
 
     private void OnEnable(){
