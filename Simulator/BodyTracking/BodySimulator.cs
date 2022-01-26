@@ -19,7 +19,7 @@ public class BodySimulator : SimulatorBase
     private bool _skipBodySimulator;
 
     public override bool IsSetUpProperly(){
-        return _filterObject != null;
+        return _filterObject != null && _bodyVisualiser != null && _bodyTracker != null && _wristTracker != null;
     }
 
     protected override void EnforceObjectStructure(){
@@ -42,7 +42,7 @@ public class BodySimulator : SimulatorBase
             return;
         if (!IsSetUpProperly()) {
             Debug.LogError(
-                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
+                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
             _skipBodySimulator = true;
             return;
         }

@@ -163,7 +163,7 @@ public class Simulator : SimulatorBase {
         }
         if (!IsSetUpProperly()) {
             Debug.LogError(
-                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
+                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
             _skipFaceSimulator = true;
             return;
         }
