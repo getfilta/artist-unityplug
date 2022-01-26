@@ -15,6 +15,7 @@ using UnityEditor;
 
 [ExecuteAlways]
 public class Simulator : SimulatorBase {
+    public override SimulatorType _simulatorType => SimulatorType.Face;
     private string _filePath;
 
     private long _recordingLength;
@@ -68,7 +69,6 @@ public class Simulator : SimulatorBase {
     private bool _skipFaceSimulator;
     private bool _skipFaceRecording;
 
-
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
@@ -85,7 +85,6 @@ public class Simulator : SimulatorBase {
 
 #if UNITY_EDITOR
     private void OnEnable(){
-        _simulatorType = SimulatorType.Face;
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
         //_filePath = Application.dataPath;
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;

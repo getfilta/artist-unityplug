@@ -6,16 +6,13 @@ using UnityEngine;
 
 public class BodySimulator : SimulatorBase
 {
-    
+    public override SimulatorType _simulatorType => SimulatorType.Body;
+
     [SerializeField]
     private Transform _bodyTracker;
 
     [SerializeField]
     private Transform _wristTracker;
-
-    private void OnEnable(){
-        _simulatorType = SimulatorType.Body;
-    }
 
     protected override bool IsSetUpProperly(){
         return _filterObject != null;

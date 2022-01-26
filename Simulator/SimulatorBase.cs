@@ -9,9 +9,8 @@ public abstract class SimulatorBase : MonoBehaviour
         Face,
         Body
     }
-
-    [NonSerialized]
-    public SimulatorType _simulatorType;
+    
+    public virtual SimulatorType _simulatorType{ get;}
 
     public Transform _filterObject;
 
