@@ -13,7 +13,6 @@ using UnityEditor;
 #endif
 
 
-[ExecuteAlways]
 public class Simulator : SimulatorBase {
     public override SimulatorType _simulatorType => SimulatorType.Face;
     private string _filePath;
@@ -97,7 +96,7 @@ public class Simulator : SimulatorBase {
     }
 #endif
 
-    private void TryAutomaticSetup() {
+    protected override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
             return;
         }

@@ -1,7 +1,7 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
+[ExecuteAlways]
 public abstract class SimulatorBase : MonoBehaviour
 {
     public enum SimulatorType
@@ -34,5 +34,9 @@ public abstract class SimulatorBase : MonoBehaviour
 
     protected virtual void Update(){
 
+    }
+
+    protected virtual void TryAutomaticSetup(){
+        
     }
 }
