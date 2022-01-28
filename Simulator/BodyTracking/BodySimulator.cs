@@ -9,9 +9,14 @@ public class BodySimulator : SimulatorBase
 
     [SerializeField]
     private Transform _bodyVisualiser;
+
+    private Avatar _visualiserAvatar;
     
     [SerializeField]
     private Transform _bodyTracker;
+
+    [SerializeField]
+    private Transform _bodyAvatars;
 
     [SerializeField]
     private Transform _wristTracker;
@@ -19,12 +24,13 @@ public class BodySimulator : SimulatorBase
     private bool _skipBodySimulator;
 
     public override bool IsSetUpProperly(){
-        return _filterObject != null && _bodyVisualiser != null && _bodyTracker != null && _wristTracker != null;
+        return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyTracker != null && _bodyAvatars != null && _wristTracker != null;
     }
 
     protected override void EnforceObjectStructure(){
         _filterObject.name = "FilterBody";
         _bodyTracker.name = "BodyTracker";
+        _bodyAvatars.name = "BodyAvatar";
         _wristTracker.name = "WristTracker";
     }
 
@@ -40,6 +46,9 @@ public class BodySimulator : SimulatorBase
     protected override void Update(){
         if (_skipBodySimulator)
             return;
+        if (_bodyVisualiser != null && _visualiserAvatar == null){
+            _visualiserAvatar = new Avatar(_bodyVisualiser);
+        }
         if (!IsSetUpProperly()) {
             Debug.LogError(
                 "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
@@ -48,6 +57,7 @@ public class BodySimulator : SimulatorBase
         }
         EnforceObjectStructure();
         PositionTrackers();
+        UpdateBodyAvatars();
     }
 
     public override void TryAutomaticSetup(){
@@ -60,11 +70,11 @@ public class BodySimulator : SimulatorBase
         }
 
         //Might need a better way to find the root
-        if (_bodyVisualiser != null){
+        /*if (_bodyVisualiser != null){
             if (_skeletonRoot == null){
                 _skeletonRoot = _bodyVisualiser.Find("biped_robot_ace_skeleton/Root/Root");
             }
-        }
+        }*/
         if (_filterObject == null){
             _filterObject = GameObject.Find("FilterBody").transform;
         }
@@ -79,7 +89,12 @@ public class BodySimulator : SimulatorBase
             if (_wristTracker == null){
                 _wristTracker = _bodyTracker.Find("WristTracker");
             }
+
+            if (_bodyAvatars == null){
+                _bodyAvatars = _bodyTracker.Find("BodyAvatar");
+            }
         }
+        _visualiserAvatar = new Avatar(_bodyVisualiser);
         
         if (IsSetUpProperly()) {
             _skipBodySimulator = false;
@@ -91,25 +106,80 @@ public class BodySimulator : SimulatorBase
     }
     private void Awake(){
         TryAutomaticSetup();
+        InitializeBodyAvatars();
     }
 
     private void OnEnable(){
+#if UNITY_EDITOR
+        EditorApplication.hierarchyChanged += GetBodyAvatars;
+#endif
         if (IsSetUpProperly()){
-            InitializeSkeletonJoints();
+            _visualiserAvatar = new Avatar(_bodyVisualiser);
         }
     }
 
-    void PositionTrackers(){
-        _bodyTracker.position = boneMapping[(int)JointIndices.Root].position;
-        _bodyTracker.eulerAngles = boneMapping[(int)JointIndices.Root].eulerAngles;
-        _wristTracker.position = boneMapping[(int) JointIndices.LeftHand].position;
-        _wristTracker.eulerAngles = boneMapping[(int) JointIndices.LeftHand].eulerAngles;
+    private void OnDisable(){
+#if UNITY_EDITOR
+        EditorApplication.hierarchyChanged -= GetBodyAvatars;
+#endif
     }
 
-    #region Joints
+    void PositionTrackers(){
+        _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
+        _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        _wristTracker.position = _visualiserAvatar._boneMapping[(int) Avatar.JointIndices.LeftHand].position;
+        _wristTracker.eulerAngles = _visualiserAvatar._boneMapping[(int) Avatar.JointIndices.LeftHand].eulerAngles;
+    }
+    
+    #region Body Avatars
 
-    // 3D joint skeleton
-        enum JointIndices
+    private List<Avatar> _avatars;
+    private int _avatarCount;
+    void GetBodyAvatars(){
+        if (_avatarCount == _bodyAvatars.childCount) {
+            return;
+        }
+        InitializeBodyAvatars();
+        _avatarCount = _avatars.Count;
+    }
+
+    void InitializeBodyAvatars(){
+        _avatars = new List<Avatar>();
+        for (int i = 0; i < _bodyAvatars.childCount; i++){
+            _avatars.Add(new Avatar(_bodyAvatars.GetChild(i)));
+        }
+    }
+
+    //when the simulator is up and running, we should follow ARHumanBody data not the visualiser's data
+    void UpdateBodyAvatars(){
+        if (_avatars == null){
+            return;
+        }
+        for (int i = 0; i < _avatars.Count; i++){
+            Avatar avatar = _avatars[i];
+            for (int j = 0; j < avatar._boneMapping.Length; j++){
+                if (avatar._boneMapping[j] != null && _visualiserAvatar._boneMapping[j] != null){
+                    avatar._boneMapping[j].localPosition = _visualiserAvatar._boneMapping[j].localPosition;
+                    avatar._boneMapping[j].localRotation = _visualiserAvatar._boneMapping[j].localRotation;
+                }
+            }
+        }
+    }
+
+    class Avatar
+    {
+        public bool isInitialized;
+        public Transform root;
+        public Transform[] _boneMapping = new Transform[NumSkeletonJoints];
+
+        public Avatar(Transform model){
+            root = model;
+            InitializeSkeletonJoints();
+            isInitialized = true;
+        }
+        
+        // 3D joint skeleton
+        public enum JointIndices
         {
             Invalid = -1,
             Root = 0, // parent: <none> [-1]
@@ -206,20 +276,14 @@ public class BodySimulator : SimulatorBase
         }
         const int NumSkeletonJoints = 91;
 
-        [SerializeField]
-        [Tooltip("The root bone of the skeleton.")]
-        Transform _skeletonRoot;
-
-        Transform[] boneMapping = new Transform[NumSkeletonJoints];
-
-        public void InitializeSkeletonJoints()
+        private void InitializeSkeletonJoints()
         {
             // Walk through all the child joints in the skeleton and
             // store the skeleton joints at the corresponding index in the m_BoneMapping array.
             // This assumes that the bones in the skeleton are named as per the
             // JointIndices enum above.
             Queue<Transform> nodes = new Queue<Transform>();
-            nodes.Enqueue(_skeletonRoot);
+            nodes.Enqueue(root);
             while (nodes.Count > 0)
             {
                 Transform next = nodes.Dequeue();
@@ -254,12 +318,12 @@ public class BodySimulator : SimulatorBase
             int index = GetJointIndex(joint.name);
             if (index >= 0 && index < NumSkeletonJoints)
             {
-                boneMapping[index] = joint;
+                _boneMapping[index] = joint;
             }
-            else
+            /*else
             {
                 Debug.LogWarning($"{joint.name} was not found.");
-            }
+            }*/
         }
 
         // Returns the integer value corresponding to the JointIndices enum value
@@ -273,6 +337,7 @@ public class BodySimulator : SimulatorBase
             }
             return -1;
         }
-
+    }
+    
     #endregion
 }
