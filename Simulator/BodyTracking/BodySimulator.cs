@@ -168,14 +168,12 @@ public class BodySimulator : SimulatorBase
 
     class Avatar
     {
-        public bool isInitialized;
         public Transform root;
         public Transform[] _boneMapping = new Transform[NumSkeletonJoints];
 
         public Avatar(Transform model){
             root = model;
             InitializeSkeletonJoints();
-            isInitialized = true;
         }
         
         // 3D joint skeleton
