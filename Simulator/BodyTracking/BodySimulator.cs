@@ -146,7 +146,9 @@ public class BodySimulator : SimulatorBase
     void InitializeBodyAvatars(){
         _avatars = new List<Avatar>();
         for (int i = 0; i < _bodyAvatars.childCount; i++){
-            _avatars.Add(new Avatar(_bodyAvatars.GetChild(i)));
+            Avatar avatar = new Avatar(_bodyAvatars.GetChild(i));
+            avatar.Compensate(_visualiserAvatar._boneMapping);
+            _avatars.Add(avatar);
         }
     }
 
@@ -159,8 +161,8 @@ public class BodySimulator : SimulatorBase
             Avatar avatar = _avatars[i];
             for (int j = 0; j < avatar._boneMapping.Length; j++){
                 if (avatar._boneMapping[j] != null && _visualiserAvatar._boneMapping[j] != null){
-                    avatar._boneMapping[j].localPosition = _visualiserAvatar._boneMapping[j].localPosition;
-                    avatar._boneMapping[j].localRotation = _visualiserAvatar._boneMapping[j].localRotation;
+                    //avatar._boneMapping[j].position = _visualiserAvatar._boneMapping[j].position;
+                    avatar._boneMapping[j].rotation = _visualiserAvatar._boneMapping[j].rotation * avatar.compensation[j];
                 }
             }
         }
@@ -175,6 +177,19 @@ public class BodySimulator : SimulatorBase
             root = model;
             InitializeSkeletonJoints();
         }
+
+        public void Compensate(Transform[] visualiser){
+            for (int i = 0; i < _boneMapping.Length; i++){
+                if (_boneMapping[i] != null && visualiser[i] != null){
+                    compensation[i] = Quaternion.Inverse(visualiser[i].rotation) * _boneMapping[i].rotation;
+                }
+                else{
+                    compensation[i] = Quaternion.identity;
+                }
+            }
+        }
+
+        public Quaternion[] compensation = new Quaternion[NumSkeletonJoints];
         
         // 3D joint skeleton
         public enum JointIndices
