@@ -115,6 +115,9 @@ namespace Filta {
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
                 HandleFaceSimulator();
             }
+            else{
+                HandleBodySimulator();
+            }
 
             if (!_simulator.IsSetUpProperly()){
                 EditorGUILayout.LabelField("Simulator is not set up properly");
@@ -123,6 +126,19 @@ namespace Filta {
                 }
             }
             
+        }
+
+        private void HandleBodySimulator(){
+            if (_bodySimulator.isPlaying){
+                if (GUILayout.Button("Stop")){
+                    _bodySimulator.PauseSimulator();
+                }
+            }
+            else{
+                if (GUILayout.Button("Play")){
+                    _bodySimulator.ResumeSimulator();
+                }
+            }
         }
         
         private void HandleFaceSimulator(){

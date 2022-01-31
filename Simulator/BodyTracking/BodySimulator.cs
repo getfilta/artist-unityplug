@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,6 +25,48 @@ public class BodySimulator : SimulatorBase
     private Transform _wristTracker;
 
     private bool _skipBodySimulator;
+    private bool _skipBodyRecording;
+
+    private long _prevTime;
+    private int _previousFrame;
+    
+    private DateTime _startTime;
+
+    [NonSerialized]
+    public bool isPlaying;
+    
+    private ARBodyRecording _bodyRecording;
+    private long _recordingLength;
+    
+    private void Awake(){
+        isPlaying = true;
+        _startTime = DateTime.Now;
+        TryAutomaticSetup();
+        InitializeBodyAvatars();
+    }
+
+    protected override void OnEnable(){
+        base.OnEnable();
+#if UNITY_EDITOR
+        EditorApplication.hierarchyChanged += GetBodyAvatars;
+#endif
+        if (IsSetUpProperly()){
+            _visualiserAvatar = new Avatar(_bodyVisualiser);
+            GetRecordingData();
+        }
+    }
+
+    private void OnDisable(){
+#if UNITY_EDITOR
+        EditorApplication.hierarchyChanged -= GetBodyAvatars;
+#endif
+    }
+    private void GetRecordingData() {
+        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/BodyTracking/BodyRecording"));
+        string bodyData = Encoding.ASCII.GetString(data);
+        _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
+        _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
+    }
 
     public override bool IsSetUpProperly(){
         return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyTracker != null && _bodyAvatars != null && _wristTracker != null;
@@ -56,8 +101,76 @@ public class BodySimulator : SimulatorBase
             return;
         }
         EnforceObjectStructure();
-        PositionTrackers();
-        UpdateBodyAvatars();
+        if ((_bodyRecording._bodyData == null || _bodyRecording._bodyData.Count == 0) && !_skipBodyRecording){
+            try{
+                GetRecordingData();
+            }
+            catch (Exception e){
+                Debug.LogError($"Could not get recorded body data. {e.Message}");
+                _skipBodyRecording = true;
+            }
+        }
+        
+        if (!isPlaying) {
+            _startTime = DateTime.Now;
+            return;
+        }
+
+        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        Playback(time);
+    }
+    
+    private long _pauseTime;
+    public void PauseSimulator(){
+        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        isPlaying = false;
+    }
+
+    public void ResumeSimulator(){
+        isPlaying = true;
+    }
+    
+    void Replay() {
+        _startTime = DateTime.Now;
+    }
+
+    private void Playback(long currentTime){
+        if (_recordingLength <= 0){
+            return;
+        }
+
+        if (currentTime > _recordingLength){
+            Replay();
+            _pauseTime = 0;
+            return;
+        }
+
+        if (_prevTime > currentTime){
+            _previousFrame = 0;
+        }
+
+        _prevTime = currentTime;
+        for (int i = _previousFrame; i < _bodyRecording._bodyData.Count; i++){
+            ARBodyData bodyData = _bodyRecording._bodyData[i];
+            long nextTimeStamp = bodyData._timestamp;
+            if (nextTimeStamp < currentTime){
+                if (i == _bodyRecording._bodyData.Count - 1){
+                    i = 0;
+                    break;
+                }
+
+                continue;
+            }
+
+            if (i == 0){
+                break;
+            }
+            UpdateBodyVisualiser(bodyData);
+            PositionTrackers(bodyData);
+            UpdateBodyAvatars(bodyData);
+            _previousFrame = i;
+            break;
+        }
     }
 
     public override void TryAutomaticSetup(){
@@ -104,31 +217,13 @@ public class BodySimulator : SimulatorBase
             Debug.LogError("Failed to set up simulator");
         }
     }
-    private void Awake(){
-        TryAutomaticSetup();
-        InitializeBodyAvatars();
-    }
 
-    private void OnEnable(){
-#if UNITY_EDITOR
-        EditorApplication.hierarchyChanged += GetBodyAvatars;
-#endif
-        if (IsSetUpProperly()){
-            _visualiserAvatar = new Avatar(_bodyVisualiser);
-        }
-    }
-
-    private void OnDisable(){
-#if UNITY_EDITOR
-        EditorApplication.hierarchyChanged -= GetBodyAvatars;
-#endif
-    }
-
-    void PositionTrackers(){
+    void PositionTrackers(ARBodyData bodyData){
+        List<ARBodyData.Joint> joints = bodyData._joints;
         _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
         _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
-        _wristTracker.position = _visualiserAvatar._boneMapping[(int) Avatar.JointIndices.LeftHand].position;
-        _wristTracker.eulerAngles = _visualiserAvatar._boneMapping[(int) Avatar.JointIndices.LeftHand].eulerAngles;
+        _wristTracker.localPosition = joints[(int) Avatar.JointIndices.LeftHand]._anchorPose;
+        _wristTracker.eulerAngles = joints[(int) Avatar.JointIndices.LeftHand]._anchorRotation;
     }
     
     #region Body Avatars
@@ -145,6 +240,7 @@ public class BodySimulator : SimulatorBase
 
     void InitializeBodyAvatars(){
         _avatars = new List<Avatar>();
+        _visualiserAvatar.Compensate(_visualiserAvatar._boneMapping);
         for (int i = 0; i < _bodyAvatars.childCount; i++){
             Avatar avatar = new Avatar(_bodyAvatars.GetChild(i));
             avatar.Compensate(_visualiserAvatar._boneMapping);
@@ -152,18 +248,22 @@ public class BodySimulator : SimulatorBase
         }
     }
 
-    //when the simulator is up and running, we should follow ARHumanBody data not the visualiser's data
-    void UpdateBodyAvatars(){
+    void UpdateBodyVisualiser(ARBodyData bodyData){
+        _visualiserAvatar.ApplyBodyPose(bodyData);
+    }
+    
+    void UpdateBodyAvatars(ARBodyData bodyData){
         if (_avatars == null){
             return;
         }
         for (int i = 0; i < _avatars.Count; i++){
             Avatar avatar = _avatars[i];
             for (int j = 0; j < avatar._boneMapping.Length; j++){
-                if (avatar._boneMapping[j] != null && _visualiserAvatar._boneMapping[j] != null){
+                /*if (avatar._boneMapping[j] != null && _visualiserAvatar._boneMapping[j] != null){
                     //avatar._boneMapping[j].position = _visualiserAvatar._boneMapping[j].position;
                     avatar._boneMapping[j].rotation = _visualiserAvatar._boneMapping[j].rotation * avatar.compensation[j];
-                }
+                }*/
+                avatar.ApplyBodyPose(bodyData);
             }
         }
     }
@@ -308,23 +408,20 @@ public class BodySimulator : SimulatorBase
             }
         }
 
-        /*public void ApplyBodyPose(ARHumanBody body)
+        public void ApplyBodyPose(ARBodyData body)
         {
-            var joints = body.joints;
-            if (!joints.IsCreated)
-                return;
+            List<ARBodyData.Joint> joints = body._joints;
 
-            for (int i = 0; i < k_NumSkeletonJoints; ++i)
+            for (int i = 0; i < NumSkeletonJoints; ++i)
             {
-                XRHumanBodyJoint joint = joints[i];
-                var bone = m_BoneMapping[i];
+                ARBodyData.Joint joint = joints[i];
+                var bone = _boneMapping[i];
                 if (bone != null)
                 {
-                    bone.transform.localPosition = joint.localPose.position;
-                    bone.transform.localRotation = joint.localPose.rotation;
+                    bone.transform.rotation = Quaternion.Euler(joint._anchorRotation) * compensation[i];
                 }
             }
-        }*/
+        }
 
         void ProcessJoint(Transform joint)
         {
@@ -352,5 +449,44 @@ public class BodySimulator : SimulatorBase
         }
     }
     
+    #endregion
+    
+    #region Class/Struct Declarations
+
+    [Serializable]
+    public class ARBodyRecording
+    {
+        public List<ARBodyData> _bodyData;
+    }
+    
+    [Serializable]
+    public class ARBodyData
+    {
+        public List<Joint> _joints;
+        public long _timestamp;
+
+        [Serializable]
+        public class Joint
+        {
+            public Vector3Json _localPose;
+            public Vector3Json _localRotation;
+            public Vector3Json _anchorPose;
+            public Vector3Json _anchorRotation;
+            
+            [Serializable]
+            public struct Vector3Json
+            {
+                public float x, y, z;
+
+                public static implicit operator Vector3Json(Vector3 vector){
+                    return new Vector3Json{x = vector.x, y = vector.y, z = vector.z};
+                }
+
+                public static implicit operator Vector3(Vector3Json vector){
+                    return new Vector3{x = vector.x, y = vector.y, z = vector.z};
+                }
+            }
+        }
+    }
     #endregion
 }

@@ -15,7 +15,6 @@ using UnityEditor;
 
 public class Simulator : SimulatorBase {
     public override SimulatorType _simulatorType => SimulatorType.Face;
-    private string _filePath;
 
     private long _recordingLength;
 
@@ -83,9 +82,8 @@ public class Simulator : SimulatorBase {
     }
 
 #if UNITY_EDITOR
-    private void OnEnable(){
-        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
-        //_filePath = Application.dataPath;
+    protected override void OnEnable(){
+        base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
     }
@@ -188,7 +186,6 @@ public class Simulator : SimulatorBase {
     }
 
     private void GetRecordingData() {
-        Debug.Log("Deserializing file");
         byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);

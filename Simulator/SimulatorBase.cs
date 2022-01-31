@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +12,8 @@ public abstract class SimulatorBase : MonoBehaviour
     }
     
     public virtual SimulatorType _simulatorType{ get;}
+    
+    protected string _filePath{ get; set; }
 
     public Transform _filterObject;
 
@@ -30,6 +33,10 @@ public abstract class SimulatorBase : MonoBehaviour
             SceneView.RepaintAll();
         }
 #endif
+    }
+
+    protected virtual void OnEnable(){
+        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
     }
 
     protected virtual void Update(){
