@@ -328,7 +328,6 @@ public class BodySimulator : SimulatorBase
             }
             
         }
-        _visualiserAvatar = new Avatar(_bodyVisualiser);
         InitializeBodyAvatars();
         if (IsSetUpProperly()) {
             _skipBodySimulator = false;
