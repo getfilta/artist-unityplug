@@ -50,7 +50,7 @@ namespace Filta {
         //Plugin major version number.
         private const int pluginMajorVersion = 4;
         //Plugin minor version number.
-        private const int pluginMinorVersion = 0;
+        private const int pluginMinorVersion = 1;
         
 
         [MenuItem("Filta/Artist Panel")]
