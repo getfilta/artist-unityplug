@@ -60,7 +60,9 @@ namespace Filta {
         }
 
         #region Simulator
-        private Simulator _simulator;
+        private SimulatorBase _simulator;
+        private Simulator _faceSimulator;
+        private BodySimulator _bodySimulator;
         private bool _activeSimulator;
         private bool _loggingIn;
         private int _vertexNumber;
@@ -73,7 +75,12 @@ namespace Filta {
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            _pluginInfo = new PluginInfo { version = pluginAppVersion };
+            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                filterType = PluginInfo.FilterType.Body;
+            }
+            _pluginInfo = new PluginInfo
+                {version = pluginAppVersion, filterType = filterType};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
@@ -87,12 +94,16 @@ namespace Filta {
             }
         }
 
-        private void FindSimulator(PlayModeStateChange stateChange) {
-            GameObject simulatorObject = GameObject.Find("Simulator");
-            if (simulatorObject != null) {
-                _simulator = simulatorObject.GetComponent<Simulator>();
-                if (_simulator != null) {
-                    _activeSimulator = true;
+        private void FindSimulator(PlayModeStateChange stateChange){
+            _simulator = FindObjectOfType<SimulatorBase>();
+            GameObject simulatorObject = _simulator.gameObject;
+            if (_simulator != null){
+                _activeSimulator = true;
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
+                    _faceSimulator = simulatorObject.GetComponent<Simulator>();
+                }
+                else{
+                    _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
                 }
             }
         }
@@ -105,27 +116,57 @@ namespace Filta {
         private void HandleSimulator() {
             if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
-            if (_simulator.isPlaying) {
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
+                HandleFaceSimulator();
+            }
+            else{
+                HandleBodySimulator();
+            }
+
+            if (!_simulator.IsSetUpProperly()){
+                EditorGUILayout.LabelField("Simulator is not set up properly");
+                if (GUILayout.Button("Try Automatic Setup")){
+                    _simulator.TryAutomaticSetup();
+                }
+            }
+            
+        }
+
+        private void HandleBodySimulator(){
+            if (_bodySimulator.isPlaying){
+                if (GUILayout.Button("Stop")){
+                    _bodySimulator.PauseSimulator();
+                }
+            }
+            else{
+                if (GUILayout.Button("Play")){
+                    _bodySimulator.ResumeSimulator();
+                }
+            }
+        }
+        
+        private void HandleFaceSimulator(){
+            if (_faceSimulator.isPlaying) {
                 if (GUILayout.Button("Stop")) {
-                    _simulator.PauseSimulator();
+                    _faceSimulator.PauseSimulator();
                 }
             } else {
                 if (GUILayout.Button("Play")) {
-                    _simulator.ResumeSimulator();
+                    _faceSimulator.ResumeSimulator();
                 }
             }
 
-            _simulator.showFaceMeshVisualiser =
-                EditorGUILayout.Toggle("Show Face Mesh Visualiser", _simulator.showFaceMeshVisualiser);
+            _faceSimulator.showFaceMeshVisualiser =
+                EditorGUILayout.Toggle("Show Face Mesh Visualiser", _faceSimulator.showFaceMeshVisualiser);
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Vertex Trackers", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             _vertexNumber = EditorGUILayout.IntField("Vertex Index", _vertexNumber);
             if (GUILayout.Button("Create")) {
-                if (_simulator.vertexTrackers == null) {
-                    _simulator.vertexTrackers = new List<Simulator.VertexTracker>();
+                if (_faceSimulator.vertexTrackers == null) {
+                    _faceSimulator.vertexTrackers = new List<Simulator.VertexTracker>();
                 }
-                GameObject newVertex = _simulator.GenerateVertexTracker(_vertexNumber);
+                GameObject newVertex = _faceSimulator.GenerateVertexTracker(_vertexNumber);
                 //To select the newly created vertex tracker so that the user would be aware it has been selected.
                 Selection.activeGameObject = newVertex;
                 _vertexNumber = 0;
@@ -133,11 +174,11 @@ namespace Filta {
                 EditorGUI.FocusTextInControl(null);
             }
             EditorGUILayout.EndHorizontal();
-            _simulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _simulator.showVertexNumbers);
+            _faceSimulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _faceSimulator.showVertexNumbers);
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Face Mesh", EditorStyles.boldLabel);
             if (GUILayout.Button("Create")){
-                GameObject newFace = _simulator.SpawnNewFaceMesh();
+                GameObject newFace = _faceSimulator.SpawnNewFaceMesh();
                 Selection.activeGameObject = newFace;
             }
         }
@@ -300,33 +341,47 @@ namespace Filta {
             EditorGUI.DrawRect(r, color);
         }
 
-        private string sceneName;
+        private string _sceneName;
         void CreateNewScene() {
-            sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", sceneName);
-            GUI.enabled = !String.IsNullOrWhiteSpace(sceneName);
-            if (GUILayout.Button("Create new filter scene file")) {
-                bool success;
-                if (!AssetDatabase.IsValidFolder("Assets/Filters")){
-                    AssetDatabase.CreateFolder("Assets", "Filters");
-                }
-                
-                success = AssetDatabase.CopyAsset("Packages/com.getfilta.artist-unityplug/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
-                //success = AssetDatabase.CopyAsset("Assets/Core/templateScene.unity", $"Assets/Filters/{sceneName}.unity");
-                if (!success) {
-                    SetStatusMessage("Failed to create new filter scene file", true);
-                    Debug.LogError("Failed to create new filter scene file");
-                } else {
-                    if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
-                        EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-                    }
-
-                    EditorSceneManager.OpenScene($"Assets/Filters/{sceneName}.unity", OpenSceneMode.Single);
-                }
+            EditorGUILayout.LabelField("Create new filter scene", EditorStyles.boldLabel);
+            _sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", _sceneName);
+            GUI.enabled = !String.IsNullOrWhiteSpace(_sceneName);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Create Face Filter")) {
+                CreateScene(SimulatorBase.SimulatorType.Face);
             }
 
+            if (GUILayout.Button("Create Body Filter ")){
+                CreateScene(SimulatorBase.SimulatorType.Body);
+            }
+
+            EditorGUILayout.EndHorizontal();
             GUI.enabled = true;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
 
+        }
+
+        void CreateScene(SimulatorBase.SimulatorType type){
+            string templateSceneName = type == SimulatorBase.SimulatorType.Face
+                ? "templateScene.unity"
+                : "templateScene-body.unity";
+            string scenePath = $"Packages/com.getfilta.artist-unityplug/Core/{templateSceneName}";
+            bool success;
+            if (!AssetDatabase.IsValidFolder("Assets/Filters")){
+                AssetDatabase.CreateFolder("Assets", "Filters");
+            }
+                
+            success = AssetDatabase.CopyAsset(scenePath, $"Assets/Filters/{_sceneName}.unity");
+            if (!success) {
+                SetStatusMessage("Failed to create new filter scene file", true);
+                Debug.LogError("Failed to create new filter scene file");
+            } else {
+                if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
+                    EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+                }
+
+                EditorSceneManager.OpenScene($"Assets/Filters/{_sceneName}.unity", OpenSceneMode.Single);
+            }
         }
 
         private async void GenerateAndUploadAssetBundle() {
@@ -347,9 +402,9 @@ namespace Filta {
                 EditorUtility.DisplayDialog("Error", "You cannot complete this task while in Play Mode. Please leave Play Mode", "Ok");
                 return;
             }
-            
 
-            var filterObject = GameObject.Find("Filter");
+
+            GameObject filterObject = _simulator._filterObject.gameObject;
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
@@ -735,6 +790,8 @@ namespace Filta {
     }
 
     public struct PluginInfo {
+        public enum FilterType{Face, Body}
         public int version;
+        public FilterType filterType;
     }
 }

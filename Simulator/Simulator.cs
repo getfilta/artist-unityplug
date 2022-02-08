@@ -13,16 +13,12 @@ using UnityEditor;
 #endif
 
 
-[ExecuteAlways]
-public class Simulator : MonoBehaviour {
-    private string _filePath;
+public class Simulator : SimulatorBase {
+    public override SimulatorType _simulatorType => SimulatorType.Face;
 
     private long _recordingLength;
 
     private FaceRecording _faceRecording;
-
-    [FormerlySerializedAs("filterObject"), SerializeField]
-    private Transform _filterObject;
 
     [FormerlySerializedAs("faceMeshVisualiser"), SerializeField]
     private GameObject _faceMeshVisualiser;
@@ -71,7 +67,6 @@ public class Simulator : MonoBehaviour {
     private bool _skipFaceSimulator;
     private bool _skipFaceRecording;
 
-
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
@@ -87,9 +82,8 @@ public class Simulator : MonoBehaviour {
     }
 
 #if UNITY_EDITOR
-    private void OnEnable() {
-        _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
-        //_filePath = Application.dataPath;
+    protected override void OnEnable(){
+        base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
     }
@@ -100,7 +94,7 @@ public class Simulator : MonoBehaviour {
     }
 #endif
 
-    private void TryAutomaticSetup() {
+    public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
             return;
         }
@@ -153,7 +147,7 @@ public class Simulator : MonoBehaviour {
 
     }
 
-    private bool IsSetUpProperly() {
+    public override bool IsSetUpProperly() {
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
@@ -161,13 +155,13 @@ public class Simulator : MonoBehaviour {
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
-    private void Update() {
+    protected override void Update() {
         if (_skipFaceSimulator) {
             return;
         }
         if (!IsSetUpProperly()) {
             Debug.LogError(
-                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Simulator Inspector!");
+                "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
             _skipFaceSimulator = true;
             return;
         }
@@ -192,7 +186,6 @@ public class Simulator : MonoBehaviour {
     }
 
     private void GetRecordingData() {
-        Debug.Log("Deserializing file");
         byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
@@ -227,16 +220,6 @@ public class Simulator : MonoBehaviour {
 
     void Replay() {
         _startTime = DateTime.Now;
-    }
-    
-    private void OnRenderObject(){
-#if UNITY_EDITOR
-        // Ensure continuous Update calls.
-        if (!Application.isPlaying){
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
-#endif
     }
 
     //added Y-offset because text labels are rendered below the actual point specified.
@@ -275,7 +258,7 @@ public class Simulator : MonoBehaviour {
         Camera.main.transform.eulerAngles = faceData.camera.rotation;
     }
 
-    void EnforceObjectStructure() {
+    protected override void EnforceObjectStructure() {
         _faceTracker.name = "FaceTracker";
         _leftEyeTracker.name = "LeftEyeTracker";
         _rightEyeTracker.name = "RightEyeTracker";
@@ -618,39 +601,4 @@ public class Simulator : MonoBehaviour {
     }
 
     #endregion
-
-    #region Editor
-
-#if UNITY_EDITOR
-    [CustomEditor(typeof(Simulator))]
-    public class SimulatorEditor : Editor {
-        public override void OnInspectorGUI() {
-            DrawDefaultInspector();
-            EditorGUILayout.Separator();
-            Simulator sim = (Simulator)target;
-            if (sim.isPlaying) {
-                if (GUILayout.Button("Stop")) {
-                    sim.PauseSimulator();
-                }
-            } else {
-                if (GUILayout.Button("Play")) {
-                    sim.ResumeSimulator();
-                }
-            }
-
-            if (!sim.IsSetUpProperly()) {
-                if (GUILayout.Button("Automatically set up")) {
-                    sim.TryAutomaticSetup();
-                }
-            }
-
-
-        }
-    }
-
-
-#endif
-
-    #endregion
-
 }
