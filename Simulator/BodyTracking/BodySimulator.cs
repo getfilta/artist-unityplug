@@ -254,13 +254,7 @@ public class BodySimulator : SimulatorBase
         if (_bodyVisualiser == null){
             _bodyVisualiser = transform.GetChild(0);
         }
-
-        //Might need a better way to find the root
-        /*if (_bodyVisualiser != null){
-            if (_skeletonRoot == null){
-                _skeletonRoot = _bodyVisualiser.Find("biped_robot_ace_skeleton/Root/Root");
-            }
-        }*/
+        
         if (_filterObject == null){
             _filterObject = GameObject.Find("FilterBody").transform;
         }
@@ -412,10 +406,6 @@ public class BodySimulator : SimulatorBase
         for (int i = 0; i < _avatars.Count; i++){
             Avatar avatar = _avatars[i];
             for (int j = 0; j < avatar._boneMapping.Length; j++){
-                /*if (avatar._boneMapping[j] != null && _visualiserAvatar._boneMapping[j] != null){
-                    //avatar._boneMapping[j].position = _visualiserAvatar._boneMapping[j].position;
-                    avatar._boneMapping[j].rotation = _visualiserAvatar._boneMapping[j].rotation * avatar.compensation[j];
-                }*/
                 avatar.ApplyBodyPose(bodyData);
             }
         }
@@ -583,10 +573,6 @@ public class BodySimulator : SimulatorBase
             {
                 _boneMapping[index] = joint;
             }
-            /*else
-            {
-                Debug.LogWarning($"{joint.name} was not found.");
-            }*/
         }
 
         // Returns the integer value corresponding to the JointIndices enum value
