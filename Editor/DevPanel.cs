@@ -75,8 +75,12 @@ namespace Filta {
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
+            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                filterType = PluginInfo.FilterType.Body;
+            }
             _pluginInfo = new PluginInfo
-                {version = pluginAppVersion, isBody = _simulator._simulatorType == SimulatorBase.SimulatorType.Body};
+                {version = pluginAppVersion, filterType = filterType};
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
@@ -786,7 +790,8 @@ namespace Filta {
     }
 
     public struct PluginInfo {
+        public enum FilterType{Face, Body}
         public int version;
-        public bool isBody;
+        public FilterType filterType;
     }
 }
