@@ -612,16 +612,20 @@ namespace Filta {
 
         private async Task GetPrivateCollection() {
             string url = $"https://firestore.googleapis.com/v1/projects/filta-machina/databases/(default)/documents/priv_collection/{loginData.localId}";
-            using (UnityWebRequest req = new UnityWebRequest(url)) {
+            using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
-                req.method = "GET";
                 await req.SendWebRequest();
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
-                var jsonResult = JObject.Parse(req.downloadHandler.text);
-                var result = ParseArtMetas(jsonResult);
-                privateCollection = result;
+                if(req.downloadHandler != null) {
+                    var jsonResult = JObject.Parse(req.downloadHandler.text);
+                    var result = ParseArtMetas(jsonResult);
+                    privateCollection = result;
+                } else {
+                    SetStatusMessage("Error Deleting. Check console for details.", true);
+                    Debug.LogError("Request Result: " + req.result);
+                }
                 this.Repaint();
             }
         }
@@ -641,21 +645,21 @@ namespace Filta {
                 ArtMeta value = new ArtMeta();
                 value.artId = name;
                 foreach (var field in artMetaJson.Value["mapValue"]["fields"].Children()) {
-                    if (field.Value<JProperty>().Name == "artist") {
-                        var previewObject = field.Value<JProperty>().Value as JObject;
+                    var fieldName = field.Value<JProperty>().Name;
+                    var previewObject = field.Value<JProperty>().Value as JObject;
+                    switch(fieldName) {
+                    case "artist":
                         value.artist = previewObject.Value<string>("stringValue");
-                    } else if (field.Value<JProperty>().Name == "creationTime") {
-                        var previewObject = field.Value<JProperty>().Value as JObject;
+                        break;
+                    case "creationTime":
                         value.creationTime = previewObject.Value<string>("integerValue");
-                    } else if (field.Value<JProperty>().Name == "title") {
-                        var previewObject = field.Value<JProperty>().Value as JObject;
+                        break;
+                    case "title":
                         value.title = previewObject.Value<string>("stringValue");
-                    } else if (field.Value<JProperty>().Name == "version") {
-                        var previewObject = field.Value<JProperty>().Value as JObject;
-                        value.version = previewObject.Value<string>("integerValue");
-                    } else if (field.Value<JProperty>().Name == "preview") {
-                        var previewObject = field.Value<JProperty>().Value as JObject;
+                        break;
+                    case "preview":
                         value.preview = previewObject.Value<string>("stringValue");
+                        break;
                     }
                 }
 
