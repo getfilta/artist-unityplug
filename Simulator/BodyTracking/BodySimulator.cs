@@ -97,7 +97,6 @@ public class BodySimulator : SimulatorBase
     private void Awake(){
         isPlaying = true;
         _startTime = DateTime.Now;
-        ToggleVisualiser(false);
         TryAutomaticSetup();
         InitializeBodyAvatars();
     }
@@ -109,8 +108,9 @@ public class BodySimulator : SimulatorBase
 #endif
         if (IsSetUpProperly()){
             InitializeBodyAvatars();
-            GetRecordingData();
         }
+        GetRecordingData();
+        ToggleVisualiser(false);
     }
 
     private void OnDisable(){
@@ -402,6 +402,11 @@ public class BodySimulator : SimulatorBase
     }
 
     void InitializeBodyAvatars(){
+        if (_avatars != null){
+            for (int i = 0; i < _avatars.Count; i++){
+                _avatars[i].RevertToTPose(_referenceAvatar._boneMapping);
+            }
+        }
         _avatars = new List<Avatar>();
         _referenceAvatar = new Avatar(_bodyReference);
         _visualiserAvatar = new Avatar(_bodyVisualiser);
@@ -439,6 +444,7 @@ public class BodySimulator : SimulatorBase
             InitializeSkeletonJoints();
         }
 
+        public Quaternion[] compensation = new Quaternion[NumSkeletonJoints];
         public void Compensate(Transform[] visualiser){
             for (int i = 0; i < _boneMapping.Length; i++){
                 if (_boneMapping[i] != null && visualiser[i] != null){
@@ -450,7 +456,18 @@ public class BodySimulator : SimulatorBase
             }
         }
 
-        public Quaternion[] compensation = new Quaternion[NumSkeletonJoints];
+        public void RevertToTPose(Transform[] reference){
+            for (int i = 0; i < _boneMapping.Length; i++){
+                if (_boneMapping[i] != null && reference[i] != null){
+                    _boneMapping[i].rotation = reference[i].rotation * compensation[i];
+                }
+                else{
+                    compensation[i] = Quaternion.identity;
+                }
+            }
+        }
+
+        
         
         // 3D joint skeleton
         public enum JointIndices
