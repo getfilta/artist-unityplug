@@ -6,6 +6,7 @@ using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.IO;
+using System.Linq;
 using EvtSource;
 using Newtonsoft.Json;
 using Filta.Datatypes;
@@ -443,7 +444,7 @@ namespace Filta {
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
             FileInfo fileInfo = new FileInfo(pathToPackage);
             if (fileInfo.Length > UPLOAD_LIMIT) {
-                EditorUtility.DisplayDialog("Error", "Your filter is over 100MB, please reduce the size", "Ok");
+                HandleOversizePackage(packagePaths);
                 return;
             }
             /*string assetBundleDirectory = "AssetBundles";
@@ -492,6 +493,30 @@ namespace Filta {
             selectedArtKey = parsed.artid;
             SetStatusMessage("Upload successful");
             AssetDatabase.DeleteAsset(variantTempSave);
+        }
+
+        private void HandleOversizePackage(string[] path){
+            string[] pathNames = AssetDatabase.GetDependencies(path);
+            string readout = "";
+            Dictionary<string, long> fileSizes = new Dictionary<string, long>();
+            for (int i = 0; i < pathNames.Length; i++){
+                string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), pathNames[i]);
+                FileInfo fileInfo = new FileInfo(fullPath);
+                fileSizes.Add(pathNames[i], fileInfo.Length);
+            }
+            fileSizes = new Dictionary<string, long>(fileSizes.OrderByDescending(pair => pair.Value));
+            long limit = 0;
+            foreach (KeyValuePair<string, long> file in fileSizes){
+                readout += $"\n {file.Key} - {file.Value / 1000000f:#.##}MB";
+                limit += file.Value;
+                if (limit > UPLOAD_LIMIT){
+                    break;
+                }
+            }
+
+            EditorUtility.DisplayDialog("Error",
+                $"Your filter is over {UPLOAD_LIMIT / 1000000}MB, please reduce the size. These are the files that might be causing this. {readout}",
+                "Ok");
         }
 
         private async Task<bool> LoginAutomatic() {
