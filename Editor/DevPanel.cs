@@ -611,17 +611,63 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
+            string url = $"https://firestore.googleapis.com/v1/projects/filta-machina/databases/(default)/documents/priv_collection/{loginData.localId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
+                req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
-                var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
-                privateCollection = result;
+                if(req.downloadHandler != null) {
+                    var jsonResult = JObject.Parse(req.downloadHandler.text);
+                    var result = ParseArtMetas(jsonResult);
+                    privateCollection = result;
+                } else {
+                    SetStatusMessage("Error Deleting. Check console for details.", true);
+                    Debug.LogError("Request Result: " + req.result);
+                }
                 this.Repaint();
             }
         }
+
+        private Dictionary<string, ArtMeta> ParseArtMetas(JObject json) {
+            var output = new Dictionary<string, ArtMeta>();
+            var fields = json["fields"];
+            if (fields == null) {
+                return output;
+            }
+            if (fields.Type != JTokenType.Object) {
+                return output;
+            }
+
+            foreach (var artMetaJson in fields.Children<JProperty>()) {
+                string name = artMetaJson.Name;
+                ArtMeta value = new ArtMeta();
+                value.artId = name;
+                foreach (var field in artMetaJson.Value["mapValue"]["fields"].Children()) {
+                    var fieldName = field.Value<JProperty>().Name;
+                    var previewObject = field.Value<JProperty>().Value as JObject;
+                    switch(fieldName) {
+                    case "artist":
+                        value.artist = previewObject.Value<string>("stringValue");
+                        break;
+                    case "creationTime":
+                        value.creationTime = previewObject.Value<string>("integerValue");
+                        break;
+                    case "title":
+                        value.title = previewObject.Value<string>("stringValue");
+                        break;
+                    case "preview":
+                        value.preview = previewObject.Value<string>("stringValue");
+                        break;
+                    }
+                }
+
+                output.Add(name, value);
+            }
+            return output;
+        }
+
 
         private bool _showPrivCollection = true;
         private void PrivateCollection() {
