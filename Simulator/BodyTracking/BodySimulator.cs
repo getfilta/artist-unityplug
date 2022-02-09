@@ -12,7 +12,11 @@ public class BodySimulator : SimulatorBase
 
     [SerializeField]
     private Transform _bodyVisualiser;
-    
+
+    [SerializeField]
+    private Transform _bodyReference;
+
+    private Avatar _referenceAvatar;
     private Avatar _visualiserAvatar;
     
     #region Trackers
@@ -93,6 +97,7 @@ public class BodySimulator : SimulatorBase
     private void Awake(){
         isPlaying = true;
         _startTime = DateTime.Now;
+        ToggleVisualiser(false);
         TryAutomaticSetup();
         InitializeBodyAvatars();
     }
@@ -121,7 +126,7 @@ public class BodySimulator : SimulatorBase
     }
 
     public override bool IsSetUpProperly(){
-        return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyTracker != null &&
+        return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
                _bodyAvatars != null && _lShoulderTracker != null && _rShoulderTracker != null && _lArmTracker != null &&
                _rArmTracker != null && _lForearmTracker != null && _rForearmTracker != null && _lHandTracker != null &&
                _rHandTracker != null && _lUpLegTracker != null && _rUpLegTracker != null && _lLegTracker != null &&
@@ -164,7 +169,7 @@ public class BodySimulator : SimulatorBase
     protected override void Update(){
         if (_skipBodySimulator)
             return;
-        if (_bodyVisualiser != null && _visualiserAvatar == null){
+        if ((_bodyVisualiser != null && _visualiserAvatar == null) || (_bodyReference != null && _referenceAvatar == null)){
             InitializeBodyAvatars();
         }
         if (!IsSetUpProperly()) {
@@ -254,6 +259,10 @@ public class BodySimulator : SimulatorBase
         if (_bodyVisualiser == null){
             _bodyVisualiser = transform.GetChild(0);
         }
+
+        if (_bodyReference == null){
+            _bodyReference = transform.GetChild(1);
+        }
         
         if (_filterObject == null){
             _filterObject = GameObject.Find("FilterBody").transform;
@@ -332,6 +341,14 @@ public class BodySimulator : SimulatorBase
         }
     }
 
+    [NonSerialized]
+    public bool isPose;
+    public void ToggleVisualiser(bool setToPose){
+        isPose = setToPose;
+        _bodyVisualiser.gameObject.SetActive(!isPose);
+        _bodyReference.gameObject.SetActive(isPose);
+    }
+
     void PositionTrackers(ARBodyData bodyData){
         List<ARBodyData.Joint> joints = bodyData._joints;
         _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
@@ -386,11 +403,12 @@ public class BodySimulator : SimulatorBase
 
     void InitializeBodyAvatars(){
         _avatars = new List<Avatar>();
+        _referenceAvatar = new Avatar(_bodyReference);
         _visualiserAvatar = new Avatar(_bodyVisualiser);
         _visualiserAvatar.Compensate(_visualiserAvatar._boneMapping);
         for (int i = 0; i < _bodyAvatars.childCount; i++){
             Avatar avatar = new Avatar(_bodyAvatars.GetChild(i));
-            avatar.Compensate(_visualiserAvatar._boneMapping);
+            avatar.Compensate(_referenceAvatar._boneMapping);
             _avatars.Add(avatar);
         }
     }

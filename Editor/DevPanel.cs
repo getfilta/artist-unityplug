@@ -129,17 +129,28 @@ namespace Filta {
             }
 
         }
+        
 
         private void HandleBodySimulator() {
-            if (_bodySimulator.isPlaying) {
-                if (GUILayout.Button("Stop")) {
-                    _bodySimulator.PauseSimulator();
+            if (!_bodySimulator.isPose){
+                if (GUILayout.Button("Show T-Pose Visualiser")){
+                    _bodySimulator.ToggleVisualiser(true);
                 }
-            } else {
-                if (GUILayout.Button("Play")) {
-                    _bodySimulator.ResumeSimulator();
+                if (_bodySimulator.isPlaying) {
+                    if (GUILayout.Button("Stop")) {
+                        _bodySimulator.PauseSimulator();
+                    }
+                } else {
+                    if (GUILayout.Button("Play")) {
+                        _bodySimulator.ResumeSimulator();
+                    }
+                }
+            }else {
+                if (GUILayout.Button("Show Simulated Visualiser")){
+                    _bodySimulator.ToggleVisualiser(false);
                 }
             }
+            
         }
 
         private void HandleFaceSimulator() {
