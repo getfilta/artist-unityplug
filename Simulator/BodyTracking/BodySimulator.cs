@@ -401,12 +401,16 @@ public class BodySimulator : SimulatorBase
         _avatarCount = _avatars.Count;
     }
 
-    void InitializeBodyAvatars(){
+    public void RevertAvatarsToTPose(){
         if (_avatars != null){
             for (int i = 0; i < _avatars.Count; i++){
                 _avatars[i].RevertToTPose(_referenceAvatar._boneMapping);
             }
         }
+    }
+
+    void InitializeBodyAvatars(){
+        RevertAvatarsToTPose();
         _avatars = new List<Avatar>();
         _referenceAvatar = new Avatar(_bodyReference);
         _visualiserAvatar = new Avatar(_bodyVisualiser);

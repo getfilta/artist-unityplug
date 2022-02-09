@@ -416,25 +416,39 @@ namespace Filta {
                 return;
             }
             SetStatusMessage("Generating asset bundles");
-            try {
+            try{
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                    _bodySimulator.PauseSimulator();
+                    _bodySimulator.RevertAvatarsToTPose();
+                }
+
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
                 GameObject filterDuplicate = Instantiate(filterObject);
                 filterDuplicate.name = "Filter";
                 PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
                 DestroyImmediate(filterDuplicate);
-                if (success) {
+                if (success){
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
-                } else {
-                    EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
+                }
+                else{
+                    EditorUtility.DisplayDialog("Error",
+                        "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                     SetStatusMessage("Failed to generate asset bundle.", true);
                     return;
                 }
 
-            } catch {
-                EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
+            }
+            catch{
+                EditorUtility.DisplayDialog("Error",
+                    "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                 SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
+            }
+            finally{
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                    _bodySimulator.ResumeSimulator();
+                }
             }
 
             string pluginInfoPath = Path.Combine(Application.dataPath, "pluginInfo.json");
