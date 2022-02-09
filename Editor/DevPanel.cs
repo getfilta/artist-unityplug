@@ -49,10 +49,10 @@ namespace Filta {
         //Version number for changes in plugin that need accommodating on the app.
         private const int pluginAppVersion = 1;
         //Plugin major version number.
-        private const int pluginMajorVersion = 4;
+        private const int pluginMajorVersion = 5;
         //Plugin minor version number.
-        private const int pluginMinorVersion = 1;
-        
+        private const int pluginMinorVersion = 0;
+
 
         [MenuItem("Filta/Artist Panel")]
         static void Init() {
@@ -68,20 +68,19 @@ namespace Filta {
         private bool _loggingIn;
         private int _vertexNumber;
 
-        private static string GetVersionNumber(){
+        private static string GetVersionNumber() {
             return $"v{pluginAppVersion}.{pluginMajorVersion}.{pluginMinorVersion}";
         }
 
-        private async void OnEnable(){
+        private async void OnEnable() {
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
             PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
-            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                 filterType = PluginInfo.FilterType.Body;
             }
-            _pluginInfo = new PluginInfo
-                {version = pluginAppVersion, filterType = filterType};
+            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType };
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
@@ -95,15 +94,14 @@ namespace Filta {
             }
         }
 
-        private void FindSimulator(PlayModeStateChange stateChange){
+        private void FindSimulator(PlayModeStateChange stateChange) {
             _simulator = FindObjectOfType<SimulatorBase>();
             GameObject simulatorObject = _simulator.gameObject;
-            if (_simulator != null){
+            if (_simulator != null) {
                 _activeSimulator = true;
-                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                     _faceSimulator = simulatorObject.GetComponent<Simulator>();
-                }
-                else{
+                } else {
                     _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
                 }
             }
@@ -117,36 +115,34 @@ namespace Filta {
         private void HandleSimulator() {
             if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
-            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face){
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
-            }
-            else{
+            } else {
                 HandleBodySimulator();
             }
 
-            if (!_simulator.IsSetUpProperly()){
+            if (!_simulator.IsSetUpProperly()) {
                 EditorGUILayout.LabelField("Simulator is not set up properly");
-                if (GUILayout.Button("Try Automatic Setup")){
+                if (GUILayout.Button("Try Automatic Setup")) {
                     _simulator.TryAutomaticSetup();
                 }
             }
-            
+
         }
 
-        private void HandleBodySimulator(){
-            if (_bodySimulator.isPlaying){
-                if (GUILayout.Button("Stop")){
+        private void HandleBodySimulator() {
+            if (_bodySimulator.isPlaying) {
+                if (GUILayout.Button("Stop")) {
                     _bodySimulator.PauseSimulator();
                 }
-            }
-            else{
-                if (GUILayout.Button("Play")){
+            } else {
+                if (GUILayout.Button("Play")) {
                     _bodySimulator.ResumeSimulator();
                 }
             }
         }
-        
-        private void HandleFaceSimulator(){
+
+        private void HandleFaceSimulator() {
             if (_faceSimulator.isPlaying) {
                 if (GUILayout.Button("Stop")) {
                     _faceSimulator.PauseSimulator();
@@ -178,7 +174,7 @@ namespace Filta {
             _faceSimulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _faceSimulator.showVertexNumbers);
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Face Mesh", EditorStyles.boldLabel);
-            if (GUILayout.Button("Create")){
+            if (GUILayout.Button("Create")) {
                 GameObject newFace = _faceSimulator.SpawnNewFaceMesh();
                 Selection.activeGameObject = newFace;
             }
@@ -187,43 +183,40 @@ namespace Filta {
         #endregion
 
         #region Bundle Queue
-        
+
         private Dictionary<string, Bundle> _bundles;
         private EventSourceReader _evt;
-        private async void GetFiltersOnQueue(){
+        private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
             string getUrlQueue = $"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
             UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
             await request.SendWebRequest();
             JObject results = JObject.Parse(request.downloadHandler.text);
-            foreach (JProperty prop in results.Properties()){
+            foreach (JProperty prop in results.Properties()) {
                 string id = prop.Name;
                 string bundleTitle = prop.Value["title"].Value<string>();
                 int queue = prop.Value["queue"].Value<int>();
-                _bundles.Add(id, new Bundle{queue = queue, title = bundleTitle});
+                _bundles.Add(id, new Bundle { queue = queue, title = bundleTitle });
             }
             ListenToQueue();
         }
 
-        private void ListenToQueue(){
+        private void ListenToQueue() {
             _evt = new EventSourceReader(new Uri($"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
-            _evt.MessageReceived += (sender, e) =>
-            {
-                if (e.Event == "put"){
-                    try{
+            _evt.MessageReceived += (sender, e) => {
+                if (e.Event == "put") {
+                    try {
                         QueueResponse response = JsonConvert.DeserializeObject<QueueResponse>(e.Message);
                         string[] paths = response.path.Split('/');
-                        if (response.data is int queue){
+                        if (response.data is int queue) {
                             _bundles[paths[1]].queue = queue;
-                        }
-                        else{
+                        } else {
                             SetStatusMessage($"{_bundles[paths[1]].title} successfully bundled!");
                             _bundles.Remove(paths[1]);
                         }
-                        
-                    }
-                    catch(Exception exception){
-                        if (exception is JsonReaderException){
+
+                    } catch (Exception exception) {
+                        if (exception is JsonReaderException) {
                             return;
                         }
                         Debug.LogError(exception.Message);
@@ -232,19 +225,18 @@ namespace Filta {
             };
             _evt.Disconnected += async (sender, e) => {
                 await Task.Delay(e.ReconnectDelay);
-                try{
-                    if (!_evt.IsDisposed){
+                try {
+                    if (!_evt.IsDisposed) {
                         _evt.Start(); // Reconnect to the same URL
                     }
-                }
-                catch (Exception exception){
+                } catch (Exception exception) {
                     Debug.LogError(exception.Message);
                 }
 
             };
         }
 
-        private void DisplayQueue(){
+        private void DisplayQueue() {
             if (_bundles == null || _bundles.Count <= 0)
                 return;
             GUILayout.Label("Filters being processed", EditorStyles.boldLabel);
@@ -252,31 +244,29 @@ namespace Filta {
             GUILayout.Label("Filter name");
             GUILayout.Label("Queue number");
             GUILayout.EndHorizontal();
-            foreach (KeyValuePair<string, Bundle> bundle in _bundles){
+            foreach (KeyValuePair<string, Bundle> bundle in _bundles) {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(bundle.Value.title);
-                GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" :bundle.Value.queue.ToString());
+                GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" : bundle.Value.queue.ToString());
                 GUILayout.EndHorizontal();
             }
             DrawUILine(Color.gray);
         }
 
-        private void DisposeQueue(){
+        private void DisposeQueue() {
             _evt?.Dispose();
         }
 
-        private void OnInspectorUpdate(){
+        private void OnInspectorUpdate() {
             Repaint();
         }
 
-        public class Bundle
-        {
+        public class Bundle {
             public string title;
             public int queue;
         }
 
-        public class QueueResponse
-        {
+        public class QueueResponse {
             public string path;
             public int? data;
         }
@@ -289,7 +279,7 @@ namespace Filta {
                 leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
                 if (loginData != null && loginData.idToken != "") {
                     CreateNewScene();
-                    if (_activeSimulator){
+                    if (_activeSimulator) {
                         DrawUILine(Color.gray);
                         HandleSimulator();
                         DrawUILine(Color.gray);
@@ -319,7 +309,7 @@ namespace Filta {
                 AdvancedSettings();
             }
             DrawUILine(Color.gray);
-            
+
             EditorGUILayout.LabelField(statusBar);
         }
 
@@ -352,7 +342,7 @@ namespace Filta {
                 CreateScene(SimulatorBase.SimulatorType.Face);
             }
 
-            if (GUILayout.Button("Create Body Filter ")){
+            if (GUILayout.Button("Create Body Filter ")) {
                 CreateScene(SimulatorBase.SimulatorType.Body);
             }
 
@@ -362,16 +352,16 @@ namespace Filta {
 
         }
 
-        void CreateScene(SimulatorBase.SimulatorType type){
+        void CreateScene(SimulatorBase.SimulatorType type) {
             string templateSceneName = type == SimulatorBase.SimulatorType.Face
                 ? "templateScene.unity"
                 : "templateScene-body.unity";
             string scenePath = $"Packages/com.getfilta.artist-unityplug/Core/{templateSceneName}";
             bool success;
-            if (!AssetDatabase.IsValidFolder("Assets/Filters")){
+            if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
                 AssetDatabase.CreateFolder("Assets", "Filters");
             }
-                
+
             success = AssetDatabase.CopyAsset(scenePath, $"Assets/Filters/{_sceneName}.unity");
             if (!success) {
                 SetStatusMessage("Failed to create new filter scene file", true);
@@ -411,7 +401,7 @@ namespace Filta {
                 return;
             }
 
-            if (CheckForUnreadableMeshes(filterObject)){
+            if (CheckForUnreadableMeshes(filterObject)) {
                 return;
             }
             SetStatusMessage("Generating asset bundles");
@@ -421,42 +411,39 @@ namespace Filta {
                 filterDuplicate.name = "Filter";
                 PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
                 DestroyImmediate(filterDuplicate);
-                if (success){
+                if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
-                }
-                else{
+                } else {
                     EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                     SetStatusMessage("Failed to generate asset bundle.", true);
                     return;
                 }
-                
-            } catch
-            {
+
+            } catch {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                 SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
             }
 
             string pluginInfoPath = Path.Combine(Application.dataPath, "pluginInfo.json");
-            try{
+            try {
                 File.WriteAllText(
-                    pluginInfoPath,JsonConvert.SerializeObject(_pluginInfo));
+                    pluginInfoPath, JsonConvert.SerializeObject(_pluginInfo));
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-            }
-            catch{
+            } catch {
                 EditorUtility.DisplayDialog("Error", "There was a problem editing the pluginInfo.json. Did you delete it from your assets?", "Ok");
                 SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
             }
 
-            string[] packagePaths = {"Assets/pluginInfo.json", variantTempSave};
+            string[] packagePaths = { "Assets/pluginInfo.json", variantTempSave };
             AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
             FileInfo fileInfo = new FileInfo(pathToPackage);
-            if (fileInfo.Length > UPLOAD_LIMIT){
+            if (fileInfo.Length > UPLOAD_LIMIT) {
                 HandleOversizePackage(packagePaths);
                 return;
             }
@@ -470,7 +457,7 @@ namespace Filta {
                                     BuildTarget.iOS);
             assetBundlePath = $"{assetBundleDirectory}/filter";*/
             SetStatusMessage("Asset bundle generated");
-            
+
             SetStatusMessage("Connecting...");
             byte[] bytes = File.ReadAllBytes(pathToPackage);
             Hash128 hash = Hash128.Compute(bytes);
@@ -499,7 +486,7 @@ namespace Filta {
                 Debug.LogError(response);
                 return;
             }
-            _bundles.Add(parsed.artid, new Bundle{queue = 999, title = selectedArtTitle});
+            _bundles.Add(parsed.artid, new Bundle { queue = 999, title = selectedArtTitle });
             UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
@@ -649,17 +636,63 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            string url = $"https://filta-machina.firebaseio.com/priv_collection/{loginData.localId}/.json?auth={loginData.idToken}";
+            string url = $"https://firestore.googleapis.com/v1/projects/filta-machina/databases/(default)/documents/priv_collection/{loginData.localId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
+                req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
-                var result = JsonConvert.DeserializeObject<Dictionary<string, ArtMeta>>(req.downloadHandler.text);
-                privateCollection = result;
+                if(req.downloadHandler != null) {
+                    var jsonResult = JObject.Parse(req.downloadHandler.text);
+                    var result = ParseArtMetas(jsonResult);
+                    privateCollection = result;
+                } else {
+                    SetStatusMessage("Error Deleting. Check console for details.", true);
+                    Debug.LogError("Request Result: " + req.result);
+                }
                 this.Repaint();
             }
         }
+
+        private Dictionary<string, ArtMeta> ParseArtMetas(JObject json) {
+            var output = new Dictionary<string, ArtMeta>();
+            var fields = json["fields"];
+            if (fields == null) {
+                return output;
+            }
+            if (fields.Type != JTokenType.Object) {
+                return output;
+            }
+
+            foreach (var artMetaJson in fields.Children<JProperty>()) {
+                string name = artMetaJson.Name;
+                ArtMeta value = new ArtMeta();
+                value.artId = name;
+                foreach (var field in artMetaJson.Value["mapValue"]["fields"].Children()) {
+                    var fieldName = field.Value<JProperty>().Name;
+                    var previewObject = field.Value<JProperty>().Value as JObject;
+                    switch(fieldName) {
+                    case "artist":
+                        value.artist = previewObject.Value<string>("stringValue");
+                        break;
+                    case "creationTime":
+                        value.creationTime = previewObject.Value<string>("integerValue");
+                        break;
+                    case "title":
+                        value.title = previewObject.Value<string>("stringValue");
+                        break;
+                    case "preview":
+                        value.preview = previewObject.Value<string>("stringValue");
+                        break;
+                    }
+                }
+
+                output.Add(name, value);
+            }
+            return output;
+        }
+
 
         private bool _showPrivCollection = true;
         private void PrivateCollection() {
@@ -735,8 +768,8 @@ namespace Filta {
             DeletePrivArt(selectedArtKey);
         }
 
-        private void SetStatusMessage(string message, bool isError = false){
-            if (isError){
+        private void SetStatusMessage(string message, bool isError = false) {
+            if (isError) {
                 s.normal.textColor = Color.red;
                 return;
             }
@@ -744,21 +777,21 @@ namespace Filta {
             statusBar = message;
         }
 
-        private bool CheckForUnreadableMeshes(GameObject filterParent){
+        private bool CheckForUnreadableMeshes(GameObject filterParent) {
             bool result = false;
-            string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: " ;
+            string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: ";
             SkinnedMeshRenderer[] skinnedMeshRenderers = filterParent.GetComponentsInChildren<SkinnedMeshRenderer>();
-            for (int i = 0; i < skinnedMeshRenderers.Length; i++){
-                if (!skinnedMeshRenderers[i].sharedMesh.isReadable){
+            for (int i = 0; i < skinnedMeshRenderers.Length; i++) {
+                if (!skinnedMeshRenderers[i].sharedMesh.isReadable) {
                     result = true;
                     dialog += $" {skinnedMeshRenderers[i].gameObject.name},";
                 }
             }
 
-            if (result){
+            if (result) {
                 EditorUtility.DisplayDialog("Error", dialog, "Ok");
             }
-            
+
             return result;
         }
     }
@@ -815,7 +848,7 @@ namespace Filta {
     }
 
     public struct PluginInfo {
-        public enum FilterType{Face, Body}
+        public enum FilterType { Face, Body }
         public int version;
         public FilterType filterType;
     }
