@@ -5,6 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class BodySimulator : SimulatorBase
 {
@@ -400,23 +401,44 @@ public class BodySimulator : SimulatorBase
         InitializeBodyAvatars();
         _avatarCount = _avatars.Count;
     }
+    
+    //Finds mesh used by skinned renderer and uses this to obtain the model file
+    private Transform GetModelTransform(GameObject model){
+        //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
+        string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
+        Object obj = AssetDatabase.LoadMainAssetAtPath(path);
+        GameObject gO = obj as GameObject;
+        return gO.transform;
+    }
+
+    private void RevertToOriginalPose(GameObject model){
+        Transform root = GetModelTransform(model);
+        Avatar rootAvatar = new Avatar(root);
+        Avatar modelAvatar = new Avatar(model.transform);
+        for (int i = 0; i < modelAvatar._boneMapping.Length; i++){
+            if (modelAvatar._boneMapping[i] != null && rootAvatar._boneMapping[i] != null){
+                modelAvatar._boneMapping[i].localRotation = rootAvatar._boneMapping[i].localRotation;
+            }
+        }
+    }
+    
 
     public void RevertAvatarsToTPose(){
         if (_avatars != null){
             for (int i = 0; i < _avatars.Count; i++){
-                _avatars[i].RevertToTPose(_referenceAvatar._boneMapping);
+                RevertToOriginalPose(_avatars[i].root.gameObject);
             }
         }
     }
 
     void InitializeBodyAvatars(){
-        RevertAvatarsToTPose();
         _avatars = new List<Avatar>();
         _referenceAvatar = new Avatar(_bodyReference);
         _visualiserAvatar = new Avatar(_bodyVisualiser);
         _visualiserAvatar.Compensate(_visualiserAvatar._boneMapping);
         for (int i = 0; i < _bodyAvatars.childCount; i++){
             Avatar avatar = new Avatar(_bodyAvatars.GetChild(i));
+            RevertToOriginalPose(avatar.root.gameObject);
             avatar.Compensate(_referenceAvatar._boneMapping);
             _avatars.Add(avatar);
         }
