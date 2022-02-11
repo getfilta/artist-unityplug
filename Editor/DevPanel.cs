@@ -416,7 +416,7 @@ namespace Filta {
                 return;
             }
             SetStatusMessage("Generating asset bundles");
-            try{
+            try {
                 if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
                     _bodySimulator.PauseSimulator();
                     _bodySimulator.RevertAvatarsToTPose();
@@ -438,14 +438,12 @@ namespace Filta {
                     return;
                 }
 
-            }
-            catch{
+            } catch {
                 EditorUtility.DisplayDialog("Error",
                     "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                 SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
-            }
-            finally{
+            } finally {
                 if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
                     _bodySimulator.ResumeSimulator();
                 }
