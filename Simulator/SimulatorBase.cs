@@ -68,6 +68,7 @@ public abstract class SimulatorBase : MonoBehaviour {
             }
             return;
         }
+        _objectsToHide[0].gameObject.hideFlags = HideFlags.NotEditable;
         //we start at 1 because 0 is the parent
         for (int i = 1; i < _objectsToHide.Length; i++) {
             _objectsToHide[i].gameObject.hideFlags = _customHideFlags;

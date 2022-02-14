@@ -413,6 +413,7 @@ public class BodySimulator : SimulatorBase {
     }
 
     private void RevertToOriginalPose(GameObject model) {
+        SetFlags(true);
         Transform root = GetModelTransform(model);
         Avatar rootAvatar = new Avatar(root);
         Avatar modelAvatar = new Avatar(model.transform);
@@ -421,6 +422,7 @@ public class BodySimulator : SimulatorBase {
                 modelAvatar._boneMapping[i].localRotation = rootAvatar._boneMapping[i].localRotation;
             }
         }
+        SetFlags();
     }
 
 
