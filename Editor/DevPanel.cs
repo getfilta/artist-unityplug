@@ -51,7 +51,7 @@ namespace Filta {
         //Plugin major version number.
         private const int pluginMajorVersion = 5;
         //Plugin minor version number.
-        private const int pluginMinorVersion = 0;
+        private const int pluginMinorVersion = 1;
 
 
         [MenuItem("Filta/Artist Panel")]
@@ -129,11 +129,11 @@ namespace Filta {
             }
 
         }
-        
+
 
         private void HandleBodySimulator() {
-            if (!_bodySimulator.isPose){
-                if (GUILayout.Button("Show T-Pose Visualiser")){
+            if (!_bodySimulator.isPose) {
+                if (GUILayout.Button("Show T-Pose Visualiser")) {
                     _bodySimulator.ToggleVisualiser(true);
                 }
                 if (_bodySimulator.isPlaying) {
@@ -145,12 +145,12 @@ namespace Filta {
                         _bodySimulator.ResumeSimulator();
                     }
                 }
-            }else {
-                if (GUILayout.Button("Show Simulated Visualiser")){
+            } else {
+                if (GUILayout.Button("Show Simulated Visualiser")) {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
-            
+
         }
 
         private void HandleFaceSimulator() {
@@ -417,7 +417,7 @@ namespace Filta {
             }
             SetStatusMessage("Generating asset bundles");
             try {
-                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                     _bodySimulator.PauseSimulator();
                     _bodySimulator.RevertAvatarsToTPose();
                 }
@@ -427,11 +427,10 @@ namespace Filta {
                 filterDuplicate.name = "Filter";
                 PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
                 DestroyImmediate(filterDuplicate);
-                if (success){
+                if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
-                }
-                else{
+                } else {
                     EditorUtility.DisplayDialog("Error",
                         "The object 'Filter' isn't a prefab. Did you delete it from your assets?", "Ok");
                     SetStatusMessage("Failed to generate asset bundle.", true);
@@ -444,7 +443,7 @@ namespace Filta {
                 SetStatusMessage("Failed to generate asset bundle.", true);
                 return;
             } finally {
-                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body){
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                     _bodySimulator.ResumeSimulator();
                 }
             }
@@ -518,21 +517,21 @@ namespace Filta {
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
-        private void HandleOversizePackage(string[] path){
+        private void HandleOversizePackage(string[] path) {
             string[] pathNames = AssetDatabase.GetDependencies(path);
             string readout = "";
             Dictionary<string, long> fileSizes = new Dictionary<string, long>();
-            for (int i = 0; i < pathNames.Length; i++){
+            for (int i = 0; i < pathNames.Length; i++) {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), pathNames[i]);
                 FileInfo fileInfo = new FileInfo(fullPath);
                 fileSizes.Add(pathNames[i], fileInfo.Length);
             }
             fileSizes = new Dictionary<string, long>(fileSizes.OrderByDescending(pair => pair.Value));
             long limit = 0;
-            foreach (KeyValuePair<string, long> file in fileSizes){
+            foreach (KeyValuePair<string, long> file in fileSizes) {
                 readout += $"\n {file.Key} - {file.Value / 1000000f:#.##}MB";
                 limit += file.Value;
-                if (limit > UPLOAD_LIMIT){
+                if (limit > UPLOAD_LIMIT) {
                     break;
                 }
             }
@@ -666,7 +665,7 @@ namespace Filta {
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
-                if(req.downloadHandler != null) {
+                if (req.downloadHandler != null) {
                     var jsonResult = JObject.Parse(req.downloadHandler.text);
                     var result = ParseArtMetas(jsonResult);
                     privateCollection = result;
@@ -695,19 +694,19 @@ namespace Filta {
                 foreach (var field in artMetaJson.Value["mapValue"]["fields"].Children()) {
                     var fieldName = field.Value<JProperty>().Name;
                     var previewObject = field.Value<JProperty>().Value as JObject;
-                    switch(fieldName) {
-                    case "artist":
-                        value.artist = previewObject.Value<string>("stringValue");
-                        break;
-                    case "creationTime":
-                        value.creationTime = previewObject.Value<string>("integerValue");
-                        break;
-                    case "title":
-                        value.title = previewObject.Value<string>("stringValue");
-                        break;
-                    case "preview":
-                        value.preview = previewObject.Value<string>("stringValue");
-                        break;
+                    switch (fieldName) {
+                        case "artist":
+                            value.artist = previewObject.Value<string>("stringValue");
+                            break;
+                        case "creationTime":
+                            value.creationTime = previewObject.Value<string>("integerValue");
+                            break;
+                        case "title":
+                            value.title = previewObject.Value<string>("stringValue");
+                            break;
+                        case "preview":
+                            value.preview = previewObject.Value<string>("stringValue");
+                            break;
                     }
                 }
 
