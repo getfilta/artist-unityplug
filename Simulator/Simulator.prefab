@@ -431,7 +431,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7865246587420603576}
   - component: {fileID: 7865246587420603579}
-  - component: {fileID: 1597849149027139097}
   m_Layer: 6
   m_Name: Simulator
   m_TagString: Untagged
@@ -466,12 +465,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7865246587420603578}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7458e90b50d3040e7b87a4d9ffc2aa1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _filterObject: {fileID: 0}
+  _developerMode: 0
+  _objectsToHide:
+  - {fileID: 7865246587290439195}
+  - {fileID: 4417709660473707542}
+  - {fileID: 4417709660774032506}
+  - {fileID: 4417709660343842657}
+  - {fileID: 3092905064218652095}
+  _customHideFlags: 9
   _faceMeshVisualiser: {fileID: 7865246587290439175}
   _visualiserOffset: 0
   _faceTracker: {fileID: 0}
@@ -482,27 +489,6 @@ MonoBehaviour:
   _facesHolder: {fileID: 0}
   _vertices: {fileID: 0}
   _videoFeed: {fileID: 4417709659914063239}
---- !u!114 &1597849149027139097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7865246587420603578}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb81a315669fd423997d7997496d409c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  targets:
-  - {fileID: 7865246587290439195}
-  - {fileID: 4417709660473707542}
-  - {fileID: 4417709660774032506}
-  - {fileID: 4417709660343842657}
-  - {fileID: 3092905064218652095}
-  customHideFlags: 9
-  showInEditor: 1
-  setOn: 0
 --- !u!1001 &3271458007765944916
 PrefabInstance:
   m_ObjectHideFlags: 0

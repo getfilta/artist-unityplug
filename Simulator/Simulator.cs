@@ -61,7 +61,6 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private RawImage _videoFeed;
 
-
     private long _prevTime;
     private int _previousFrame;
     private bool _skipFaceSimulator;
@@ -82,7 +81,7 @@ public class Simulator : SimulatorBase {
     }
 
 #if UNITY_EDITOR
-    protected override void OnEnable(){
+    protected override void OnEnable() {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
@@ -96,8 +95,10 @@ public class Simulator : SimulatorBase {
 
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
+            SetFlags();
             return;
         }
+        SetFlags(true);
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
@@ -136,7 +137,7 @@ public class Simulator : SimulatorBase {
                 _vertices = _faceTracker.Find("Vertices");
             }
         }
-
+        SetFlags();
         if (IsSetUpProperly()) {
             _skipFaceSimulator = false;
             Debug.Log("Successfully Set up");
@@ -227,7 +228,7 @@ public class Simulator : SimulatorBase {
     private float _offsetY = -45;
     private void OnDrawGizmos() {
 #if UNITY_EDITOR
-        if (showVertexNumbers){
+        if (showVertexNumbers) {
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
             handleStyle.normal.textColor = Color.white;
@@ -238,8 +239,8 @@ public class Simulator : SimulatorBase {
             }
         }
 
-        
-        
+
+
 #endif
     }
 
@@ -273,14 +274,14 @@ public class Simulator : SimulatorBase {
         _filterObject.localScale = Vector3.one;
         HandleVertexPairing();
     }
-    
+
     private long _pauseTime;
-    public void PauseSimulator(){
+    public void PauseSimulator() {
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
     }
 
-    public void ResumeSimulator(){
+    public void ResumeSimulator() {
         isPlaying = true;
     }
 
@@ -354,6 +355,8 @@ public class Simulator : SimulatorBase {
         }
     }
 
+
+
     #region Face Mask Control
 
     private List<SkinnedMeshRenderer> _faceMasks;
@@ -396,7 +399,7 @@ public class Simulator : SimulatorBase {
 
     private int _faceCount;
 
-    public GameObject SpawnNewFaceMesh(){
+    public GameObject SpawnNewFaceMesh() {
         GameObject newFace = GameObject.CreatePrimitive(PrimitiveType.Plane);
         newFace.name = "FaceMesh";
         Collider col = newFace.GetComponent<Collider>();
