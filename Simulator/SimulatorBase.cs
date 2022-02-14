@@ -20,9 +20,8 @@ public abstract class SimulatorBase : MonoBehaviour {
     [SerializeField]
     private bool _developerMode = false;
     [SerializeField]
-    private List<Component> _objectsToHide;
-    [SerializeField]
     private HideFlags _customHideFlags;
+    private Transform[] _objectsToHide;
 
     public virtual bool IsSetUpProperly() {
         return false;
@@ -30,6 +29,10 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     protected virtual void EnforceObjectStructure() {
 
+    }
+
+    protected virtual void Awake() {
+        _objectsToHide = GetComponentsInChildren<Transform>(true);
     }
 
     private void OnRenderObject() {
@@ -60,17 +63,15 @@ public abstract class SimulatorBase : MonoBehaviour {
     }
 
     protected void SetFlags(bool initialSetup = false) {
-        Debug.Log("SetFlags");
         if (_developerMode || initialSetup) {
-            Debug.Log("dev or initial setup");
-
             foreach (var target in _objectsToHide) {
                 target.gameObject.hideFlags = HideFlags.None;
             }
             return;
         }
-        foreach (var target in _objectsToHide) {
-            target.gameObject.hideFlags = _customHideFlags;
+        //we start at 1 because 0 is the parent
+        for (int i = 1; i < _objectsToHide.Length; i++) {
+            _objectsToHide[i].gameObject.hideFlags = _customHideFlags;
         }
     }
 }

@@ -70,7 +70,8 @@ public class Simulator : SimulatorBase {
 
     private FaceData.FaceMesh _faceMesh;
 
-    private void Awake() {
+    protected override void Awake() {
+        base.Awake();
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         mesh = new Mesh();
