@@ -16,12 +16,10 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     public Transform _filterObject;
 
-
-    [SerializeField]
-    private bool _developerMode = false;
     [SerializeField]
     private HideFlags _customHideFlags;
     private Transform[] _objectsToHide;
+    private bool _developerMode = false;
 
     public virtual bool IsSetUpProperly() {
         return false;
@@ -57,13 +55,14 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     }
 
-    [ContextMenu("Set Flags")]
+    [ContextMenu("Toggle Visibility")]
     protected void ContextMenu() {
-        SetFlags();
+        _developerMode = !_developerMode;
+        SetFlags(_developerMode);
     }
 
-    protected void SetFlags(bool initialSetup = false) {
-        if (_developerMode || initialSetup) {
+    protected void SetFlags(bool forceVisibility = false) {
+        if (forceVisibility) {
             foreach (var target in _objectsToHide) {
                 target.gameObject.hideFlags = HideFlags.None;
             }
