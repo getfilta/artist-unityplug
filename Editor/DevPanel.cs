@@ -125,7 +125,6 @@ namespace Filta {
 
         private void HandleSimulator() {
             if (!_activeSimulator) return;
-            EditorGUILayout.LabelField($"Filter Type: {_pluginInfo.filterType.ToString()}");
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
