@@ -75,12 +75,9 @@ namespace Filta {
         private async void OnEnable() {
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
+            EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
-            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
-            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
-                filterType = PluginInfo.FilterType.Body;
-            }
-            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType };
+            SetPluginInfo();
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
             } else {
@@ -92,6 +89,11 @@ namespace Filta {
                     GetFiltersOnQueue();
                 }
             }
+        }
+
+        private void HandleSceneChange(Scene oldScene, Scene newScene) {
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            SetPluginInfo();
         }
 
         private void FindSimulator(PlayModeStateChange stateChange) {
@@ -107,13 +109,23 @@ namespace Filta {
             }
         }
 
+        private void SetPluginInfo() {
+            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
+            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
+                filterType = PluginInfo.FilterType.Body;
+            }
+            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType };
+        }
+
         private void OnDisable() {
             EditorApplication.playModeStateChanged -= FindSimulator;
+            EditorSceneManager.activeSceneChangedInEditMode -= HandleSceneChange;
             DisposeQueue();
         }
 
         private void HandleSimulator() {
             if (!_activeSimulator) return;
+            EditorGUILayout.LabelField($"Filter Type: {_pluginInfo.filterType.ToString()}");
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
@@ -359,7 +371,6 @@ namespace Filta {
 
             EditorGUILayout.EndHorizontal();
             GUI.enabled = true;
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
 
         }
 
