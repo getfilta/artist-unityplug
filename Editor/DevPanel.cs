@@ -110,10 +110,9 @@ namespace Filta {
         }
 
         private void SetPluginInfo() {
-            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
-            if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
-                filterType = PluginInfo.FilterType.Body;
-            }
+            PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
+                ? PluginInfo.FilterType.Body
+                : PluginInfo.FilterType.Face;
             _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType };
         }
 
