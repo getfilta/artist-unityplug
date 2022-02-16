@@ -113,7 +113,7 @@ namespace Filta {
             PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
                 ? PluginInfo.FilterType.Body
                 : PluginInfo.FilterType.Face;
-            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType, resetOnRecord = false};
+            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType, resetOnRecord = false };
         }
 
         private void OnDisable() {
@@ -334,7 +334,7 @@ namespace Filta {
             }
             DrawUILine(Color.gray);
 
-            EditorGUILayout.LabelField(statusBar);
+            EditorGUILayout.LabelField(statusBar, s);
         }
 
         private void AdvancedSettings() {
@@ -643,10 +643,13 @@ namespace Filta {
             var response = www.downloadHandler.text;
             if (response.Contains("EMAIL_NOT_FOUND")) {
                 SetStatusMessage("Error: Email not found", true);
+                return;
             } else if (response.Contains("MISSING_PASSWORD")) {
                 SetStatusMessage("Error: Missing Password", true);
+                return;
             } else if (response.Contains("INVALID_PASSWORD")) {
                 SetStatusMessage("Error: Invalid Password", true);
+                return;
             } else if (response.Contains("idToken")) {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
                 SetStatusMessage("Login successful!");
@@ -803,11 +806,7 @@ namespace Filta {
         }
 
         private void SetStatusMessage(string message, bool isError = false) {
-            if (isError) {
-                s.normal.textColor = Color.red;
-                return;
-            }
-            s.normal.textColor = Color.white;
+            s.normal.textColor = isError ? Color.red : Color.white;
             statusBar = message;
         }
 
