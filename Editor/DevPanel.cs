@@ -560,9 +560,15 @@ namespace Filta {
         }
 
         private async void GetMasterReleaseInfo() {
-            UnityWebRequest req = UnityWebRequest.Get(releaseURL);
-            await req.SendWebRequest();
-            _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
+            try {
+                UnityWebRequest req = UnityWebRequest.Get(releaseURL);
+                await req.SendWebRequest();
+                _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
+            }
+            catch (Exception e) {
+                Debug.LogError(e.Message);
+            }
+            
         }
 
         private static ReleaseInfo GetLocalReleaseInfo() {
