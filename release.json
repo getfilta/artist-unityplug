@@ -4,8 +4,5 @@
     "pluginMajorVersion": 5,
     "pluginMinorVersion": 1
   },
-  "releaseNotes": [
-    "body tracking fixes",
-    "occlusion fixes"
-  ]
+  "releaseNotes": "body tracking fixes \n occlusion fixes"
 }
