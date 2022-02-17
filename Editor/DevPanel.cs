@@ -107,7 +107,13 @@ namespace Filta {
         }
 
         private void FindSimulator(PlayModeStateChange stateChange) {
+            _simulator = null;
+            _activeSimulator = false;
             _simulator = FindObjectOfType<SimulatorBase>();
+            if (_simulator == null) {
+                SetStatusMessage("Not a filter scene. Create a filter by selecting Create New Filter in the dev panel", true);
+                return;
+            }
             GameObject simulatorObject = _simulator.gameObject;
             if (_simulator != null) {
                 _activeSimulator = true;
@@ -120,6 +126,9 @@ namespace Filta {
         }
 
         private void SetPluginInfo() {
+            if (!_activeSimulator) {
+                return;
+            }
             PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
                 ? PluginInfo.FilterType.Body
                 : PluginInfo.FilterType.Face;
@@ -133,7 +142,6 @@ namespace Filta {
         }
 
         private void HandleSimulator() {
-            if (!_activeSimulator) return;
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
@@ -318,6 +326,10 @@ namespace Filta {
                     if (_activeSimulator) {
                         DrawUILine(Color.gray);
                         HandleSimulator();
+                        DrawUILine(Color.gray);
+                    }
+                    else {
+                        EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
                         DrawUILine(Color.gray);
                     }
                     EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
