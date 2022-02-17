@@ -415,6 +415,7 @@ public class Simulator : SimulatorBase {
         newFace.transform.parent = _facesHolder;
         newFace.transform.localPosition = Vector3.zero;
         newFace.transform.localRotation = Quaternion.identity;
+        newFace.GetComponent<MeshFilter>().sharedMesh = mesh;
         GetFaceMeshFilters();
         SetMeshTopology();
         return newFace;
@@ -456,7 +457,9 @@ public class Simulator : SimulatorBase {
 
             for (int i = 0; i < _faceMeshes.Count; i++) {
                 if (_faceMeshes[i] != null) {
-                    _faceMeshes[i].sharedMesh = mesh;
+                    if (_faceMeshes[i].sharedMesh == null || String.IsNullOrEmpty(_faceMeshes[i].sharedMesh.name)) {
+                        _faceMeshes[i].sharedMesh = mesh;
+                    }
                 }
             }
         }

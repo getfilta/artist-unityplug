@@ -2,7 +2,7 @@
   "version": {
     "pluginAppVersion": 1,
     "pluginMajorVersion": 5,
-    "pluginMinorVersion": 2
+    "pluginMinorVersion": 3
   },
-  "releaseNotes": "- Body tracking fixes \n- Occlusion fixes"
+  "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes."
 }
