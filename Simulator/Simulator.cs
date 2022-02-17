@@ -286,6 +286,12 @@ public class Simulator : SimulatorBase {
         isPlaying = true;
     }
 
+    public void ResetSimulator() {
+        Replay();
+        _pauseTime = 0;
+        Playback(0);
+    }
+
     private void Playback(long currentTime) {
         if (_recordingLength <= 0) {
             return;
@@ -319,9 +325,10 @@ public class Simulator : SimulatorBase {
                 //we haven't found the future yet. try the next one.
                 continue;
             }
+            var frameOffset = 1;
 
             if (i == 0) {
-                break;
+                frameOffset = 0;
             }
 
             if (_videoFeed != null && _frames.Count > i)
@@ -331,7 +338,7 @@ public class Simulator : SimulatorBase {
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
-            FaceData prevFaceData = _faceRecording.faceDatas[i - 1];
+            FaceData prevFaceData = _faceRecording.faceDatas[i - frameOffset];
             UpdateMasks(faceData, prevFaceData, currentTime);
 
             //Logic to implement blendshape manipulation
