@@ -4,5 +4,5 @@
     "pluginMajorVersion": 5,
     "pluginMinorVersion": 3
   },
-  "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes.\n NOTE: artists might need to recreate Face meshes in previous filters"
+  "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes."
 }
