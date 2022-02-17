@@ -210,7 +210,7 @@ namespace Filta {
 
         #region Bundle Queue
 
-        private Dictionary<string, Bundle> _bundles;
+        private Dictionary<string, Bundle> _bundles = new Dictionary<string, Bundle>();
         private EventSourceReader _evt;
         private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
@@ -522,6 +522,10 @@ namespace Filta {
             } catch {
                 SetStatusMessage("Error! Check console for more information", true);
                 Debug.LogError(response);
+                return;
+            }
+            if (_bundles.ContainsKey(parsed.artid)) {
+                SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
                 return;
             }
             _bundles.Add(parsed.artid, new Bundle { queue = 999, title = selectedArtTitle });
