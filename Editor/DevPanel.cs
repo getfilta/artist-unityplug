@@ -51,7 +51,7 @@ namespace Filta {
         //Plugin major version number.
         private const int pluginMajorVersion = 5;
         //Plugin minor version number.
-        private const int pluginMinorVersion = 1;
+        private const int pluginMinorVersion = 2;
 
 
         [MenuItem("Filta/Artist Panel")]
@@ -232,7 +232,7 @@ namespace Filta {
                         if (response.data is int queue) {
                             _bundles[paths[1]].queue = queue;
                         } else {
-                            SetStatusMessage($"{_bundles[paths[1]].title} successfully bundled!");
+                            SetStatusMessage($"{_bundles[paths[1]].title} successfully processed! (5/5)");
                             _bundles.Remove(paths[1]);
                         }
 
@@ -427,7 +427,7 @@ namespace Filta {
             if (CheckForUnreadableMeshes(filterObject)) {
                 return;
             }
-            SetStatusMessage("Generating asset bundles");
+            SetStatusMessage("Exporting... (1/5)");
             try {
                 if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                     _bodySimulator.PauseSimulator();
@@ -490,9 +490,8 @@ namespace Filta {
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
             assetBundlePath = $"{assetBundleDirectory}/filter";*/
-            SetStatusMessage("Asset bundle generated");
 
-            SetStatusMessage("Connecting...");
+            SetStatusMessage("Connecting... (2/5)");
             byte[] bytes = File.ReadAllBytes(pathToPackage);
             Hash128 hash = Hash128.Compute(bytes);
             /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
@@ -510,7 +509,7 @@ namespace Filta {
             postData.AddField("title", selectedArtTitle);
             var www = UnityWebRequest.Post(UPLOAD_URL, postData);
             await www.SendWebRequest();
-            SetStatusMessage("Connected! Uploading...");
+            SetStatusMessage("Connected! Uploading... (3/5)");
             var response = www.downloadHandler.text;
             UploadBundleResponse parsed;
             try {
@@ -525,7 +524,7 @@ namespace Filta {
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
-            SetStatusMessage("Upload successful");
+            SetStatusMessage("Upload successful. Processing... (4/5)");
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
