@@ -29,7 +29,7 @@ namespace Filta {
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
-        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
+        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/new-plugin-alert/release.json";
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
         private const string variantTempSave = "Assets/Filter.prefab";
