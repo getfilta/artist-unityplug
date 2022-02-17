@@ -54,10 +54,16 @@ namespace Filta {
         private const int pluginMinorVersion = 2;
 
 
-        [MenuItem("Filta/Artist Panel")]
-        static void Init() {
+        [MenuItem("Filta/Artist Panel (Dockable)")]
+        static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
+        }
+
+        [MenuItem("Filta/Artist Panel (Always On Top)")]
+        static void InitFloating() {
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
+            window.ShowUtility();
         }
 
         #region Simulator
