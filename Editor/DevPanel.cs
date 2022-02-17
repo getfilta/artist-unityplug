@@ -164,6 +164,8 @@ namespace Filta {
         }
 
         private void HandleFaceSimulator() {
+
+            EditorGUILayout.BeginHorizontal();
             if (_faceSimulator.isPlaying) {
                 if (GUILayout.Button("Stop")) {
                     _faceSimulator.PauseSimulator();
@@ -173,7 +175,10 @@ namespace Filta {
                     _faceSimulator.ResumeSimulator();
                 }
             }
-
+            if (GUILayout.Button("Reset")) {
+                _faceSimulator.ResetSimulator();
+            }
+            EditorGUILayout.EndHorizontal();
             _faceSimulator.showFaceMeshVisualiser =
                 EditorGUILayout.Toggle("Show Face Mesh Visualiser", _faceSimulator.showFaceMeshVisualiser);
             DrawUILine(Color.gray);
