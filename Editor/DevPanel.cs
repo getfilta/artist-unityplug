@@ -117,7 +117,7 @@ namespace Filta {
             PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
                 ? PluginInfo.FilterType.Body
                 : PluginInfo.FilterType.Face;
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType };
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false};
         }
 
         private void OnDisable() {
@@ -309,6 +309,9 @@ namespace Filta {
                         HandleSimulator();
                         DrawUILine(Color.gray);
                     }
+                    EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
+                    _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset Filter On Record", _pluginInfo.resetOnRecord);
+                    DrawUILine(Color.gray);
                     DisplayQueue();
                 }
 
@@ -936,6 +939,7 @@ namespace Filta {
         public enum FilterType { Face, Body }
         public int version;
         public FilterType filterType;
+        public bool resetOnRecord;
     }
 
     public class ReleaseInfo
