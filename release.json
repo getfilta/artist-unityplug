@@ -1,0 +1,8 @@
+{
+  "version": {
+    "pluginAppVersion": 1,
+    "pluginMajorVersion": 5,
+    "pluginMinorVersion": 2
+  },
+  "releaseNotes": "- Body tracking fixes \n- Occlusion fixes"
+}

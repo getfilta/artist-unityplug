@@ -11,6 +11,7 @@ using EvtSource;
 using Newtonsoft.Json;
 using Filta.Datatypes;
 using Newtonsoft.Json.Linq;
+using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using Object = System.Object;
@@ -28,6 +29,8 @@ namespace Filta {
         private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
+        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
+        private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
         private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
@@ -46,18 +49,22 @@ namespace Filta {
         private bool _watchingQueue;
         private GUIStyle s;
 
-        //Version number for changes in plugin that need accommodating on the app.
-        private const int pluginAppVersion = 1;
-        //Plugin major version number.
-        private const int pluginMajorVersion = 5;
-        //Plugin minor version number.
-        private const int pluginMinorVersion = 1;
+        private ReleaseInfo _masterReleaseInfo;
+        private ReleaseInfo _localReleaseInfo;
+        
+        private AddRequest _addRequest;
 
 
-        [MenuItem("Filta/Artist Panel")]
-        static void Init() {
+        [MenuItem("Filta/Artist Panel (Dockable)")]
+        static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
+        }
+
+        [MenuItem("Filta/Artist Panel (Always On Top)")]
+        static void InitFloating() {
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
+            window.ShowUtility();
         }
 
         #region Simulator
@@ -69,7 +76,8 @@ namespace Filta {
         private int _vertexNumber;
 
         private static string GetVersionNumber() {
-            return $"v{pluginAppVersion}.{pluginMajorVersion}.{pluginMinorVersion}";
+            ReleaseInfo releaseInfo = GetLocalReleaseInfo();
+            return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
         }
 
         private async void OnEnable() {
@@ -77,6 +85,7 @@ namespace Filta {
             EditorApplication.playModeStateChanged += FindSimulator;
             EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
             FindSimulator(PlayModeStateChange.EnteredEditMode);
+            _localReleaseInfo = GetLocalReleaseInfo();
             SetPluginInfo();
             if (loginData == null || String.IsNullOrEmpty(loginData.idToken)) {
                 await LoginAutomatic();
@@ -87,6 +96,7 @@ namespace Filta {
                 } else {
                     await GetPrivateCollection();
                     GetFiltersOnQueue();
+                    GetMasterReleaseInfo();
                 }
             }
         }
@@ -113,7 +123,7 @@ namespace Filta {
             PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
                 ? PluginInfo.FilterType.Body
                 : PluginInfo.FilterType.Face;
-            _pluginInfo = new PluginInfo { version = pluginAppVersion, filterType = filterType, resetOnRecord = false};
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false};
         }
 
         private void OnDisable() {
@@ -164,6 +174,8 @@ namespace Filta {
         }
 
         private void HandleFaceSimulator() {
+
+            EditorGUILayout.BeginHorizontal();
             if (_faceSimulator.isPlaying) {
                 if (GUILayout.Button("Stop")) {
                     _faceSimulator.PauseSimulator();
@@ -173,7 +185,10 @@ namespace Filta {
                     _faceSimulator.ResumeSimulator();
                 }
             }
-
+            if (GUILayout.Button("Reset")) {
+                _faceSimulator.ResetSimulator();
+            }
+            EditorGUILayout.EndHorizontal();
             _faceSimulator.showFaceMeshVisualiser =
                 EditorGUILayout.Toggle("Show Face Mesh Visualiser", _faceSimulator.showFaceMeshVisualiser);
             DrawUILine(Color.gray);
@@ -205,7 +220,7 @@ namespace Filta {
 
         #region Bundle Queue
 
-        private Dictionary<string, Bundle> _bundles;
+        private Dictionary<string, Bundle> _bundles = new Dictionary<string, Bundle>();
         private EventSourceReader _evt;
         private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
@@ -232,7 +247,7 @@ namespace Filta {
                         if (response.data is int queue) {
                             _bundles[paths[1]].queue = queue;
                         } else {
-                            SetStatusMessage($"{_bundles[paths[1]].title} successfully bundled!");
+                            SetStatusMessage($"{_bundles[paths[1]].title} successfully processed! (5/5)");
                             _bundles.Remove(paths[1]);
                         }
 
@@ -312,6 +327,7 @@ namespace Filta {
                 }
 
                 GUILayout.FlexibleSpace();
+                HandleNewPluginVersion();
                 AdvancedSettings();
                 GUILayout.EndScrollView();
 
@@ -330,22 +346,21 @@ namespace Filta {
                 EditorGUILayout.EndHorizontal();
             } else {
                 GUILayout.FlexibleSpace();
+                HandleNewPluginVersion();
                 AdvancedSettings();
             }
             DrawUILine(Color.gray);
 
-            EditorGUILayout.LabelField(statusBar);
+            EditorGUILayout.LabelField(statusBar, s);
         }
 
         private void AdvancedSettings() {
             runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
-            if (GUILayout.Button("Get latest plugin version")) {
-                UpdatePanel();
-            };
         }
 
         private void UpdatePanel() {
-            UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+            _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+            SetStatusMessage("Updating plugin! Please wait a while");
         }
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
             Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
@@ -379,7 +394,7 @@ namespace Filta {
             string templateSceneName = type == SimulatorBase.SimulatorType.Face
                 ? "templateScene.unity"
                 : "templateScene-body.unity";
-            string scenePath = $"Packages/com.getfilta.artist-unityplug/Core/{templateSceneName}";
+            string scenePath = $"{packagePath}/Core/{templateSceneName}";
             bool success;
             if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
                 AssetDatabase.CreateFolder("Assets", "Filters");
@@ -427,7 +442,7 @@ namespace Filta {
             if (CheckForUnreadableMeshes(filterObject)) {
                 return;
             }
-            SetStatusMessage("Generating asset bundles");
+            SetStatusMessage("Exporting... (1/5)");
             try {
                 if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                     _bodySimulator.PauseSimulator();
@@ -490,9 +505,8 @@ namespace Filta {
                                     BuildAssetBundleOptions.None,
                                     BuildTarget.iOS);
             assetBundlePath = $"{assetBundleDirectory}/filter";*/
-            SetStatusMessage("Asset bundle generated");
 
-            SetStatusMessage("Connecting...");
+            SetStatusMessage("Connecting... (2/5)");
             byte[] bytes = File.ReadAllBytes(pathToPackage);
             Hash128 hash = Hash128.Compute(bytes);
             /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
@@ -510,7 +524,7 @@ namespace Filta {
             postData.AddField("title", selectedArtTitle);
             var www = UnityWebRequest.Post(UPLOAD_URL, postData);
             await www.SendWebRequest();
-            SetStatusMessage("Connected! Uploading...");
+            SetStatusMessage("Connected! Uploading... (3/5)");
             var response = www.downloadHandler.text;
             UploadBundleResponse parsed;
             try {
@@ -520,14 +534,66 @@ namespace Filta {
                 Debug.LogError(response);
                 return;
             }
+            if (_bundles.ContainsKey(parsed.artid)) {
+                SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
+                return;
+            }
             _bundles.Add(parsed.artid, new Bundle { queue = 999, title = selectedArtTitle });
             UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
-            SetStatusMessage("Upload successful");
+            SetStatusMessage("Upload successful. Processing... (4/5)");
             AssetDatabase.DeleteAsset(variantTempSave);
         }
+        
+        private void HandleNewPluginVersion() {
+            if (_masterReleaseInfo == null || _localReleaseInfo == null) {
+                return;
+            }
+
+            if (_masterReleaseInfo.version.ToInt() > _localReleaseInfo.version.ToInt()) {
+                ReleaseInfo.Version masterVersion = _masterReleaseInfo.version;
+                GUILayout.Label(
+                    $"New plugin version available! v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}",
+                    EditorStyles.largeLabel);
+                GUILayout.Label(_localReleaseInfo.releaseNotes);
+                if (_addRequest != null && !_addRequest.IsCompleted) {
+                    GUI.enabled = false;
+                } 
+                else if(_addRequest != null && !_addRequest.IsCompleted) {
+                    SetStatusMessage("Successfully updated plugin");
+                    _addRequest = null;
+                }
+                else {
+                    GUI.enabled = true;
+                }
+                if (GUILayout.Button("Get latest plugin version")) {
+                    UpdatePanel();
+                }
+
+                GUI.enabled = true;
+            }
+        }
+
+        private async void GetMasterReleaseInfo() {
+            try {
+                UnityWebRequest req = UnityWebRequest.Get(releaseURL);
+                await req.SendWebRequest();
+                _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
+            }
+            catch (Exception e) {
+                Debug.LogError(e.Message);
+            }
+            
+        }
+
+        private static ReleaseInfo GetLocalReleaseInfo() {
+            string data = File.ReadAllText($"{packagePath}/release.json");
+            return JsonConvert.DeserializeObject<ReleaseInfo>(data);
+        }
+        
+        
 
         private void HandleOversizePackage(string[] path) {
             string[] pathNames = AssetDatabase.GetDependencies(path);
@@ -586,6 +652,7 @@ namespace Filta {
                 try {
                     await GetPrivateCollection();
                     GetFiltersOnQueue();
+                    GetMasterReleaseInfo();
                 } catch (Exception e) {
                     SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
                     Debug.LogError("Error downloading: " + e.Message);
@@ -643,10 +710,13 @@ namespace Filta {
             var response = www.downloadHandler.text;
             if (response.Contains("EMAIL_NOT_FOUND")) {
                 SetStatusMessage("Error: Email not found", true);
+                return;
             } else if (response.Contains("MISSING_PASSWORD")) {
                 SetStatusMessage("Error: Missing Password", true);
+                return;
             } else if (response.Contains("INVALID_PASSWORD")) {
                 SetStatusMessage("Error: Invalid Password", true);
+                return;
             } else if (response.Contains("idToken")) {
                 loginData = JsonUtility.FromJson<LoginResponse>(response);
                 SetStatusMessage("Login successful!");
@@ -659,6 +729,7 @@ namespace Filta {
                 try {
                     await GetPrivateCollection();
                     GetFiltersOnQueue();
+                    GetMasterReleaseInfo();
                 } catch (Exception e) {
                     SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
                     Debug.LogError("Error downloading: " + e.Message);
@@ -674,6 +745,11 @@ namespace Filta {
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
+                if (req.responseCode == 404) {
+                    Debug.LogWarning("No uploads found. User could be new or service is down.");
+                    SetStatusMessage("No uploads found", true);
+                    return;
+                }
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
@@ -803,11 +879,7 @@ namespace Filta {
         }
 
         private void SetStatusMessage(string message, bool isError = false) {
-            if (isError) {
-                s.normal.textColor = Color.red;
-                return;
-            }
-            s.normal.textColor = Color.white;
+            s.normal.textColor = isError ? Color.red : Color.white;
             statusBar = message;
         }
 
@@ -886,5 +958,21 @@ namespace Filta {
         public int version;
         public FilterType filterType;
         public bool resetOnRecord;
+    }
+
+    public class ReleaseInfo
+    {
+        public Version version;
+        public string releaseNotes;
+        public class Version
+        {
+            public int pluginAppVersion;
+            public int pluginMajorVersion;
+            public int pluginMinorVersion;
+
+            public int ToInt() {
+                return (pluginAppVersion * 100) + (pluginMajorVersion * 10) + (pluginMinorVersion);
+            }
+        }
     }
 }
