@@ -677,6 +677,11 @@ namespace Filta {
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
+                if (req.responseCode == 404) {
+                    Debug.LogWarning("No uploads found. User could be new or service is down.");
+                    SetStatusMessage("No uploads found", true);
+                    return;
+                }
                 if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                     throw new Exception(req.error.ToString());
                 }
