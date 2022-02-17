@@ -66,9 +66,6 @@ public class Simulator : SimulatorBase {
     private bool _skipFaceSimulator;
     private bool _skipFaceRecording;
 
-    //This is a random name for the mesh used for face meshes
-    private const string DefaultFaceMeshName = "DefaultFaceMesh-fdlndvfdvvvkdfm";
-
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
@@ -78,7 +75,6 @@ public class Simulator : SimulatorBase {
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         mesh = new Mesh();
-        mesh.name = DefaultFaceMeshName;
         isPlaying = true;
         _startTime = DateTime.Now;
         Debug.Log("Starting playback");
@@ -461,10 +457,9 @@ public class Simulator : SimulatorBase {
 
             for (int i = 0; i < _faceMeshes.Count; i++) {
                 if (_faceMeshes[i] != null) {
-                    if (_faceMeshes[i].sharedMesh.name != DefaultFaceMeshName) {
-                        continue;
+                    if (_faceMeshes[i].sharedMesh == null || String.IsNullOrEmpty(_faceMeshes[i].sharedMesh.name)) {
+                        _faceMeshes[i].sharedMesh = mesh;
                     }
-                    _faceMeshes[i].sharedMesh = mesh;
                 }
             }
         }
