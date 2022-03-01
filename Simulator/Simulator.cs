@@ -233,7 +233,10 @@ public class Simulator : SimulatorBase {
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
             handleStyle.normal.textColor = Color.white;
+            //Y offset is only needed for OSX
+#if UNITY_EDITOR_OSX
             handleStyle.contentOffset = new Vector2(0, _offsetY);
+#endif
             Handles.matrix = _faceMeshVisualiser.transform.localToWorldMatrix;
             for (int i = 0; i < _faceMesh.vertices.Count; i++) {
                 Handles.Label(_faceMesh.vertices[i], i.ToString(), handleStyle);
