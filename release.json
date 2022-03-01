@@ -2,7 +2,7 @@
   "version": {
     "pluginAppVersion": 1,
     "pluginMajorVersion": 5,
-    "pluginMinorVersion": 3
+    "pluginMinorVersion": 4
   },
-  "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes."
+  "releaseNotes": "- fix: vertex indices not in proper positions on windows platform"
 }
