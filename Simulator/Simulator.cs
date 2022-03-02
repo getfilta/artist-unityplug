@@ -49,6 +49,9 @@ public class Simulator : SimulatorBase {
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
+    [SerializeField]
+    private Mesh bounds;
+
     [NonSerialized]
     public bool isPlaying;
 
@@ -498,6 +501,8 @@ public class Simulator : SimulatorBase {
 
     public GameObject GenerateVertexTracker(int index) {
         GameObject vertex = new GameObject();
+        MeshFilter boundsFilter = vertex.AddComponent<MeshFilter>();
+        boundsFilter.mesh = bounds;
         VertexTracker vertexTracker = new VertexTracker { vertexIndex = index, holder = vertex };
         vertexTrackers.Add(vertexTracker);
         HandleVertexPairing();
