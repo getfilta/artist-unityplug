@@ -56,7 +56,7 @@ public class Simulator : SimulatorBase {
     public bool showVertexNumbers;
 
     [NonSerialized]
-    public bool showFaceMeshVisualiser = true;
+    public bool showFaceMeshVisualiser;
 
     [SerializeField]
     private RawImage _videoFeed;
