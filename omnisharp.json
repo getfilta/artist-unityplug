@@ -1,0 +1,20 @@
+{
+  "FormattingOptions": {
+    "NewLinesForBracesInLambdaExpressionBody": false,
+    "NewLinesForBracesInAnonymousMethods": false,
+    "NewLinesForBracesInAnonymousTypes": false,
+    "NewLinesForBracesInControlBlocks": false,
+    "NewLinesForBracesInTypes": false,
+    "NewLinesForBracesInMethods": false,
+    "NewLinesForBracesInProperties": false,
+    "NewLinesForBracesInObjectCollectionArrayInitializers": false,
+    "NewLinesForBracesInAccessors": false,
+    "NewLineForElse": false,
+    "NewLineForCatch": false,
+    "NewLineForFinally": false
+  },
+  "RoslynExtensionsOptions": {
+    "EnableAnalyzersSupport": true,
+    "LocationPaths": ["./NuGet/microsoft.unity.analyzers.1.10.0"]
+  }
+}
