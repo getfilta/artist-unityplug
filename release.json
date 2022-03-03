@@ -4,5 +4,5 @@
     "pluginMajorVersion": 5,
     "pluginMinorVersion": 4
   },
-  "releaseNotes": "- fix: vertex indices not in proper positions on windows platform"
+  "releaseNotes": "- fix: vertex indices not in proper positions on windows platform\n- fix: pressing f on trackers zooms in properly\n- feat: add warning when artists leave objects out of Filter object"
 }
