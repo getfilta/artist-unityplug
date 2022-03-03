@@ -642,11 +642,13 @@ namespace Filta {
                 //Check if it's the simulator, filter, main camera or it's inactive.
                 //This works under the assumption that artists wouldn't want a warning for disabled objects.
                 if (rootObjects[i] == _simulator.gameObject || rootObjects[i] == _simulator._filterObject.gameObject ||
-                    rootObjects[i] == Camera.main.gameObject || !rootObjects[i].activeSelf) {
+                    rootObjects[i] == Camera.main.gameObject) {
                     continue;
                 }
-
                 extraObjects += $"\n{rootObjects[i].name}";
+                if (!rootObjects[i].activeSelf) {
+                    extraObjects += " (inactive)";
+                }
             }
 
             if (!String.IsNullOrEmpty(extraObjects)) {
