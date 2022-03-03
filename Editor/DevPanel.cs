@@ -640,7 +640,7 @@ namespace Filta {
             string extraObjects = "";
             for (int i = 0; i < rootObjects.Count; i++) {
                 //Check if it's the simulator, filter, main camera or it's inactive.
-                //This works under the assumption that artists wouldn't want a warning for disabled objects.
+                //This works under the assumption that artists would still want to be warned even if object is disabled.
                 if (rootObjects[i] == _simulator.gameObject || rootObjects[i] == _simulator._filterObject.gameObject ||
                     rootObjects[i] == Camera.main.gameObject) {
                     continue;
