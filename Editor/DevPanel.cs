@@ -23,6 +23,7 @@ namespace Filta {
         private bool _stayLoggedIn;
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private string FUNC_LOCATION { get { return useTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
+        private string RTDB_URLBASE { get { return useTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
         private const string REFRESH_KEY = "RefreshToken";
         private const long UPLOAD_LIMIT = 100000000;
         private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
@@ -233,7 +234,7 @@ namespace Filta {
         private EventSourceReader _evt;
         private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
-            string getUrlQueue = $"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
+            string getUrlQueue = $"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
             UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
             await request.SendWebRequest();
             JObject results = JObject.Parse(request.downloadHandler.text);
@@ -247,7 +248,7 @@ namespace Filta {
         }
 
         private void ListenToQueue() {
-            _evt = new EventSourceReader(new Uri($"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
+            _evt = new EventSourceReader(new Uri($"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
             _evt.MessageReceived += (sender, e) => {
                 if (e.Event == "put") {
                     try {
