@@ -22,7 +22,8 @@ namespace Filta {
         private string password = "";
         private bool _stayLoggedIn;
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
-        private const string FUNC_LOCATION = "https://us-central1-filta-machina.cloudfunctions.net/";
+        private string FUNC_LOCATION { get { return useTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
+        private string RTDB_URLBASE { get { return useTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
         private const string REFRESH_KEY = "RefreshToken";
         private const long UPLOAD_LIMIT = 100000000;
         private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
@@ -31,11 +32,12 @@ namespace Filta {
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
-        private const string fbaseKey = "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
+        private string FIREBASE_APIKEY { get { return useTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
         private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
         private bool runLocally = false;
+        private bool useTestEnvironment = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
         private Vector2 leftScrollPosition;
@@ -51,7 +53,7 @@ namespace Filta {
 
         private ReleaseInfo _masterReleaseInfo;
         private ReleaseInfo _localReleaseInfo;
-        
+
         private AddRequest _addRequest;
 
 
@@ -132,7 +134,7 @@ namespace Filta {
             PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
                 ? PluginInfo.FilterType.Body
                 : PluginInfo.FilterType.Face;
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false};
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false };
         }
 
         private void OnDisable() {
@@ -232,7 +234,7 @@ namespace Filta {
         private EventSourceReader _evt;
         private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
-            string getUrlQueue = $"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
+            string getUrlQueue = $"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
             UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
             await request.SendWebRequest();
             JObject results = JObject.Parse(request.downloadHandler.text);
@@ -246,7 +248,7 @@ namespace Filta {
         }
 
         private void ListenToQueue() {
-            _evt = new EventSourceReader(new Uri($"https://filta-machina.firebaseio.com/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
+            _evt = new EventSourceReader(new Uri($"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
             _evt.MessageReceived += (sender, e) => {
                 if (e.Event == "put") {
                     try {
@@ -327,8 +329,7 @@ namespace Filta {
                         DrawUILine(Color.gray);
                         HandleSimulator();
                         DrawUILine(Color.gray);
-                    }
-                    else {
+                    } else {
                         EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
                         DrawUILine(Color.gray);
                     }
@@ -368,6 +369,15 @@ namespace Filta {
 
         private void AdvancedSettings() {
             runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
+            var logoutAndToggleUseTestEnv = GUILayout.Button($"(ADVANCED) Switch to {(useTestEnvironment ? "production" : "test")} environment (click will cause logout)");
+            if (logoutAndToggleUseTestEnv) {
+                useTestEnvironment = !useTestEnvironment;
+                password = "";
+                loginData = null;
+                PlayerPrefs.SetString(REFRESH_KEY, null);
+                PlayerPrefs.Save();
+                GUI.FocusControl(null);
+            }
         }
 
         private void UpdatePanel() {
@@ -539,12 +549,18 @@ namespace Filta {
             SetStatusMessage("Connected! Uploading... (3/5)");
             var response = www.downloadHandler.text;
             UploadBundleResponse parsed;
-            try {
-                parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
-            } catch {
-                SetStatusMessage("Error! Check console for more information", true);
-                Debug.LogError(response);
+            if (!string.IsNullOrEmpty(www.error)) {
+                SetStatusMessage($"Error Uploading: {www.error}");
+                Debug.LogError($"{response}:{www.error}");
                 return;
+            } else {
+                try {
+                    parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
+                } catch {
+                    SetStatusMessage("Error! Check console for more information", true);
+                    Debug.LogError(response);
+                    return;
+                }
             }
             if (_bundles.ContainsKey(parsed.artid)) {
                 SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
@@ -558,7 +574,7 @@ namespace Filta {
             SetStatusMessage("Upload successful. Processing... (4/5)");
             AssetDatabase.DeleteAsset(variantTempSave);
         }
-        
+
         private void HandleNewPluginVersion() {
             if (_masterReleaseInfo == null || _localReleaseInfo == null) {
                 return;
@@ -572,12 +588,10 @@ namespace Filta {
                 GUILayout.Label(_localReleaseInfo.releaseNotes);
                 if (_addRequest != null && !_addRequest.IsCompleted) {
                     GUI.enabled = false;
-                } 
-                else if(_addRequest != null && !_addRequest.IsCompleted) {
+                } else if (_addRequest != null && !_addRequest.IsCompleted) {
                     SetStatusMessage("Successfully updated plugin");
                     _addRequest = null;
-                }
-                else {
+                } else {
                     GUI.enabled = true;
                 }
                 if (GUILayout.Button("Get latest plugin version")) {
@@ -593,19 +607,18 @@ namespace Filta {
                 UnityWebRequest req = UnityWebRequest.Get(releaseURL);
                 await req.SendWebRequest();
                 _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Debug.LogError(e.Message);
             }
-            
+
         }
 
         private static ReleaseInfo GetLocalReleaseInfo() {
             string data = File.ReadAllText($"{packagePath}/release.json");
             return JsonConvert.DeserializeObject<ReleaseInfo>(data);
         }
-        
-        
+
+
 
         private void HandleOversizePackage(string[] path) {
             string[] pathNames = AssetDatabase.GetDependencies(path);
@@ -642,7 +655,7 @@ namespace Filta {
             WWWForm postData = new WWWForm();
             postData.AddField("grant_type", "refresh_token");
             postData.AddField("refresh_token", token);
-            UnityWebRequest www = UnityWebRequest.Post(refreshURL + fbaseKey, postData);
+            UnityWebRequest www = UnityWebRequest.Post(refreshURL + FIREBASE_APIKEY, postData);
             SetStatusMessage("Logging you in...");
             await www.SendWebRequest();
             _loggingIn = false;
@@ -714,7 +727,7 @@ namespace Filta {
             postData.AddField("email", email);
             postData.AddField("password", password);
             postData.AddField("returnSecureToken", "true");
-            var www = UnityWebRequest.Post(loginURL + fbaseKey, postData);
+            var www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
             SetStatusMessage("Connecting...");
 
             await www.SendWebRequest();
@@ -753,7 +766,7 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            string url = $"https://firestore.googleapis.com/v1/projects/filta-machina/databases/(default)/documents/priv_collection/{loginData.localId}";
+            string url = $"https://firestore.googleapis.com/v1/projects/{(useTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
@@ -972,12 +985,10 @@ namespace Filta {
         public bool resetOnRecord;
     }
 
-    public class ReleaseInfo
-    {
+    public class ReleaseInfo {
         public Version version;
         public string releaseNotes;
-        public class Version
-        {
+        public class Version {
             public int pluginAppVersion;
             public int pluginMajorVersion;
             public int pluginMinorVersion;
