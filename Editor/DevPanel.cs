@@ -460,8 +460,10 @@ namespace Filta {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
             }
-
             if (CheckForUnreadableMeshes(filterObject)) {
+                return;
+            }
+            if (CheckObjectsOutsideFilter()) {
                 return;
             }
             SetStatusMessage("Exporting... (1/5)");
@@ -642,6 +644,34 @@ namespace Filta {
             EditorUtility.DisplayDialog("Error",
                 $"Your filter is over {UPLOAD_LIMIT / 1000000}MB, please reduce the size. These are the files that might be causing this. {readout}",
                 "Ok");
+        }
+
+        private bool CheckObjectsOutsideFilter() {
+            Scene scene = SceneManager.GetActiveScene();
+            List<GameObject> rootObjects = new List<GameObject>(scene.rootCount);
+            scene.GetRootGameObjects(rootObjects);
+            string extraObjects = "";
+            for (int i = 0; i < rootObjects.Count; i++) {
+                //Check if it's the simulator, filter, main camera or it's inactive.
+                //This works under the assumption that artists would still want to be warned even if object is disabled.
+                if (rootObjects[i] == _simulator.gameObject || rootObjects[i] == _simulator._filterObject.gameObject ||
+                    rootObjects[i] == Camera.main.gameObject) {
+                    continue;
+                }
+                extraObjects += $"\n{rootObjects[i].name}";
+                if (!rootObjects[i].activeSelf) {
+                    extraObjects += " (inactive)";
+                }
+            }
+
+            if (!String.IsNullOrEmpty(extraObjects)) {
+                EditorUtility.DisplayDialog("Warning",
+                    $"There are some gameObjects in the scene that aren't children of the Filter object. They will not be included in your filter. Here's a list. {extraObjects}\nDo you wish to proceed?",
+                    "Continue", "Cancel");
+                return true;
+            }
+
+            return false;
         }
 
         private async Task<bool> LoginAutomatic() {

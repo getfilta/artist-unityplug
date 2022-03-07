@@ -49,6 +49,9 @@ public class Simulator : SimulatorBase {
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
+    [SerializeField]
+    private Mesh bounds;
+
     [NonSerialized]
     public bool isPlaying;
 
@@ -56,7 +59,7 @@ public class Simulator : SimulatorBase {
     public bool showVertexNumbers;
 
     [NonSerialized]
-    public bool showFaceMeshVisualiser = true;
+    public bool showFaceMeshVisualiser;
 
     [SerializeField]
     private RawImage _videoFeed;
@@ -233,7 +236,10 @@ public class Simulator : SimulatorBase {
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
             handleStyle.normal.textColor = Color.white;
+            //Y offset is only needed for OSX
+#if UNITY_EDITOR_OSX
             handleStyle.contentOffset = new Vector2(0, _offsetY);
+#endif
             Handles.matrix = _faceMeshVisualiser.transform.localToWorldMatrix;
             for (int i = 0; i < _faceMesh.vertices.Count; i++) {
                 Handles.Label(_faceMesh.vertices[i], i.ToString(), handleStyle);
@@ -495,6 +501,8 @@ public class Simulator : SimulatorBase {
 
     public GameObject GenerateVertexTracker(int index) {
         GameObject vertex = new GameObject();
+        MeshFilter boundsFilter = vertex.AddComponent<MeshFilter>();
+        boundsFilter.mesh = bounds;
         VertexTracker vertexTracker = new VertexTracker { vertexIndex = index, holder = vertex };
         vertexTrackers.Add(vertexTracker);
         HandleVertexPairing();

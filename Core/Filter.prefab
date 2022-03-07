@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1227345090432911023}
+  - component: {fileID: 9119977142836294204}
   m_Layer: 0
   m_Name: Faces
   m_TagString: Untagged
@@ -31,6 +32,14 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &9119977142836294204
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 743779218448092938}
+  m_Mesh: {fileID: 1017558197362468757, guid: c078524773c7a489687e9eb8684389a5, type: 3}
 --- !u!1 &5793920084510438091
 GameObject:
   m_ObjectHideFlags: 0
@@ -40,6 +49,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5793920084510438092}
+  - component: {fileID: 114721478519627452}
   m_Layer: 0
   m_Name: RightEyeTracker
   m_TagString: Untagged
@@ -62,6 +72,14 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &114721478519627452
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5793920084510438091}
+  m_Mesh: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
 --- !u!1 &5793920084659739305
 GameObject:
   m_ObjectHideFlags: 0
@@ -71,6 +89,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5793920084659739306}
+  - component: {fileID: 8868411686954544823}
   m_Layer: 0
   m_Name: LeftEyeTracker
   m_TagString: Untagged
@@ -93,6 +112,14 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &8868411686954544823
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5793920084659739305}
+  m_Mesh: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
 --- !u!1 &5793920085351626496
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,6 +166,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5793920085441729464}
+  - component: {fileID: 547698800962560928}
   m_Layer: 0
   m_Name: NoseBridgeTracker
   m_TagString: Untagged
@@ -161,6 +189,14 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &547698800962560928
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5793920085441729447}
+  m_Mesh: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
 --- !u!1 &5944243049912973014
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,6 +206,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8334740255424572145}
+  - component: {fileID: 3039456073809649961}
   m_Layer: 0
   m_Name: Vertices
   m_TagString: Untagged
@@ -192,6 +229,14 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3039456073809649961
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5944243049912973014}
+  m_Mesh: {fileID: 1017558197362468757, guid: c078524773c7a489687e9eb8684389a5, type: 3}
 --- !u!1 &6832660465685105016
 GameObject:
   m_ObjectHideFlags: 0
@@ -233,6 +278,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1507604817244997749}
+  - component: {fileID: 773723967862845241}
   m_Layer: 0
   m_Name: FaceMasks
   m_TagString: Untagged
@@ -255,3 +301,11 @@ Transform:
   m_Father: {fileID: 5793920085351626497}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &773723967862845241
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6997269289296679575}
+  m_Mesh: {fileID: 1017558197362468757, guid: c078524773c7a489687e9eb8684389a5, type: 3}
