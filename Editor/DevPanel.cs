@@ -429,10 +429,14 @@ namespace Filta {
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Create Face Filter")) {
                 CreateScene(SimulatorBase.SimulatorType.Face);
+                _sceneName = "";
+                GUI.FocusControl(null);
             }
 
             if (GUILayout.Button("Create Body Filter ")) {
                 CreateScene(SimulatorBase.SimulatorType.Body);
+                _sceneName = "";
+                GUI.FocusControl(null);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -469,8 +473,8 @@ namespace Filta {
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-
-            bool assetBundleButton = GUILayout.Button($"Upload your filter to Filta");
+            string buttonTitle = selectedArtKey == "temp" ? "Upload new filter to Filta" : "Update your filta";
+            bool assetBundleButton = GUILayout.Button(buttonTitle);
             if (!assetBundleButton) { return; }
             if (DateTime.Now > _expiryTime) {
                 loginData = null;
@@ -773,6 +777,7 @@ namespace Filta {
             postData.AddField("returnSecureToken", "true");
             var www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
             password = "";
+            GUI.FocusControl(null);
             SetStatusMessage("Connecting...");
 
             await www.SendWebRequest();
