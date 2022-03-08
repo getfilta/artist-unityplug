@@ -22,22 +22,20 @@ namespace Filta {
         private string password = "";
         private bool _stayLoggedIn;
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
-        private string FUNC_LOCATION { get { return useTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
-        private string RTDB_URLBASE { get { return useTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
+        private string FUNC_LOCATION { get { return UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
+        private string RTDB_URLBASE { get { return UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
         private const string REFRESH_KEY = "RefreshToken";
         private const long UPLOAD_LIMIT = 100000000;
-        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
-        private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
+        private string UPLOAD_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
+        private string DELETE_PRIV_ART_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
-        private string FIREBASE_APIKEY { get { return useTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
+        private string FIREBASE_APIKEY { get { return UseTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
         private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-        private bool runLocally = false;
-        private bool useTestEnvironment = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
         private Vector2 leftScrollPosition;
@@ -56,17 +54,63 @@ namespace Filta {
 
         private AddRequest _addRequest;
 
-
-        [MenuItem("Filta/Artist Panel (Dockable)")]
+        [MenuItem("Filta/Artist Panel (Dockable)", false, 0)]
         static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
         }
 
-        [MenuItem("Filta/Artist Panel (Always On Top)")]
+        [MenuItem("Filta/Artist Panel (Always On Top)", false, 1)]
         static void InitFloating() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.ShowUtility();
+        }
+
+        [MenuItem("Filta/Log Out", false, 5)]
+        static void LogOut() {
+            loginData = null;
+            PlayerPrefs.SetString(REFRESH_KEY, null);
+            PlayerPrefs.Save();
+            GUI.FocusControl(null);
+        }
+
+        private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
+        private const string RunLocallySetting = "Filta_RunLocally";
+
+        public static bool RunLocally {
+            get { return EditorPrefs.GetBool(RunLocallySetting, false); }
+            set { EditorPrefs.SetBool(RunLocallySetting, value); }
+        }
+
+        [MenuItem(RunLocallyMenuName, false, 30)]
+        private static void ToggleRunLocally() {
+            RunLocally = !RunLocally;
+        }
+
+        [MenuItem(RunLocallyMenuName, true, 30)]
+        private static bool ToggleRunLocallyValidate() {
+            Menu.SetChecked(RunLocallyMenuName, RunLocally);
+            return true;
+        }
+
+        private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
+        private const string TestEnvirSetting = "Filta_TestEnvir";
+
+        public static bool UseTestEnvironment {
+            get { return EditorPrefs.GetBool(TestEnvirSetting, false); }
+            set { EditorPrefs.SetBool(TestEnvirSetting, value); }
+        }
+
+        [MenuItem(TestEnvirMenuName, false, 30)]
+        private static void ToggleTestEnvir() {
+            LogOut();
+            UseTestEnvironment = !UseTestEnvironment;
+        }
+
+        [MenuItem(TestEnvirMenuName, true, 30)]
+        private static bool ToggleTestEnvirValidate() {
+            Menu.SetChecked(TestEnvirMenuName, UseTestEnvironment);
+            return true;
         }
 
         #region Simulator
@@ -341,7 +385,6 @@ namespace Filta {
 
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
-                AdvancedSettings();
                 GUILayout.EndScrollView();
 
                 rightScrollPosition = GUILayout.BeginScrollView(rightScrollPosition);
@@ -354,30 +397,15 @@ namespace Filta {
                     }
                 }
                 GUILayout.FlexibleSpace();
-                Logout();
                 GUILayout.EndScrollView();
                 EditorGUILayout.EndHorizontal();
             } else {
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
-                AdvancedSettings();
             }
             DrawUILine(Color.gray);
 
             EditorGUILayout.LabelField(statusBar, s);
-        }
-
-        private void AdvancedSettings() {
-            runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
-            var logoutAndToggleUseTestEnv = GUILayout.Button($"(ADVANCED) Switch to {(useTestEnvironment ? "production" : "test")} environment (click will cause logout)");
-            if (logoutAndToggleUseTestEnv) {
-                useTestEnvironment = !useTestEnvironment;
-                password = "";
-                loginData = null;
-                PlayerPrefs.SetString(REFRESH_KEY, null);
-                PlayerPrefs.Save();
-                GUI.FocusControl(null);
-            }
         }
 
         private void UpdatePanel() {
@@ -720,20 +748,6 @@ namespace Filta {
             return success;
         }
 
-        private void Logout() {
-            if (isLoggedIn()) {
-                DrawUILine(Color.gray);
-                bool logout = GUILayout.Button("Logout");
-                if (logout) {
-                    password = "";
-                    loginData = null;
-                    PlayerPrefs.SetString(REFRESH_KEY, null);
-                    PlayerPrefs.Save();
-                    GUI.FocusControl(null);
-                }
-            }
-        }
-
         private bool isLoggedIn() {
             return loginData != null && !String.IsNullOrEmpty(loginData.idToken);
         }
@@ -758,6 +772,7 @@ namespace Filta {
             postData.AddField("password", password);
             postData.AddField("returnSecureToken", "true");
             var www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
+            password = "";
             SetStatusMessage("Connecting...");
 
             await www.SendWebRequest();
@@ -796,7 +811,7 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            string url = $"https://firestore.googleapis.com/v1/projects/{(useTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
+            string url = $"https://firestore.googleapis.com/v1/projects/{(UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
