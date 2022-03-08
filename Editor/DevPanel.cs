@@ -21,6 +21,8 @@ namespace Filta {
         private string email = "";
         private string password = "";
         private bool _stayLoggedIn;
+        private int _selectedTab = 0;
+        private string[] _toolbarTitles = { "Simulator", "Uploader" };
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
         private string FUNC_LOCATION { get { return UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
         private string RTDB_URLBASE { get { return UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
@@ -38,8 +40,8 @@ namespace Filta {
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
-        private Vector2 leftScrollPosition;
-        private Vector2 rightScrollPosition;
+        private Vector2 simulatorScrollPosition;
+        private Vector2 uploaderScrollPosition;
 
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
@@ -365,40 +367,15 @@ namespace Filta {
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
-                EditorGUILayout.BeginHorizontal();
-                leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
-                if (loginData != null && loginData.idToken != "") {
-                    CreateNewScene();
-                    if (_activeSimulator) {
-                        DrawUILine(Color.gray);
-                        HandleSimulator();
-                        DrawUILine(Color.gray);
-                    } else {
-                        EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                        DrawUILine(Color.gray);
-                    }
-                    EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
-                    _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset Filter On Record", _pluginInfo.resetOnRecord);
-                    DrawUILine(Color.gray);
-                    DisplayQueue();
+                _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
+                switch (_selectedTab) {
+                    case 0:
+                        DrawSimulator();
+                        break;
+                    case 1:
+                        DrawUploader();
+                        break;
                 }
-
-                GUILayout.FlexibleSpace();
-                HandleNewPluginVersion();
-                GUILayout.EndScrollView();
-
-                rightScrollPosition = GUILayout.BeginScrollView(rightScrollPosition);
-
-                if (loginData != null && loginData.idToken != "") {
-                    if (selectedArtKey != "") {
-                        SelectedArt();
-                    } else {
-                        PrivateCollection();
-                    }
-                }
-                GUILayout.FlexibleSpace();
-                GUILayout.EndScrollView();
-                EditorGUILayout.EndHorizontal();
             } else {
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
@@ -406,6 +383,43 @@ namespace Filta {
             DrawUILine(Color.gray);
 
             EditorGUILayout.LabelField(statusBar, s);
+        }
+
+        private void DrawSimulator() {
+            simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
+            if (loginData != null && loginData.idToken != "") {
+                CreateNewScene();
+                if (_activeSimulator) {
+                    DrawUILine(Color.gray);
+                    HandleSimulator();
+                    DrawUILine(Color.gray);
+                } else {
+                    EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
+                    DrawUILine(Color.gray);
+                }
+                EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
+                _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset Filter On Record", _pluginInfo.resetOnRecord);
+                DrawUILine(Color.gray);
+                DisplayQueue();
+            }
+
+            GUILayout.FlexibleSpace();
+            HandleNewPluginVersion();
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawUploader() {
+            uploaderScrollPosition = GUILayout.BeginScrollView(uploaderScrollPosition);
+
+            if (loginData != null && loginData.idToken != "") {
+                if (selectedArtKey != "") {
+                    SelectedArt();
+                } else {
+                    PrivateCollection();
+                }
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndScrollView();
         }
 
         private void UpdatePanel() {
