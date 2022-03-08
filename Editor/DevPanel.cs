@@ -232,7 +232,7 @@ namespace Filta {
 
         private void SetButtonColor(bool isRed) {
             _normalBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = isRed ? Color.red : Color.green;
+            GUI.backgroundColor = isRed ? Color.magenta : Color.green;
         }
 
         private void ResetButtonColor() {
