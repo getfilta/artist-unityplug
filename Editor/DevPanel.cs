@@ -50,6 +50,7 @@ namespace Filta {
         private static DateTime _expiryTime;
         private bool _watchingQueue;
         private GUIStyle s;
+        private Color _normalBackgroundColor;
 
         private ReleaseInfo _masterReleaseInfo;
         private ReleaseInfo _localReleaseInfo;
@@ -213,7 +214,7 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(true);
                 }
                 if (_bodySimulator.isPlaying) {
-                    if (GUILayout.Button("Stop")) {
+                    if (GUILayout.Button("Pause")) {
                         _bodySimulator.PauseSimulator();
                     }
                 } else {
@@ -229,11 +230,20 @@ namespace Filta {
 
         }
 
+        private void SetButtonColor(bool isRed) {
+            _normalBackgroundColor = GUI.backgroundColor;
+            GUI.backgroundColor = isRed ? Color.red : Color.green;
+        }
+
+        private void ResetButtonColor() {
+            GUI.backgroundColor = _normalBackgroundColor;
+        }
+
         private void HandleFaceSimulator() {
 
             EditorGUILayout.BeginHorizontal();
             if (_faceSimulator.isPlaying) {
-                if (GUILayout.Button("Stop")) {
+                if (GUILayout.Button("Pause")) {
                     _faceSimulator.PauseSimulator();
                 }
             } else {
@@ -245,8 +255,13 @@ namespace Filta {
                 _faceSimulator.ResetSimulator();
             }
             EditorGUILayout.EndHorizontal();
-            _faceSimulator.showFaceMeshVisualiser =
-                EditorGUILayout.Toggle("Show Face Mesh Visualiser", _faceSimulator.showFaceMeshVisualiser);
+
+            string visualizerButtonTitle = _faceSimulator.showFaceMeshVisualiser ? "Hide Face Mesh Visualiser" : "Show Face Mesh Visualiser";
+            SetButtonColor(_faceSimulator.showFaceMeshVisualiser);
+            if (GUILayout.Button(visualizerButtonTitle)) {
+                _faceSimulator.showFaceMeshVisualiser = !_faceSimulator.showFaceMeshVisualiser;
+            }
+            ResetButtonColor();
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Vertex Trackers", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
@@ -263,7 +278,12 @@ namespace Filta {
                 EditorGUI.FocusTextInControl(null);
             }
             EditorGUILayout.EndHorizontal();
-            _faceSimulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _faceSimulator.showVertexNumbers);
+            SetButtonColor(_faceSimulator.showVertexNumbers);
+            string vertexIndexButtonTitle = _faceSimulator.showVertexNumbers ? "Hide Vertex Index" : "Show Vertex Index";
+            if (GUILayout.Button(vertexIndexButtonTitle)) {
+                _faceSimulator.showVertexNumbers = !_faceSimulator.showVertexNumbers;
+            }
+            ResetButtonColor();
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Face Mesh", EditorStyles.boldLabel);
             if (GUILayout.Button("Create")) {
@@ -398,7 +418,10 @@ namespace Filta {
                     DrawUILine(Color.gray);
                 }
                 EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
-                _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset Filter On Record", _pluginInfo.resetOnRecord);
+                float originalValue = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = 215;
+                _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
+                EditorGUIUtility.labelWidth = originalValue;
                 DrawUILine(Color.gray);
                 DisplayQueue();
             }
