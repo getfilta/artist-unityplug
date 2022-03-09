@@ -21,27 +21,27 @@ namespace Filta {
         private string email = "";
         private string password = "";
         private bool _stayLoggedIn;
+        private int _selectedTab = 0;
+        private string[] _toolbarTitles = { "Simulator", "Uploader" };
         private const string TEST_FUNC_LOCATION = "http://localhost:5000/filta-machina/us-central1/";
-        private string FUNC_LOCATION { get { return useTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
-        private string RTDB_URLBASE { get { return useTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
+        private string FUNC_LOCATION { get { return UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
+        private string RTDB_URLBASE { get { return UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
         private const string REFRESH_KEY = "RefreshToken";
         private const long UPLOAD_LIMIT = 100000000;
-        private string UPLOAD_URL { get { return runLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
-        private string DELETE_PRIV_ART_URL { get { return runLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
+        private string UPLOAD_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
+        private string DELETE_PRIV_ART_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
-        private string FIREBASE_APIKEY { get { return useTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
+        private string FIREBASE_APIKEY { get { return UseTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
         private const string variantTempSave = "Assets/Filter.prefab";
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-        private bool runLocally = false;
-        private bool useTestEnvironment = false;
         private string selectedArtTitle = "";
         private string selectedArtKey = "";
-        private Vector2 leftScrollPosition;
-        private Vector2 rightScrollPosition;
+        private Vector2 simulatorScrollPosition;
+        private Vector2 uploaderScrollPosition;
 
         private Dictionary<string, ArtMeta> privateCollection = new Dictionary<string, ArtMeta>();
         private static LoginResponse loginData;
@@ -50,23 +50,70 @@ namespace Filta {
         private static DateTime _expiryTime;
         private bool _watchingQueue;
         private GUIStyle s;
+        private Color _normalBackgroundColor;
 
         private ReleaseInfo _masterReleaseInfo;
         private ReleaseInfo _localReleaseInfo;
 
         private AddRequest _addRequest;
 
-
-        [MenuItem("Filta/Artist Panel (Dockable)")]
+        [MenuItem("Filta/Artist Panel (Dockable)", false, 0)]
         static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.Show();
         }
 
-        [MenuItem("Filta/Artist Panel (Always On Top)")]
+        [MenuItem("Filta/Artist Panel (Always On Top)", false, 1)]
         static void InitFloating() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.ShowUtility();
+        }
+
+        [MenuItem("Filta/Log Out", false, 5)]
+        static void LogOut() {
+            loginData = null;
+            PlayerPrefs.SetString(REFRESH_KEY, null);
+            PlayerPrefs.Save();
+            GUI.FocusControl(null);
+        }
+
+        private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
+        private const string RunLocallySetting = "Filta_RunLocally";
+
+        public static bool RunLocally {
+            get { return EditorPrefs.GetBool(RunLocallySetting, false); }
+            set { EditorPrefs.SetBool(RunLocallySetting, value); }
+        }
+
+        [MenuItem(RunLocallyMenuName, false, 30)]
+        private static void ToggleRunLocally() {
+            RunLocally = !RunLocally;
+        }
+
+        [MenuItem(RunLocallyMenuName, true, 30)]
+        private static bool ToggleRunLocallyValidate() {
+            Menu.SetChecked(RunLocallyMenuName, RunLocally);
+            return true;
+        }
+
+        private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
+        private const string TestEnvirSetting = "Filta_TestEnvir";
+
+        public static bool UseTestEnvironment {
+            get { return EditorPrefs.GetBool(TestEnvirSetting, false); }
+            set { EditorPrefs.SetBool(TestEnvirSetting, value); }
+        }
+
+        [MenuItem(TestEnvirMenuName, false, 30)]
+        private static void ToggleTestEnvir() {
+            LogOut();
+            UseTestEnvironment = !UseTestEnvironment;
+        }
+
+        [MenuItem(TestEnvirMenuName, true, 30)]
+        private static bool ToggleTestEnvirValidate() {
+            Menu.SetChecked(TestEnvirMenuName, UseTestEnvironment);
+            return true;
         }
 
         #region Simulator
@@ -167,7 +214,7 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(true);
                 }
                 if (_bodySimulator.isPlaying) {
-                    if (GUILayout.Button("Stop")) {
+                    if (GUILayout.Button("Pause")) {
                         _bodySimulator.PauseSimulator();
                     }
                 } else {
@@ -183,11 +230,20 @@ namespace Filta {
 
         }
 
+        private void SetButtonColor(bool isRed) {
+            _normalBackgroundColor = GUI.backgroundColor;
+            GUI.backgroundColor = isRed ? Color.magenta : Color.green;
+        }
+
+        private void ResetButtonColor() {
+            GUI.backgroundColor = _normalBackgroundColor;
+        }
+
         private void HandleFaceSimulator() {
 
             EditorGUILayout.BeginHorizontal();
             if (_faceSimulator.isPlaying) {
-                if (GUILayout.Button("Stop")) {
+                if (GUILayout.Button("Pause")) {
                     _faceSimulator.PauseSimulator();
                 }
             } else {
@@ -199,8 +255,13 @@ namespace Filta {
                 _faceSimulator.ResetSimulator();
             }
             EditorGUILayout.EndHorizontal();
-            _faceSimulator.showFaceMeshVisualiser =
-                EditorGUILayout.Toggle("Show Face Mesh Visualiser", _faceSimulator.showFaceMeshVisualiser);
+
+            string visualizerButtonTitle = _faceSimulator.showFaceMeshVisualiser ? "Hide Face Mesh Visualiser" : "Show Face Mesh Visualiser";
+            SetButtonColor(_faceSimulator.showFaceMeshVisualiser);
+            if (GUILayout.Button(visualizerButtonTitle)) {
+                _faceSimulator.showFaceMeshVisualiser = !_faceSimulator.showFaceMeshVisualiser;
+            }
+            ResetButtonColor();
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Vertex Trackers", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
@@ -217,7 +278,12 @@ namespace Filta {
                 EditorGUI.FocusTextInControl(null);
             }
             EditorGUILayout.EndHorizontal();
-            _faceSimulator.showVertexNumbers = EditorGUILayout.Toggle("Show Vertex Index", _faceSimulator.showVertexNumbers);
+            SetButtonColor(_faceSimulator.showVertexNumbers);
+            string vertexIndexButtonTitle = _faceSimulator.showVertexNumbers ? "Hide Vertex Index" : "Show Vertex Index";
+            if (GUILayout.Button(vertexIndexButtonTitle)) {
+                _faceSimulator.showVertexNumbers = !_faceSimulator.showVertexNumbers;
+            }
+            ResetButtonColor();
             DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Create Face Mesh", EditorStyles.boldLabel);
             if (GUILayout.Button("Create")) {
@@ -321,63 +387,62 @@ namespace Filta {
         void OnGUI() {
             Login();
             if (isLoggedIn()) {
-                EditorGUILayout.BeginHorizontal();
-                leftScrollPosition = GUILayout.BeginScrollView(leftScrollPosition);
-                if (loginData != null && loginData.idToken != "") {
-                    CreateNewScene();
-                    if (_activeSimulator) {
-                        DrawUILine(Color.gray);
-                        HandleSimulator();
-                        DrawUILine(Color.gray);
-                    } else {
-                        EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                        DrawUILine(Color.gray);
-                    }
-                    EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
-                    _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset Filter On Record", _pluginInfo.resetOnRecord);
-                    DrawUILine(Color.gray);
-                    DisplayQueue();
+                _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
+                switch (_selectedTab) {
+                    case 0:
+                        DrawSimulator();
+                        break;
+                    case 1:
+                        DrawUploader();
+                        break;
                 }
-
-                GUILayout.FlexibleSpace();
-                HandleNewPluginVersion();
-                AdvancedSettings();
-                GUILayout.EndScrollView();
-
-                rightScrollPosition = GUILayout.BeginScrollView(rightScrollPosition);
-
-                if (loginData != null && loginData.idToken != "") {
-                    if (selectedArtKey != "") {
-                        SelectedArt();
-                    } else {
-                        PrivateCollection();
-                    }
-                }
-                GUILayout.FlexibleSpace();
-                Logout();
-                GUILayout.EndScrollView();
-                EditorGUILayout.EndHorizontal();
             } else {
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
-                AdvancedSettings();
             }
             DrawUILine(Color.gray);
 
             EditorGUILayout.LabelField(statusBar, s);
         }
 
-        private void AdvancedSettings() {
-            runLocally = GUILayout.Toggle(runLocally, "(ADVANCED) Use local firebase host");
-            var logoutAndToggleUseTestEnv = GUILayout.Button($"(ADVANCED) Switch to {(useTestEnvironment ? "production" : "test")} environment (click will cause logout)");
-            if (logoutAndToggleUseTestEnv) {
-                useTestEnvironment = !useTestEnvironment;
-                password = "";
-                loginData = null;
-                PlayerPrefs.SetString(REFRESH_KEY, null);
-                PlayerPrefs.Save();
-                GUI.FocusControl(null);
+        private void DrawSimulator() {
+            simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
+            if (loginData != null && loginData.idToken != "") {
+                CreateNewScene();
+                if (_activeSimulator) {
+                    DrawUILine(Color.gray);
+                    HandleSimulator();
+                    DrawUILine(Color.gray);
+                } else {
+                    EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
+                    DrawUILine(Color.gray);
+                }
+                EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
+                float originalValue = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = 215;
+                _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
+                EditorGUIUtility.labelWidth = originalValue;
+                DrawUILine(Color.gray);
+                DisplayQueue();
             }
+
+            GUILayout.FlexibleSpace();
+            HandleNewPluginVersion();
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawUploader() {
+            uploaderScrollPosition = GUILayout.BeginScrollView(uploaderScrollPosition);
+
+            if (loginData != null && loginData.idToken != "") {
+                if (selectedArtKey != "") {
+                    SelectedArt();
+                } else {
+                    PrivateCollection();
+                }
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndScrollView();
         }
 
         private void UpdatePanel() {
@@ -401,10 +466,14 @@ namespace Filta {
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Create Face Filter")) {
                 CreateScene(SimulatorBase.SimulatorType.Face);
+                _sceneName = "";
+                GUI.FocusControl(null);
             }
 
             if (GUILayout.Button("Create Body Filter ")) {
                 CreateScene(SimulatorBase.SimulatorType.Body);
+                _sceneName = "";
+                GUI.FocusControl(null);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -441,8 +510,8 @@ namespace Filta {
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-
-            bool assetBundleButton = GUILayout.Button($"Upload your filter to Filta");
+            string buttonTitle = selectedArtKey == "temp" ? "Upload new filter to Filta" : "Update your filta";
+            bool assetBundleButton = GUILayout.Button(buttonTitle);
             if (!assetBundleButton) { return; }
             if (DateTime.Now > _expiryTime) {
                 loginData = null;
@@ -720,20 +789,6 @@ namespace Filta {
             return success;
         }
 
-        private void Logout() {
-            if (isLoggedIn()) {
-                DrawUILine(Color.gray);
-                bool logout = GUILayout.Button("Logout");
-                if (logout) {
-                    password = "";
-                    loginData = null;
-                    PlayerPrefs.SetString(REFRESH_KEY, null);
-                    PlayerPrefs.Save();
-                    GUI.FocusControl(null);
-                }
-            }
-        }
-
         private bool isLoggedIn() {
             return loginData != null && !String.IsNullOrEmpty(loginData.idToken);
         }
@@ -758,6 +813,8 @@ namespace Filta {
             postData.AddField("password", password);
             postData.AddField("returnSecureToken", "true");
             var www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
+            password = "";
+            GUI.FocusControl(null);
             SetStatusMessage("Connecting...");
 
             await www.SendWebRequest();
@@ -796,7 +853,7 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            string url = $"https://firestore.googleapis.com/v1/projects/{(useTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
+            string url = $"https://firestore.googleapis.com/v1/projects/{(UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url)) {
                 req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
                 await req.SendWebRequest();
