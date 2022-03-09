@@ -301,7 +301,7 @@ namespace Filta {
         private async void GetFiltersOnQueue() {
             _bundles = new Dictionary<string, Bundle>();
             string getUrlQueue = $"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
-            UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
+            using UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
             await request.SendWebRequest();
             JObject results = JObject.Parse(request.downloadHandler.text);
             foreach (JProperty prop in results.Properties()) {
@@ -615,7 +615,7 @@ namespace Filta {
             postData.AddField("uid", loginData.idToken);
             postData.AddField("hash", hash.ToString());
             postData.AddField("title", selectedArtTitle);
-            var www = UnityWebRequest.Post(UPLOAD_URL, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(UPLOAD_URL, postData);
             await www.SendWebRequest();
             SetStatusMessage("Connected! Uploading... (3/5)");
             var response = www.downloadHandler.text;
@@ -638,7 +638,7 @@ namespace Filta {
                 return;
             }
             _bundles.Add(parsed.artid, new Bundle { queue = 999, title = selectedArtTitle });
-            UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
+            using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
             selectedArtKey = parsed.artid;
@@ -656,7 +656,7 @@ namespace Filta {
                 GUILayout.Label(
                     $"New plugin version available! v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}",
                     EditorStyles.largeLabel);
-                GUILayout.Label(_localReleaseInfo.releaseNotes);
+                GUILayout.Label(_masterReleaseInfo.releaseNotes);
                 if (_addRequest != null && !_addRequest.IsCompleted) {
                     GUI.enabled = false;
                 } else if (_addRequest != null && !_addRequest.IsCompleted) {
@@ -675,7 +675,7 @@ namespace Filta {
 
         private async void GetMasterReleaseInfo() {
             try {
-                UnityWebRequest req = UnityWebRequest.Get(releaseURL);
+                using UnityWebRequest req = UnityWebRequest.Get(releaseURL);
                 await req.SendWebRequest();
                 _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
             } catch (Exception e) {
@@ -754,7 +754,7 @@ namespace Filta {
             WWWForm postData = new WWWForm();
             postData.AddField("grant_type", "refresh_token");
             postData.AddField("refresh_token", token);
-            UnityWebRequest www = UnityWebRequest.Post(refreshURL + FIREBASE_APIKEY, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(refreshURL + FIREBASE_APIKEY, postData);
             SetStatusMessage("Logging you in...");
             await www.SendWebRequest();
             _loggingIn = false;
@@ -812,7 +812,7 @@ namespace Filta {
             postData.AddField("email", email);
             postData.AddField("password", password);
             postData.AddField("returnSecureToken", "true");
-            var www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(loginURL + FIREBASE_APIKEY, postData);
             password = "";
             GUI.FocusControl(null);
             SetStatusMessage("Connecting...");
@@ -854,27 +854,26 @@ namespace Filta {
 
         private async Task GetPrivateCollection() {
             string url = $"https://firestore.googleapis.com/v1/projects/{(UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
-            using (UnityWebRequest req = UnityWebRequest.Get(url)) {
-                req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
-                await req.SendWebRequest();
-                if (req.responseCode == 404) {
-                    Debug.LogWarning("No uploads found. User could be new or service is down.");
-                    SetStatusMessage("No uploads found", true);
-                    return;
-                }
-                if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
-                    throw new Exception(req.error.ToString());
-                }
-                if (req.downloadHandler != null) {
-                    var jsonResult = JObject.Parse(req.downloadHandler.text);
-                    var result = ParseArtMetas(jsonResult);
-                    privateCollection = result;
-                } else {
-                    SetStatusMessage("Error Deleting. Check console for details.", true);
-                    Debug.LogError("Request Result: " + req.result);
-                }
-                this.Repaint();
+            using UnityWebRequest req = UnityWebRequest.Get(url);
+            req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
+            await req.SendWebRequest();
+            if (req.responseCode == 404) {
+                Debug.LogWarning("No uploads found. User could be new or service is down.");
+                SetStatusMessage("No uploads found", true);
+                return;
             }
+            if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
+                throw new Exception(req.error.ToString());
+            }
+            if (req.downloadHandler != null) {
+                var jsonResult = JObject.Parse(req.downloadHandler.text);
+                var result = ParseArtMetas(jsonResult);
+                privateCollection = result;
+            } else {
+                SetStatusMessage("Error Deleting. Check console for details.", true);
+                Debug.LogError("Request Result: " + req.result);
+            }
+            this.Repaint();
         }
 
         private Dictionary<string, ArtMeta> ParseArtMetas(JObject json) {
@@ -959,7 +958,7 @@ namespace Filta {
                 WWWForm postData = new WWWForm();
                 postData.AddField("uid", loginData.idToken);
                 postData.AddField("artid", artId);
-                var www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
+                using UnityWebRequest www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
                 await www.SendWebRequest();
                 var response = www.downloadHandler.text;
                 if (www.result == UnityWebRequest.Result.ProtocolError || www.result == UnityWebRequest.Result.ConnectionError) {
