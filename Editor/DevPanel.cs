@@ -651,7 +651,8 @@ namespace Filta {
                 return;
             }
 
-            if (_masterReleaseInfo[0].version.ToInt() > _localReleaseInfo.version.ToInt()) {
+            if (_masterReleaseInfo[^1].version.ToInt() > _localReleaseInfo.version.ToInt()) {
+                DisplayReleaseNotes();
                 if (_addRequest != null && !_addRequest.IsCompleted) {
                     GUI.enabled = false;
                 } else if (_addRequest != null && !_addRequest.IsCompleted) {
@@ -670,18 +671,18 @@ namespace Filta {
 
         Vector2 _scrollPos;
         void DisplayReleaseNotes() {
-            EditorGUILayout.BeginHorizontal();
             _scrollPos =
-                EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Width(100), GUILayout.Height(100));
-            for (int i = 0; i < _masterReleaseInfo.Count; i++) {
+                EditorGUILayout.BeginScrollView(_scrollPos,  GUILayout.Height(100));
+            for (int i = _masterReleaseInfo.Count - 1; i >= 0; i--) {
                 ReleaseInfo masterInfo = _masterReleaseInfo[i];
                 ReleaseInfo.Version masterVersion = masterInfo.version;
                 if (masterVersion.ToInt() <= _localReleaseInfo.version.ToInt()) {
                     break;
                 }
-                GUILayout.Label(
-                    $"New plugin version available! v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}",
-                    EditorStyles.largeLabel);
+
+                string label = i == _masterReleaseInfo.Count - 1 ? "New plugin version available! " : "";
+                label += $"v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}";
+                GUILayout.Label(label, EditorStyles.largeLabel);
                 GUILayout.Label(masterInfo.releaseNotes);
             }
             EditorGUILayout.EndScrollView();
@@ -699,8 +700,8 @@ namespace Filta {
         }
 
         private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{packagePath}/release.json");
-            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[0];
+            string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
+            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
         }
 
 
