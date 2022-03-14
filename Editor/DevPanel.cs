@@ -749,10 +749,10 @@ namespace Filta {
             }
 
             if (!String.IsNullOrEmpty(extraObjects)) {
-                EditorUtility.DisplayDialog("Warning",
+                bool answer = EditorUtility.DisplayDialog("Warning",
                     $"There are some gameObjects in the scene that aren't children of the Filter object. They will not be included in your filter. Here's a list. {extraObjects}\nDo you wish to proceed?",
                     "Continue", "Cancel");
-                return true;
+                return !answer;
             }
 
             return false;
