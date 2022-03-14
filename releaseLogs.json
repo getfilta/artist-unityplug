@@ -1,0 +1,42 @@
+[
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 2
+    },
+    "releaseNotes": "- Body tracking fixes \n- Occlusion fixes"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 3
+    },
+    "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes."
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 4
+    },
+    "releaseNotes": "- fix: vertex indices not in proper positions on windows platform\n- fix: pressing f on trackers zooms in properly\n- feat: add warning when artists leave objects out of Filter object"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 5
+    },
+    "releaseNotes": "- new artist panel UX/UI\n- minor quality of life fixes"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 6
+    },
+    "releaseNotes": "- feat: better release notes."
+  }
+]

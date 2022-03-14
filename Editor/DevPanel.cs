@@ -32,7 +32,7 @@ namespace Filta {
         private string DELETE_PRIV_ART_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "deletePrivArt" : FUNC_LOCATION + "deletePrivArt"; } }
         private const string loginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
-        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/release.json";
+        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/releaseLogs.json";
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private string FIREBASE_APIKEY { get { return UseTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
         private const string variantTempSave = "Assets/Filter.prefab";
@@ -52,7 +52,7 @@ namespace Filta {
         private GUIStyle s;
         private Color _normalBackgroundColor;
 
-        private ReleaseInfo _masterReleaseInfo;
+        private List<ReleaseInfo> _masterReleaseInfo;
         private ReleaseInfo _localReleaseInfo;
 
         private AddRequest _addRequest;
@@ -651,12 +651,8 @@ namespace Filta {
                 return;
             }
 
-            if (_masterReleaseInfo.version.ToInt() > _localReleaseInfo.version.ToInt()) {
-                ReleaseInfo.Version masterVersion = _masterReleaseInfo.version;
-                GUILayout.Label(
-                    $"New plugin version available! v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}",
-                    EditorStyles.largeLabel);
-                GUILayout.Label(_masterReleaseInfo.releaseNotes);
+            if (_masterReleaseInfo[^1].version.ToInt() > _localReleaseInfo.version.ToInt()) {
+                DisplayReleaseNotes();
                 if (_addRequest != null && !_addRequest.IsCompleted) {
                     GUI.enabled = false;
                 } else if (_addRequest != null && !_addRequest.IsCompleted) {
@@ -673,11 +669,30 @@ namespace Filta {
             }
         }
 
+        Vector2 _scrollPos;
+        void DisplayReleaseNotes() {
+            _scrollPos =
+                EditorGUILayout.BeginScrollView(_scrollPos,  GUILayout.Height(100));
+            for (int i = _masterReleaseInfo.Count - 1; i >= 0; i--) {
+                ReleaseInfo masterInfo = _masterReleaseInfo[i];
+                ReleaseInfo.Version masterVersion = masterInfo.version;
+                if (masterVersion.ToInt() <= _localReleaseInfo.version.ToInt()) {
+                    break;
+                }
+
+                string label = i == _masterReleaseInfo.Count - 1 ? "New plugin version available! " : "";
+                label += $"v{masterVersion.pluginAppVersion}.{masterVersion.pluginMajorVersion}.{masterVersion.pluginMinorVersion}";
+                GUILayout.Label(label, EditorStyles.largeLabel);
+                GUILayout.Label(masterInfo.releaseNotes);
+            }
+            EditorGUILayout.EndScrollView();
+        }
+
         private async void GetMasterReleaseInfo() {
             try {
                 using UnityWebRequest req = UnityWebRequest.Get(releaseURL);
                 await req.SendWebRequest();
-                _masterReleaseInfo = JsonConvert.DeserializeObject<ReleaseInfo>(req.downloadHandler.text);
+                _masterReleaseInfo = JsonConvert.DeserializeObject<List<ReleaseInfo>>(req.downloadHandler.text);
             } catch (Exception e) {
                 Debug.LogError(e.Message);
             }
@@ -685,8 +700,8 @@ namespace Filta {
         }
 
         private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{packagePath}/release.json");
-            return JsonConvert.DeserializeObject<ReleaseInfo>(data);
+            string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
+            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
         }
 
 
