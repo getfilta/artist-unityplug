@@ -38,5 +38,13 @@
       "pluginMinorVersion": 6
     },
     "releaseNotes": "- feat: better release notes."
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 7
+    },
+    "releaseNotes": "- fix: bug of not being able to upload when you have objects outside of Filter object\n- visual: move filter queue to uploader panel"
   }
 ]
