@@ -362,7 +362,6 @@ namespace Filta {
                 GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" : bundle.Value.queue.ToString());
                 GUILayout.EndHorizontal();
             }
-            DrawUILine(Color.gray);
         }
 
         private void DisposeQueue() {
@@ -423,7 +422,6 @@ namespace Filta {
                 _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
                 EditorGUIUtility.labelWidth = originalValue;
                 DrawUILine(Color.gray);
-                DisplayQueue();
             }
 
             GUILayout.FlexibleSpace();
@@ -442,6 +440,7 @@ namespace Filta {
                 }
             }
             GUILayout.FlexibleSpace();
+            DisplayQueue();
             GUILayout.EndScrollView();
         }
 
