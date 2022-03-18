@@ -57,6 +57,9 @@ namespace Filta {
 
         private AddRequest _addRequest;
 
+        private const int Uploading = -1;
+        private const int Limbo = 999;
+
         [MenuItem("Filta/Artist Panel (Dockable)", false, 0)]
         static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
@@ -359,7 +362,14 @@ namespace Filta {
             foreach (KeyValuePair<string, Bundle> bundle in _bundles) {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(bundle.Value.title);
-                GUILayout.Label(bundle.Value.queue == 999 ? "still uploading" : bundle.Value.queue.ToString());
+                if (bundle.Value.queue == Uploading) {
+                    GUILayout.Label("still uploading");
+                } else if (bundle.Value.queue == Limbo) {
+                    GUILayout.Label("in Limbo");
+                }
+                else {
+                    GUILayout.Label(bundle.Value.queue.ToString());
+                }
                 GUILayout.EndHorizontal();
             }
         }
@@ -632,11 +642,13 @@ namespace Filta {
                     return;
                 }
             }
-            if (_bundles.ContainsKey(parsed.artid)) {
+            //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
+            //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
+            if (_bundles.ContainsKey(parsed.artid) && _bundles[parsed.artid].queue != Limbo) {
                 SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
                 return;
             }
-            _bundles.Add(parsed.artid, new Bundle { queue = 999, title = selectedArtTitle });
+            _bundles.Add(parsed.artid, new Bundle { queue = Uploading, title = selectedArtTitle });
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
