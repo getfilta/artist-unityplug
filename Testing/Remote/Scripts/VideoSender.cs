@@ -11,20 +11,23 @@ public class VideoSender : MonoBehaviour
         public byte[] data;
     }
 
-    public Camera mainCam;
-    public RawImage rawImage;
+    private RemoteManager _remoteManager;
+
+    private Camera _mainCam;
 
     private RenderTexture _rt;
 
-    [NonSerialized]
-    public bool connected;
-
     private Vector2Int displaySize;
-    
+
+    private void Awake() {
+        _remoteManager = GetComponent<RemoteManager>();
+        _mainCam = _remoteManager.captureCamera.GetComponent<Camera>();
+    }
+
     private void OnEnable() {
         displaySize = new Vector2Int(Display.main.systemWidth / 10, Display.main.systemHeight / 10);
         _rt = new RenderTexture(displaySize.x, displaySize.y, 32, RenderTextureFormat.ARGB32);
-        mainCam.targetTexture = _rt;
+        _mainCam.targetTexture = _rt;
         //FillWithEmptiness();
     }
     
@@ -33,22 +36,6 @@ public class VideoSender : MonoBehaviour
             StartCoroutine(SendVideo());
     }
     WaitForEndOfFrame _frameEnd = new WaitForEndOfFrame();
-    
-    void FillWithEmptiness() {
-        Texture2D tex = new Texture2D (displaySize.x, displaySize.y, TextureFormat.ARGB32, false);
- 
-        Color fillColor = Color.clear;
-        Color[] fillPixels = new Color[tex.width * tex.height];
- 
-        for (int i = 0; i < fillPixels.Length; i++)
-        {
-            fillPixels[i] = fillColor;
-        }
- 
-        tex.SetPixels(fillPixels);
-        tex.Apply();
-        rawImage.texture = tex;
-    }
 
     [Client]
     public IEnumerator SendVideo() {

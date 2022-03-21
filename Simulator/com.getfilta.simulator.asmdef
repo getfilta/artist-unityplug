@@ -1,13 +1,18 @@
-﻿{
-	"name": "Filta.Simulator",
-	"references": [],
-	"optionalUnityReferences": [],
-	"includePlatforms": [],
-	"excludePlatforms": [],
-	"allowUnsafeCode": false,
-	"overrideReferences": false,
-	"precompiledReferences": [],
-	"autoReferenced": true,
-	"defineConstraints": [],
-	"versionDefines": []
+{
+    "name": "Filta.Simulator",
+    "rootNamespace": "",
+    "references": [
+        "GUID:3494fe1fbb4cd49c2b08ad1732116293",
+        "GUID:30817c1a0e6d646d99c048fc403f5979",
+        "GUID:1c7c33eb5480dd24c9e29a8250c1a775"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

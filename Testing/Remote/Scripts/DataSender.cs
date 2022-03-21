@@ -7,7 +7,7 @@ public class DataSender : NetworkBehaviour {
     private RemoteManager _remoteManager;
 
     [SyncVar]
-    private FaceData _data;
+    public FaceData _data;
 
     [SyncVar(hook = nameof(OnGottenResolution))]
     private Vector2Int _screenResolution;
@@ -23,6 +23,7 @@ public class DataSender : NetworkBehaviour {
 
     [Client]
     public override void OnStartLocalPlayer() {
+        _remoteManager = FindObjectOfType<RemoteManager>();
         _cliented = true;
         RequestScreenResolution();
     }
