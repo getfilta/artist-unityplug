@@ -92,6 +92,7 @@ public class Simulator : SimulatorBase {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
+        EditorApplication.hierarchyChanged += SetFilterLayers;
     }
 
     private void OnDisable() {

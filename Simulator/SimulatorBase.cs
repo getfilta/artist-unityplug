@@ -45,6 +45,7 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     protected virtual void OnEnable() {
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
+        SetFilterLayers();
     }
 
     protected virtual void Update() {
@@ -53,6 +54,16 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     public virtual void TryAutomaticSetup() {
 
+    }
+
+    protected void SetFilterLayers() {
+        if (_filterObject == null || !EditorApplication.isPlayingOrWillChangePlaymode) {
+            return;
+        }
+        Transform[] children = _filterObject.GetComponentsInChildren<Transform>(true);
+        foreach ( Transform child in children) {
+            child.gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+        }
     }
 
     [ContextMenu("Toggle Visibility")]
