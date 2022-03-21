@@ -366,8 +366,7 @@ namespace Filta {
                     GUILayout.Label("still uploading");
                 } else if (bundle.Value.queue == Limbo) {
                     GUILayout.Label("in Limbo");
-                }
-                else {
+                } else {
                     GUILayout.Label(bundle.Value.queue.ToString());
                 }
                 GUILayout.EndHorizontal();
@@ -683,7 +682,7 @@ namespace Filta {
         Vector2 _scrollPos;
         void DisplayReleaseNotes() {
             _scrollPos =
-                EditorGUILayout.BeginScrollView(_scrollPos,  GUILayout.Height(100));
+                EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(100));
             for (int i = _masterReleaseInfo.Count - 1; i >= 0; i--) {
                 ReleaseInfo masterInfo = _masterReleaseInfo[i];
                 ReleaseInfo.Version masterVersion = masterInfo.version;
@@ -1002,6 +1001,7 @@ namespace Filta {
         private void SelectedArt() {
             if (GUILayout.Button("Back")) {
                 selectedArtKey = "";
+                EditorGUI.FocusTextInControl(null);
                 return;
             }
 
