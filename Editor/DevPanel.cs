@@ -298,44 +298,20 @@ namespace Filta {
         #endregion
 
         #region Bundle Queue
-
         private Dictionary<string, Bundle> _bundles = new Dictionary<string, Bundle>();
+
         private EventSourceReader _evt;
         private async void GetFiltersOnQueue() {
-            _bundles = new Dictionary<string, Bundle>();
-            string getUrlQueue = $"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"&print=pretty";
-            using UnityWebRequest request = UnityWebRequest.Get(getUrlQueue);
-            await request.SendWebRequest();
-            JObject results = JObject.Parse(request.downloadHandler.text);
-            foreach (JProperty prop in results.Properties()) {
-                string id = prop.Name;
-                string bundleTitle = prop.Value["title"].Value<string>();
-                int queue = prop.Value["queue"].Value<int>();
-                _bundles.Add(id, new Bundle { queue = queue, title = bundleTitle });
-            }
             ListenToQueue();
         }
 
         private void ListenToQueue() {
             _evt = new EventSourceReader(new Uri($"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{loginData.localId}\"")).Start();
             _evt.MessageReceived += (sender, e) => {
-                if (e.Event == "put") {
-                    try {
-                        QueueResponse response = JsonConvert.DeserializeObject<QueueResponse>(e.Message);
-                        string[] paths = response.path.Split('/');
-                        if (response.data is int queue) {
-                            _bundles[paths[1]].queue = queue;
-                        } else {
-                            SetStatusMessage($"{_bundles[paths[1]].title} successfully processed! (5/5)");
-                            _bundles.Remove(paths[1]);
-                        }
-
-                    } catch (Exception exception) {
-                        if (exception is JsonReaderException) {
-                            return;
-                        }
-                        Debug.LogError(exception.Message);
-                    }
+                if (e.Event != "keep-alive") {
+                    // if there was some update, then just refresh
+                    // the private collection.
+                    GetPrivateCollection();
                 }
             };
             _evt.Disconnected += async (sender, e) => {
@@ -362,12 +338,12 @@ namespace Filta {
             foreach (KeyValuePair<string, Bundle> bundle in _bundles) {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(bundle.Value.title);
-                if (bundle.Value.queue == Uploading) {
+                if (bundle.Value.bundleQueuePosition == Uploading) {
                     GUILayout.Label("still uploading");
-                } else if (bundle.Value.queue == Limbo) {
+                } else if (bundle.Value.bundleQueuePosition == Limbo) {
                     GUILayout.Label("in Limbo");
                 } else {
-                    GUILayout.Label(bundle.Value.queue.ToString());
+                    GUILayout.Label(bundle.Value.bundleQueuePosition.ToString());
                 }
                 GUILayout.EndHorizontal();
             }
@@ -383,7 +359,9 @@ namespace Filta {
 
         public class Bundle {
             public string title;
-            public int queue;
+            public int bundleQueuePosition;
+            public string bundleStatus;
+            public Int64 lastUpdated;
         }
 
         public class QueueResponse {
@@ -641,13 +619,6 @@ namespace Filta {
                     return;
                 }
             }
-            //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
-            //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
-            if (_bundles.ContainsKey(parsed.artid) && _bundles[parsed.artid].queue != Limbo) {
-                SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
-                return;
-            }
-            _bundles.Add(parsed.artid, new Bundle { queue = Uploading, title = selectedArtTitle });
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
@@ -878,6 +849,7 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
+            Debug.Log("GetPrivateCollection");
             string url = $"https://firestore.googleapis.com/v1/projects/{(UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
             using UnityWebRequest req = UnityWebRequest.Get(url);
             req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
@@ -894,6 +866,7 @@ namespace Filta {
                 var jsonResult = JObject.Parse(req.downloadHandler.text);
                 var result = ParseArtMetas(jsonResult);
                 privateCollection = result;
+                _bundles = GetActiveBundles(privateCollection);
             } else {
                 SetStatusMessage("Error Deleting. Check console for details.", true);
                 Debug.LogError("Request Result: " + req.result);
@@ -931,12 +904,51 @@ namespace Filta {
                         case "preview":
                             value.preview = previewObject.Value<string>("stringValue");
                             break;
+                        case "bundleQueuePosition":
+                            value.bundleQueuePosition = previewObject.Value<int>("integerValue");
+                            break;
+                        case "bundleStatus":
+                            value.bundleStatus = previewObject.Value<string>("stringValue");
+                            break;
+                        case "lastUpdated":
+                            value.lastUpdated = previewObject.Value<Int64>("integerValue");
+                            break;
                     }
                 }
 
                 output.Add(name, value);
             }
             return output;
+        }
+
+        private Dictionary<string, Bundle> GetActiveBundles(Dictionary<string, ArtMeta> artMetas) {
+            var result = new Dictionary<string, Bundle>();
+            foreach (var artMeta in artMetas) {
+                if (artMeta.Value.bundleStatus == "need-package" ||
+                    artMeta.Value.bundleStatus == "package" ||
+                    artMeta.Value.bundleStatus == "bundling") {
+                    result.Add(artMeta.Key, new Bundle() {
+                        title = artMeta.Value.title,
+                        bundleQueuePosition = artMeta.Value.bundleQueuePosition,
+                        bundleStatus = artMeta.Value.bundleStatus,
+                        lastUpdated = artMeta.Value.lastUpdated
+                    });
+                } else if (artMeta.Value.bundleStatus == "bundled" && GetTimeSince(artMeta.Value.lastUpdated) < TimeSpan.FromSeconds(10)) {
+                    SetStatusMessage($"{artMeta.Value.title} successfully processed! (5/5)");
+                } else if (artMeta.Value.bundleStatus == "error-bundling" && GetTimeSince(artMeta.Value.lastUpdated) < TimeSpan.FromSeconds(10)) {
+                    SetStatusMessage($"{artMeta.Value.title} : error processing :(", true);
+                }
+            }
+            return result;
+        }
+
+
+        private TimeSpan GetTimeSince(Int64 jsonTimestamp) {
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+            DateTime timestamp = origin.AddMilliseconds(jsonTimestamp); // convert from milliseconds to seconds
+            var result = DateTime.UtcNow - timestamp;
+            Debug.Log($"DT.utcnow:{DateTime.UtcNow};jsonts:{jsonTimestamp},timestamp:{timestamp},delta:{result}");
+            return result;
         }
 
 
