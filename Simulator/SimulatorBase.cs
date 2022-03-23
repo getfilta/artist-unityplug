@@ -1,7 +1,9 @@
+//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
 using System.IO;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
-using System.Collections.Generic;
 
 [ExecuteAlways]
 public abstract class SimulatorBase : MonoBehaviour {
@@ -55,11 +57,13 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     }
 
+#if UNITY_EDITOR
     [ContextMenu("Toggle Visibility")]
     protected void ContextMenu() {
         _developerMode = !_developerMode;
         SetFlags(_developerMode);
     }
+#endif
 
     protected void SetFlags(bool forceVisibility = false) {
         if (forceVisibility) {

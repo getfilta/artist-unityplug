@@ -1,9 +1,12 @@
+//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -104,20 +107,19 @@ public class BodySimulator : SimulatorBase {
 
     protected override void OnEnable() {
         base.OnEnable();
-#if UNITY_EDITOR
-        EditorApplication.hierarchyChanged += GetBodyAvatars;
-#endif
         if (IsSetUpProperly()) {
             InitializeBodyAvatars();
         }
+#if UNITY_EDITOR
         GetRecordingData();
+        EditorApplication.hierarchyChanged += GetBodyAvatars;
+#endif
         ToggleVisualiser(false);
     }
 
-    private void OnDisable() {
 #if UNITY_EDITOR
+    private void OnDisable() {
         EditorApplication.hierarchyChanged -= GetBodyAvatars;
-#endif
     }
     private void GetRecordingData() {
         byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/BodyTracking/BodyRecording"));
@@ -125,6 +127,7 @@ public class BodySimulator : SimulatorBase {
         _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
         _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
     }
+#endif
 
     public override bool IsSetUpProperly() {
         return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
@@ -167,34 +170,41 @@ public class BodySimulator : SimulatorBase {
         }
 #endif
     }
+
     protected override void Update() {
         if (_skipBodySimulator)
             return;
-        if ((_bodyVisualiser != null && _visualiserAvatar == null) || (_bodyReference != null && _referenceAvatar == null)) {
+        if ((_bodyVisualiser != null && _visualiserAvatar == null) ||
+            (_bodyReference != null && _referenceAvatar == null)) {
             InitializeBodyAvatars();
         }
+
         if (!IsSetUpProperly()) {
             Debug.LogError(
                 "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
             _skipBodySimulator = true;
             return;
         }
+
         EnforceObjectStructure();
+#if UNITY_EDITOR
         if ((_bodyRecording._bodyData == null || _bodyRecording._bodyData.Count == 0) && !_skipBodyRecording) {
             try {
                 GetRecordingData();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 Debug.LogError($"Could not get recorded body data. {e.Message}");
                 _skipBodyRecording = true;
             }
         }
+#endif
 
         if (!isPlaying) {
             _startTime = DateTime.Now;
             return;
         }
 
-        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         Playback(time);
     }
 
