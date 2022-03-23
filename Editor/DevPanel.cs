@@ -619,6 +619,18 @@ namespace Filta {
                     return;
                 }
             }
+            if (_bundles.ContainsKey(parsed.artid)) {
+                //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
+                //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
+                var bundle = _bundles[parsed.artid];
+                // or if it has been in the "uploading" state for more than 5 minutes 
+                bool isTooLongUploading = bundle.bundleQueuePosition == Uploading && GetTimeSince(bundle.lastUpdated) > TimeSpan.FromMinutes(5);
+                Debug.Log($"isTooLongUploading:{isTooLongUploading}");
+                if (bundle.bundleQueuePosition != Limbo && !isTooLongUploading) {
+                    SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
+                    return;
+                }
+            }
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
             await GetPrivateCollection();
