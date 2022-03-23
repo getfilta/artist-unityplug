@@ -301,7 +301,7 @@ namespace Filta {
         private Dictionary<string, Bundle> _bundles = new Dictionary<string, Bundle>();
 
         private EventSourceReader _evt;
-        private async void GetFiltersOnQueue() {
+        private void GetFiltersOnQueue() {
             ListenToQueue();
         }
 
