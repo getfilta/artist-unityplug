@@ -415,7 +415,7 @@ public class BodySimulator : SimulatorBase {
 
     //Finds mesh used by skinned renderer and uses this to obtain the model file
     private Transform GetModelTransform(GameObject model) {
-        Transform result;
+        Transform result = null;
 #if UNITY_EDITOR
         //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
         string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
