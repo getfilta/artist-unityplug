@@ -1,4 +1,5 @@
-﻿using System;
+﻿//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
+using System;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;

@@ -1,3 +1,4 @@
+//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
 using System;
 using System.Collections.Generic;
 using System.IO;
