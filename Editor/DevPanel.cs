@@ -509,6 +509,17 @@ namespace Filta {
                 return;
             }
 
+            if (selectedArtKey != "temp" && _bundles.ContainsKey(selectedArtKey)) {
+                //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
+                //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
+                var bundle = _bundles[selectedArtKey];
+                // or if it has been in the "uploading" state for more than 5 minutes 
+                bool isTooLongUploading = bundle.bundleQueuePosition == Uploading && GetTimeSince(bundle.lastUpdated) > TimeSpan.FromMinutes(5);
+                if (bundle.bundleQueuePosition != Limbo && !isTooLongUploading) {
+                    SetStatusMessage("Error: Previous upload still being processed. Please wait up to 5 minutes and try again.", true);
+                    return;
+                }
+            }
 
             GameObject filterObject = _simulator._filterObject.gameObject;
             if (filterObject == null) {
@@ -616,18 +627,6 @@ namespace Filta {
                 } catch {
                     SetStatusMessage("Error! Check console for more information", true);
                     Debug.LogError(response);
-                    return;
-                }
-            }
-            if (_bundles.ContainsKey(parsed.artid)) {
-                //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
-                //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
-                var bundle = _bundles[parsed.artid];
-                // or if it has been in the "uploading" state for more than 5 minutes 
-                bool isTooLongUploading = bundle.bundleQueuePosition == Uploading && GetTimeSince(bundle.lastUpdated) > TimeSpan.FromMinutes(5);
-                Debug.Log($"isTooLongUploading:{isTooLongUploading}");
-                if (bundle.bundleQueuePosition != Limbo && !isTooLongUploading) {
-                    SetStatusMessage("Error: Previous upload still being processed. Please wait a few minutes and try again.", true);
                     return;
                 }
             }
@@ -861,7 +860,6 @@ namespace Filta {
         }
 
         private async Task GetPrivateCollection() {
-            Debug.Log("GetPrivateCollection");
             string url = $"https://firestore.googleapis.com/v1/projects/{(UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{loginData.localId}";
             using UnityWebRequest req = UnityWebRequest.Get(url);
             req.SetRequestHeader("authorization", $"Bearer {loginData.idToken}");
@@ -959,7 +957,6 @@ namespace Filta {
             DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
             DateTime timestamp = origin.AddMilliseconds(jsonTimestamp); // convert from milliseconds to seconds
             var result = DateTime.UtcNow - timestamp;
-            Debug.Log($"DT.utcnow:{DateTime.UtcNow};jsonts:{jsonTimestamp},timestamp:{timestamp},delta:{result}");
             return result;
         }
 
