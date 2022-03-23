@@ -6,13 +6,18 @@ using UnityEngine;
 public class RemoteManager : MonoBehaviour {
     private NetworkDiscovery _networkDiscovery;
 
+    public readonly int ResolutionFactor = 10;
     [NonSerialized]
     public DataSender sender;
+
+    [NonSerialized]
+    public VideoSender videoSender;
     
     public Transform captureCamera;
 
     private void Awake() {
         _networkDiscovery = GetComponent<NetworkDiscovery>();
+        videoSender = GetComponent<VideoSender>();
     }
 
     private void OnEnable() {

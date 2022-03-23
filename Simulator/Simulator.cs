@@ -432,6 +432,10 @@ public class Simulator : SimulatorBase {
         if (_faceMasks == null || _faceMasks.Count == 0) {
             return;
         }
+
+        if (faceData.blendshapeData == null || faceData.blendshapeData.Length <= 0) {
+            return;
+        }
         for (int j = 0; j < faceData.blendshapeData.Length - 2; j++) {
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
@@ -502,6 +506,9 @@ public class Simulator : SimulatorBase {
     }
 
     void SetMeshTopology(DataSender.FaceData data) {
+        if (data.vertices == null || data.vertices.Length <= 0) {
+            return;
+        }
         SetMeshTopology(data.vertices.ToList(), data.normals.ToList(), data.uvs.ToList(), data.indices.ToList());
     }
 
@@ -554,6 +561,10 @@ public class Simulator : SimulatorBase {
 
     private void HandleVertexPairing(List<Vector3> vertices) {
         if (vertexTrackers == null) {
+            return;
+        }
+
+        if (vertices == null || vertices.Count <= 0) {
             return;
         }
         for (int i = 0; i < vertexTrackers.Count; i++) {

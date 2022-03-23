@@ -17,22 +17,25 @@ public class VideoSender : MonoBehaviour
 
     private RenderTexture _rt;
 
-    private Vector2Int displaySize;
+    private Vector2Int _displaySize;
+
+    private bool _isInitialized;
 
     private void Awake() {
         _remoteManager = GetComponent<RemoteManager>();
         _mainCam = _remoteManager.captureCamera.GetComponent<Camera>();
     }
 
-    private void OnEnable() {
-        displaySize = new Vector2Int(Display.main.systemWidth / 10, Display.main.systemHeight / 10);
-        _rt = new RenderTexture(displaySize.x, displaySize.y, 32, RenderTextureFormat.ARGB32);
+    public void Initialize(Vector2Int screenSize) {
+        _displaySize = screenSize;
+        _rt = new RenderTexture(_displaySize.x, _displaySize.y, 32, RenderTextureFormat.ARGB32);
         _mainCam.targetTexture = _rt;
+        _isInitialized = true;
         //FillWithEmptiness();
     }
     
     private void Update() {
-        if (NetworkClient.isConnected)
+        if (NetworkClient.isConnected && _isInitialized)
             StartCoroutine(SendVideo());
     }
     WaitForEndOfFrame _frameEnd = new WaitForEndOfFrame();
@@ -41,7 +44,7 @@ public class VideoSender : MonoBehaviour
     public IEnumerator SendVideo() {
         yield return _frameEnd;
         RenderTexture.active = _rt;
-        Texture2D tex = new Texture2D(displaySize.x, displaySize.y, TextureFormat.ARGB32, false);
+        Texture2D tex = new Texture2D(_displaySize.x, _displaySize.y, TextureFormat.ARGB32, false);
         tex.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0, false);
         byte[] bytes = tex.EncodeToPNG();
         VideoMessage message = new VideoMessage {data = bytes};
