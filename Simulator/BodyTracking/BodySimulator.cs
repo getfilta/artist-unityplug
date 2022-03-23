@@ -415,11 +415,15 @@ public class BodySimulator : SimulatorBase {
 
     //Finds mesh used by skinned renderer and uses this to obtain the model file
     private Transform GetModelTransform(GameObject model) {
+        Transform result;
+#if UNITY_EDITOR
         //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
         string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
         Object obj = AssetDatabase.LoadMainAssetAtPath(path);
         GameObject gO = obj as GameObject;
-        return gO.transform;
+        result = gO.transform;
+#endif
+        return result;
     }
 
     private void RevertToOriginalPose(GameObject model) {
