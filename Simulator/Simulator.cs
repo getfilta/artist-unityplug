@@ -73,6 +73,9 @@ public class Simulator : SimulatorBase {
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
+    private readonly float _coefficientScale = 100f;
+
+    private Texture2D _tex;
 
     protected override void Awake() {
         base.Awake();
@@ -195,34 +198,9 @@ public class Simulator : SimulatorBase {
         byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
-        _recordingLength = _faceRecording.faceDatas[_faceRecording.faceDatas.Count - 1].timestamp;
-        _frames = new List<Texture>();
-#if UNITY_EDITOR
-        try {
-            GetVideo();
-        } catch (Exception e) {
-            Debug.Log($"Could not get video data. {e.Message}");
-        }
-#endif
+        _recordingLength = _faceRecording.faceDatas[^1].timestamp;
+        _tex = new Texture2D(_faceRecording.videoWidth, _faceRecording.videoHeight, TextureFormat.ARGB32, false);
     }
-
-    private List<Texture> _frames;
-
-#if UNITY_EDITOR
-    private void GetVideo() {
-        string[] textureFiles =
-            Directory.GetFiles($"{_filePath}/Simulator/Recordings", "*.png", SearchOption.AllDirectories);
-        foreach (string textFile in textureFiles) {
-            string prefix = _filePath == Application.dataPath ? "Assets" : "Packages/com.getfilta.artist-unityplug";
-            string assetPath = prefix + textFile.Replace(_filePath, "").Replace('\\', '/');
-            Texture sourceText = (Texture)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture));
-            _frames.Add(sourceText);
-        }
-
-        _frames = _frames.OrderBy((texture => Convert.ToInt64(texture.name))).ToList();
-    }
-
-#endif
 
     void Replay() {
         _startTime = DateTime.Now;
@@ -320,7 +298,7 @@ public class Simulator : SimulatorBase {
             FaceData faceData = _faceRecording.faceDatas[i];
             _faceMesh = faceData.faceMesh;
             long nextTimeStamp = faceData.timestamp;
-            float[] nextBlendShape = faceData.blendshapeData;
+            List<ARKitBlendShapeCoefficient> nextBlendShape = faceData.blendshapeData;
 
             //we want to find the timestamp in the future so we can walk back a frame and interpolate
             if (nextTimeStamp < currentTime) {
@@ -338,8 +316,12 @@ public class Simulator : SimulatorBase {
                 frameOffset = 0;
             }
 
-            if (_videoFeed != null && _frames.Count > i)
-                _videoFeed.texture = _frames[i];
+            if (_videoFeed != null) {
+                _tex.LoadImage(faceData.video);
+                _tex.Apply();
+                _videoFeed.texture = _tex;
+            }
+                
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
@@ -388,18 +370,23 @@ public class Simulator : SimulatorBase {
 
     private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime) {
         long nextTimeStamp = faceData.timestamp;
-        float[] nextBlendShape = faceData.blendshapeData;
+        List<ARKitBlendShapeCoefficient> nextBlendShape = faceData.blendshapeData;
         long prevTimeStamp = prevFaceData.timestamp;
-        float[] prevBlendShape = prevFaceData.blendshapeData;
+        List<ARKitBlendShapeCoefficient> prevBlendShape = prevFaceData.blendshapeData;
         float nextWeight = (float)(currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
         float prevWeight = 1f - nextWeight;
 
         //now to grab the blendshape values of the prev and next frame and lerp + assign them
-        for (int j = 0; j < prevBlendShape.Length - 2; j++) {
-            var nowValue = (prevBlendShape[j] * prevWeight) + (nextBlendShape[j] * nextWeight);
+        for (int j = 0; j < prevBlendShape.Count - 2; j++) {
+            float nowValue = (prevBlendShape[j].coefficient * prevWeight) + (nextBlendShape[j].coefficient * nextWeight);
+            nowValue *= _coefficientScale;
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
-                    _faceMasks[i].SetBlendShapeWeight(j, nowValue);
+                    //Cache this
+                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(prevBlendShape[j].blendShapeLocation.ToString());
+                    if (index != -1) {
+                        _faceMasks[i].SetBlendShapeWeight(index, nowValue);
+                    }
                 }
 
             }
@@ -523,12 +510,13 @@ public class Simulator : SimulatorBase {
     [Serializable]
     public struct FaceData {
         public long timestamp;
-        public float[] blendshapeData;
+        public List<ARKitBlendShapeCoefficient> blendshapeData;
         public FaceMesh faceMesh;
         public Trans face;
         public Trans leftEye;
         public Trans rightEye;
         public Trans camera;
+        public byte[] video;
 
         [Serializable]
         public struct FaceMesh {
@@ -621,6 +609,69 @@ public class Simulator : SimulatorBase {
     [Serializable]
     public struct FaceRecording {
         public List<FaceData> faceDatas;
+        public int videoWidth;
+        public int videoHeight;
+    }
+
+    public struct ARKitBlendShapeCoefficient {
+        public ARKitBlendShapeLocation blendShapeLocation;
+        public float coefficient;
+    }
+    
+    public enum ARKitBlendShapeLocation
+    {
+        BrowDownLeft,
+        BrowDownRight,
+        BrowInnerUp,
+        BrowOuterUpLeft,
+        BrowOuterUpRight,
+        CheekPuff,
+        CheekSquintLeft,
+        CheekSquintRight,
+        EyeBlinkLeft,
+        EyeBlinkRight,
+        EyeLookDownLeft,
+        EyeLookDownRight,
+        EyeLookInLeft,
+        EyeLookInRight,
+        EyeLookOutLeft,
+        EyeLookOutRight,
+        EyeLookUpLeft,
+        EyeLookUpRight,
+        EyeSquintLeft,
+        EyeSquintRight,
+        EyeWideLeft,
+        EyeWideRight,
+        JawForward,
+        JawLeft,
+        JawOpen,
+        JawRight,
+        MouthClose,
+        MouthDimpleLeft,
+        MouthDimpleRight,
+        MouthFrownLeft,
+        MouthFrownRight,
+        MouthFunnel,
+        MouthLeft,
+        MouthLowerDownLeft,
+        MouthLowerDownRight,
+        MouthPressLeft,
+        MouthPressRight,
+        MouthPucker,
+        MouthRight,
+        MouthRollLower,
+        MouthRollUpper,
+        MouthShrugLower,
+        MouthShrugUpper,
+        MouthSmileLeft,
+        MouthSmileRight,
+        MouthStretchLeft,
+        MouthStretchRight,
+        MouthUpperUpLeft,
+        MouthUpperUpRight,
+        NoseSneerLeft,
+        NoseSneerRight,
+        TongueOut,
     }
 
     #endregion
