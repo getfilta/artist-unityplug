@@ -133,6 +133,7 @@ namespace Filta {
         }
 
         private async void OnEnable() {
+            titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}");
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
