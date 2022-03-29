@@ -385,6 +385,7 @@ namespace Filta {
                 }
             } else {
                 GUILayout.FlexibleSpace();
+                LoadDefaultLayout();
                 HandleNewPluginVersion();
             }
             DrawUILine(Color.gray);
@@ -413,6 +414,7 @@ namespace Filta {
             }
 
             GUILayout.FlexibleSpace();
+            LoadDefaultLayout();
             HandleNewPluginVersion();
             GUILayout.EndScrollView();
         }
@@ -430,6 +432,16 @@ namespace Filta {
             GUILayout.FlexibleSpace();
             DisplayQueue();
             GUILayout.EndScrollView();
+        }
+
+        private void LoadDefaultLayout() {
+            if (!GUILayout.Button("Load default Filta Layout")) {
+                return;
+            }
+            string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
+            if (!LayoutUtility.LoadLayoutFromAsset(path)) {
+                SetStatusMessage("Error loading layout", true);
+            }
         }
 
         private void UpdatePanel() {
