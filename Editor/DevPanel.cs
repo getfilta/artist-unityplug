@@ -71,6 +71,12 @@ namespace Filta {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.ShowUtility();
         }
+        
+        [MenuItem("Filta/Load Default Editor Layout", false, 4)]
+        private static void LoadDefaultLayout() {
+            string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
+            LayoutUtility.LoadLayoutFromAsset(path);
+        }
 
         [MenuItem("Filta/Log Out", false, 5)]
         static void LogOut() {
