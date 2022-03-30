@@ -71,6 +71,12 @@ namespace Filta {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.ShowUtility();
         }
+        
+        [MenuItem("Filta/Load Default Editor Layout", false, 4)]
+        private static void LoadDefaultLayout() {
+            string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
+            LayoutUtility.LoadLayoutFromAsset(path);
+        }
 
         [MenuItem("Filta/Log Out", false, 5)]
         static void LogOut() {
@@ -385,7 +391,6 @@ namespace Filta {
                 }
             } else {
                 GUILayout.FlexibleSpace();
-                LoadDefaultLayout();
                 HandleNewPluginVersion();
             }
             DrawUILine(Color.gray);
@@ -414,7 +419,6 @@ namespace Filta {
             }
 
             GUILayout.FlexibleSpace();
-            LoadDefaultLayout();
             HandleNewPluginVersion();
             GUILayout.EndScrollView();
         }
@@ -432,16 +436,6 @@ namespace Filta {
             GUILayout.FlexibleSpace();
             DisplayQueue();
             GUILayout.EndScrollView();
-        }
-
-        private void LoadDefaultLayout() {
-            if (!GUILayout.Button("Load default Filta Layout")) {
-                return;
-            }
-            string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
-            if (!LayoutUtility.LoadLayoutFromAsset(path)) {
-                SetStatusMessage("Error loading layout", true);
-            }
         }
 
         private void UpdatePanel() {
