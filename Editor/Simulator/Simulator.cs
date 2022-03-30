@@ -9,9 +9,7 @@ using System.Linq;
 using Unity.Collections;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
 
 
 public class Simulator : SimulatorBase {
@@ -87,8 +85,7 @@ public class Simulator : SimulatorBase {
         Debug.Log("Starting playback");
         TryAutomaticSetup();
     }
-
-#if UNITY_EDITOR
+    
     protected override void OnEnable() {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
@@ -99,7 +96,6 @@ public class Simulator : SimulatorBase {
         EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
     }
-#endif
 
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
@@ -195,7 +191,7 @@ public class Simulator : SimulatorBase {
     }
 
     private void GetRecordingData() {
-        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/FaceRecording"));
+        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Editor/Simulator/FaceRecording"));
         string faceData = Encoding.ASCII.GetString(data);
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[^1].timestamp;
@@ -210,7 +206,6 @@ public class Simulator : SimulatorBase {
     //seems to be a Unity 2021.2 issue/change
     private float _offsetY = -45;
     private void OnDrawGizmos() {
-#if UNITY_EDITOR
         if (showVertexNumbers) {
             GUIStyle handleStyle = new GUIStyle();
             handleStyle.alignment = TextAnchor.MiddleCenter;
@@ -224,10 +219,6 @@ public class Simulator : SimulatorBase {
                 Handles.Label(_faceMesh.vertices[i], i.ToString(), handleStyle);
             }
         }
-
-
-
-#endif
     }
 
     void PositionTrackers(FaceData faceData) {

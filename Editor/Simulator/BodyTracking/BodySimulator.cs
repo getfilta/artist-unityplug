@@ -1,12 +1,9 @@
-//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -110,24 +107,20 @@ public class BodySimulator : SimulatorBase {
         if (IsSetUpProperly()) {
             InitializeBodyAvatars();
         }
-#if UNITY_EDITOR
         GetRecordingData();
         EditorApplication.hierarchyChanged += GetBodyAvatars;
-#endif
         ToggleVisualiser(false);
     }
-
-#if UNITY_EDITOR
+    
     private void OnDisable() {
         EditorApplication.hierarchyChanged -= GetBodyAvatars;
     }
     private void GetRecordingData() {
-        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Simulator/BodyTracking/BodyRecording"));
+        byte[] data = File.ReadAllBytes(Path.Combine(_filePath, "Editor/Simulator/BodyTracking/BodyRecording"));
         string bodyData = Encoding.ASCII.GetString(data);
         _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
         _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
     }
-#endif
 
     public override bool IsSetUpProperly() {
         return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
@@ -162,13 +155,11 @@ public class BodySimulator : SimulatorBase {
     }
 
     private void OnRenderObject() {
-#if UNITY_EDITOR
         // Ensure continuous Update calls.
         if (!Application.isPlaying) {
             EditorApplication.QueuePlayerLoopUpdate();
             SceneView.RepaintAll();
         }
-#endif
     }
 
     protected override void Update() {
@@ -187,7 +178,6 @@ public class BodySimulator : SimulatorBase {
         }
 
         EnforceObjectStructure();
-#if UNITY_EDITOR
         if ((_bodyRecording._bodyData == null || _bodyRecording._bodyData.Count == 0) && !_skipBodyRecording) {
             try {
                 GetRecordingData();
@@ -197,7 +187,6 @@ public class BodySimulator : SimulatorBase {
                 _skipBodyRecording = true;
             }
         }
-#endif
 
         if (!isPlaying) {
             _startTime = DateTime.Now;
@@ -416,13 +405,11 @@ public class BodySimulator : SimulatorBase {
     //Finds mesh used by skinned renderer and uses this to obtain the model file
     private Transform GetModelTransform(GameObject model) {
         Transform result = null;
-#if UNITY_EDITOR
         //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
         string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
         Object obj = AssetDatabase.LoadMainAssetAtPath(path);
         GameObject gO = obj as GameObject;
         result = gO.transform;
-#endif
         return result;
     }
 

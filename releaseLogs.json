@@ -54,5 +54,13 @@
       "pluginMinorVersion": 8
     },
     "releaseNotes": "- fix: meshes with blendshapes are now handled properly\n- visual: new simulator video"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 9
+    },
+    "releaseNotes": "- feat: add loading default filter editor layout\n- visual: new simulator video with blink\n- add logo to artist panel"
   }
 ]
