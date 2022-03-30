@@ -1,8 +1,5 @@
-//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
 using System.IO;
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
 using UnityEngine;
 
 [ExecuteAlways]
@@ -36,13 +33,11 @@ public abstract class SimulatorBase : MonoBehaviour {
     }
 
     private void OnRenderObject() {
-#if UNITY_EDITOR
         // Ensure continuous Update calls.
         if (!Application.isPlaying) {
             EditorApplication.QueuePlayerLoopUpdate();
             SceneView.RepaintAll();
         }
-#endif
     }
 
     protected virtual void OnEnable() {
@@ -56,14 +51,12 @@ public abstract class SimulatorBase : MonoBehaviour {
     public virtual void TryAutomaticSetup() {
 
     }
-
-#if UNITY_EDITOR
+    
     [ContextMenu("Toggle Visibility")]
     protected void ContextMenu() {
         _developerMode = !_developerMode;
         SetFlags(_developerMode);
     }
-#endif
 
     protected void SetFlags(bool forceVisibility = false) {
         if (forceVisibility) {
