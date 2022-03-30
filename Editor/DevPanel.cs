@@ -133,7 +133,8 @@ namespace Filta {
         }
 
         private async void OnEnable() {
-            titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}");
+            Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{packagePath}/Editor/icon.png");
+            titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
             s = new GUIStyle();
             EditorApplication.playModeStateChanged += FindSimulator;
             EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
