@@ -75,6 +75,7 @@ public class Simulator : SimulatorBase {
     private FaceData.FaceMesh _faceMesh;
 
     private DataSender _dataSender;
+    private readonly float _coefficientScale = 100f;
 
     protected override void Awake() {
         base.Awake();
@@ -361,7 +362,7 @@ public class Simulator : SimulatorBase {
             FaceData faceData = _faceRecording.faceDatas[i];
             _faceMesh = faceData.faceMesh;
             long nextTimeStamp = faceData.timestamp;
-            float[] nextBlendShape = faceData.blendshapeData;
+            List<ARKitBlendShapeCoefficient> nextBlendShape = faceData.blendshapeData;
 
             //we want to find the timestamp in the future so we can walk back a frame and interpolate
             if (nextTimeStamp < currentTime) {
@@ -433,13 +434,16 @@ public class Simulator : SimulatorBase {
             return;
         }
 
-        if (faceData.blendshapeData == null || faceData.blendshapeData.Length <= 0) {
+        if (faceData.blendshapeData == null || faceData.blendshapeData.Count <= 0) {
             return;
         }
-        for (int j = 0; j < faceData.blendshapeData.Length - 2; j++) {
+        for (int j = 0; j < faceData.blendshapeData.Count - 2; j++) {
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
-                    _faceMasks[i].SetBlendShapeWeight(j, faceData.blendshapeData[j]);
+                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
+                    if (index != -1) {
+                        _faceMasks[i].SetBlendShapeWeight(index, faceData.blendshapeData[j].coefficient * _coefficientScale);
+                    }
                 }
 
             }
@@ -447,22 +451,24 @@ public class Simulator : SimulatorBase {
     }
 
     private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime) {
-        if (_faceMasks == null || _faceMasks.Count == 0) {
-            return;
-        }
         long nextTimeStamp = faceData.timestamp;
-        float[] nextBlendShape = faceData.blendshapeData;
+        List<ARKitBlendShapeCoefficient> nextBlendShape = faceData.blendshapeData;
         long prevTimeStamp = prevFaceData.timestamp;
-        float[] prevBlendShape = prevFaceData.blendshapeData;
+        List<ARKitBlendShapeCoefficient> prevBlendShape = prevFaceData.blendshapeData;
         float nextWeight = (float)(currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
         float prevWeight = 1f - nextWeight;
 
         //now to grab the blendshape values of the prev and next frame and lerp + assign them
-        for (int j = 0; j < prevBlendShape.Length - 2; j++) {
-            var nowValue = (prevBlendShape[j] * prevWeight) + (nextBlendShape[j] * nextWeight);
+        for (int j = 0; j < prevBlendShape.Count - 2; j++) {
+            float nowValue = (prevBlendShape[j].coefficient * prevWeight) + (nextBlendShape[j].coefficient * nextWeight);
+            nowValue *= _coefficientScale;
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
-                    _faceMasks[i].SetBlendShapeWeight(j, nowValue);
+                    //Cache this
+                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(prevBlendShape[j].blendShapeLocation.ToString());
+                    if (index != -1) {
+                        _faceMasks[i].SetBlendShapeWeight(index, nowValue);
+                    }
                 }
 
             }
@@ -606,7 +612,7 @@ public class Simulator : SimulatorBase {
     [Serializable]
     public struct FaceData {
         public long timestamp;
-        public float[] blendshapeData;
+        public List<ARKitBlendShapeCoefficient> blendshapeData;
         public FaceMesh faceMesh;
         public Trans face;
         public Trans leftEye;
@@ -704,6 +710,68 @@ public class Simulator : SimulatorBase {
     [Serializable]
     public struct FaceRecording {
         public List<FaceData> faceDatas;
+    }
+    
+    [Serializable]
+    public struct ARKitBlendShapeCoefficient {
+        public ARKitBlendShapeLocation blendShapeLocation;
+        public float coefficient;
+    }
+    
+    public enum ARKitBlendShapeLocation
+    {
+        BrowDownLeft,
+        BrowDownRight,
+        BrowInnerUp,
+        BrowOuterUpLeft,
+        BrowOuterUpRight,
+        CheekPuff,
+        CheekSquintLeft,
+        CheekSquintRight,
+        EyeBlinkLeft,
+        EyeBlinkRight,
+        EyeLookDownLeft,
+        EyeLookDownRight,
+        EyeLookInLeft,
+        EyeLookInRight,
+        EyeLookOutLeft,
+        EyeLookOutRight,
+        EyeLookUpLeft,
+        EyeLookUpRight,
+        EyeSquintLeft,
+        EyeSquintRight,
+        EyeWideLeft,
+        EyeWideRight,
+        JawForward,
+        JawLeft,
+        JawOpen,
+        JawRight,
+        MouthClose,
+        MouthDimpleLeft,
+        MouthDimpleRight,
+        MouthFrownLeft,
+        MouthFrownRight,
+        MouthFunnel,
+        MouthLeft,
+        MouthLowerDownLeft,
+        MouthLowerDownRight,
+        MouthPressLeft,
+        MouthPressRight,
+        MouthPucker,
+        MouthRight,
+        MouthRollLower,
+        MouthRollUpper,
+        MouthShrugLower,
+        MouthShrugUpper,
+        MouthSmileLeft,
+        MouthSmileRight,
+        MouthStretchLeft,
+        MouthStretchRight,
+        MouthUpperUpLeft,
+        MouthUpperUpRight,
+        NoseSneerLeft,
+        NoseSneerRight,
+        TongueOut,
     }
 
     #endregion

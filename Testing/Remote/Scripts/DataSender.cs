@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mirror;
 using UnityEditor;
 using UnityEngine;
@@ -57,7 +58,7 @@ public class DataSender : NetworkBehaviour {
     }
 
     public readonly struct FaceData : IEquatable<FaceData> {
-        public readonly float[] blendshapeData;
+        public readonly List<ARKitBlendShapeCoefficient> blendshapeData;
         public readonly Vector3 facePosition;
         public readonly Vector3 faceRotation;
         public readonly Vector3 leftEyePosition;
@@ -71,7 +72,7 @@ public class DataSender : NetworkBehaviour {
         public readonly int[] indices;
         public readonly Vector2[] uvs;
 
-        public FaceData(float[] blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
+        public FaceData(List<ARKitBlendShapeCoefficient> blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
             Vector3 leftEyePos, Vector3 leftEyeRot, Vector3 rightEyePos, Vector3 rightEyeRot, Vector3[] vert,
             Vector3[] norm, int[] ind, Vector2[] uv) {
             blendshapeData = blendshape;
@@ -87,6 +88,101 @@ public class DataSender : NetworkBehaviour {
             normals = norm;
             indices = ind;
             uvs = uv;
+        }
+        
+        public readonly struct ARKitBlendShapeCoefficient : IEquatable<ARKitBlendShapeCoefficient>{
+            public readonly ARKitBlendShapeLocation blendShapeLocation;
+            public readonly float coefficient;
+
+            public ARKitBlendShapeCoefficient(ARKitBlendShapeLocation loc, float coeff) {
+                blendShapeLocation = loc;
+                coefficient = coeff;
+            }
+            
+            public bool Equals(ARKitBlendShapeCoefficient other)
+            {
+                return
+                    (blendShapeLocation == other.blendShapeLocation) &&
+                    coefficient.Equals(other.coefficient);
+            }
+
+            /// <summary>
+            /// Tests for equality.
+            /// </summary>
+            /// <param name="obj">The `object` to compare against.</param>
+            /// <returns>`True` if <paramref name="obj"/> is of type <see cref="ARKitBlendShapeCoefficient"/> and
+            /// <see cref="Equals(ARKitBlendShapeCoefficient)"/> also returns `true`; otherwise `false`.</returns>
+            public override bool Equals(object obj) => (obj is ARKitBlendShapeCoefficient other) && Equals(other);
+
+            /// <summary>
+            /// Generates a hash suitable for use with containers like `HashSet` and `Dictionary`.
+            /// </summary>
+            /// <returns>A hash code generated from this object's fields.</returns>
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hash = ((int)blendShapeLocation).GetHashCode();
+                    hash = hash * 486187739 + coefficient.GetHashCode();
+                    return hash;
+                }
+            }
+        }
+    
+        public enum ARKitBlendShapeLocation
+        {
+            BrowDownLeft,
+            BrowDownRight,
+            BrowInnerUp,
+            BrowOuterUpLeft,
+            BrowOuterUpRight,
+            CheekPuff,
+            CheekSquintLeft,
+            CheekSquintRight,
+            EyeBlinkLeft,
+            EyeBlinkRight,
+            EyeLookDownLeft,
+            EyeLookDownRight,
+            EyeLookInLeft,
+            EyeLookInRight,
+            EyeLookOutLeft,
+            EyeLookOutRight,
+            EyeLookUpLeft,
+            EyeLookUpRight,
+            EyeSquintLeft,
+            EyeSquintRight,
+            EyeWideLeft,
+            EyeWideRight,
+            JawForward,
+            JawLeft,
+            JawOpen,
+            JawRight,
+            MouthClose,
+            MouthDimpleLeft,
+            MouthDimpleRight,
+            MouthFrownLeft,
+            MouthFrownRight,
+            MouthFunnel,
+            MouthLeft,
+            MouthLowerDownLeft,
+            MouthLowerDownRight,
+            MouthPressLeft,
+            MouthPressRight,
+            MouthPucker,
+            MouthRight,
+            MouthRollLower,
+            MouthRollUpper,
+            MouthShrugLower,
+            MouthShrugUpper,
+            MouthSmileLeft,
+            MouthSmileRight,
+            MouthStretchLeft,
+            MouthStretchRight,
+            MouthUpperUpLeft,
+            MouthUpperUpRight,
+            NoseSneerLeft,
+            NoseSneerRight,
+            TongueOut,
         }
 
         public bool Equals(FaceData other) {
