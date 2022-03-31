@@ -18,8 +18,6 @@ using Object = System.Object;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
-        private string email = "";
-        private string password = "";
         private bool _stayLoggedIn;
 
         private int _selectedTab = 0;
@@ -60,7 +58,7 @@ namespace Filta {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.ShowUtility();
         }
-        
+
         [MenuItem("Filta/Load Default Editor Layout", false, 4)]
         private static void LoadDefaultLayout() {
             string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
@@ -70,6 +68,8 @@ namespace Filta {
         [MenuItem("Filta/Log Out", false, 5)]
         static void LogOut() {
             Authentication.Instance.LogOut(true);
+            DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
+            window.SetStatusMessage("Logged out");
             GUI.FocusControl(null);
         }
 
@@ -730,9 +730,9 @@ namespace Filta {
                 case AuthenticationState.LoggingIn:
                     SetStatusMessage("Logging in...");
                     break;
-                case AuthenticationState.LoggedOut:
-                    SetStatusMessage("Logged out");
-                    break;
+                // case AuthenticationState.LoggedOut:
+                //     SetStatusMessage("Logged out");
+                //     break;
                 case AuthenticationState.PendingAsk:
                     SetStatusMessage("Initiating remote login...");
                     break;

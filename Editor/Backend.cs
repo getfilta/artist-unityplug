@@ -31,6 +31,8 @@ namespace Filta {
             set { EditorPrefs.SetBool(RunLocallySetting, value); }
         }
 
+
+        private string PRIV_COLLECTION_URL { get { return $"https://firestore.googleapis.com/v1/projects/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{Authentication.Instance.Uid}"; } }
         private string TEST_FUNC_LOCATION { get { return $"http://localhost:5001/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/us-central1/"; } }
         private string FUNC_LOCATION { get { return Global.UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
         private string RTDB_URLBASE { get { return Global.UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
@@ -130,8 +132,7 @@ namespace Filta {
 
 
         public async Task<ArtsAndBundleStatus> GetArtsAndBundleStatus() {
-            string url = $"https://firestore.googleapis.com/v1/projects/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{Authentication.Instance.Uid}";
-            using UnityWebRequest req = UnityWebRequest.Get(url);
+            using UnityWebRequest req = UnityWebRequest.Get(PRIV_COLLECTION_URL);
             req.SetRequestHeader("authorization", $"Bearer {Authentication.Instance.LoginToken}");
             await req.SendWebRequest();
             if (req.responseCode == 404) {

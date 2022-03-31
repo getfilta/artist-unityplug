@@ -7,14 +7,7 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
-using EvtSource;
-using Newtonsoft.Json;
 using Filta.Datatypes;
-using Newtonsoft.Json.Linq;
-using UnityEditor.PackageManager.Requests;
-using UnityEditor.SceneManagement;
-using UnityEngine.SceneManagement;
-using Object = System.Object;
 
 namespace Filta {
 
@@ -137,8 +130,9 @@ namespace Filta {
                 AuthState = AuthenticationState.PendingAskApproval;
 
                 // every two seconds, check if the user has approved the login
+                DateTime startPolling = DateTime.Now;
                 GetRemoteLoginAskStatusResponse statusResponse = null;
-                while (AuthState == AuthenticationState.PendingAskApproval) {
+                while (AuthState == AuthenticationState.PendingAskApproval && DateTime.Now - startPolling < TimeSpan.FromMinutes(6)) {
                     await Task.Delay(2000);
                     statusResponse = await Backend.Instance.GetRemoteLoginAskStatus(response.statusKey);
                     if (statusResponse.status != "pending") {
@@ -184,21 +178,24 @@ namespace Filta {
                             return LoginResult.Success;
                         } else {
                             Debug.LogError(refreshResponse);
+                            Global.FireStatusChange(this, "Failed to acquire refreshed security token", true);
                         }
                     } else {
                         // important as status message tells user to check console
                         Debug.LogError(signinResponse);
+                        Global.FireStatusChange(this, "Server provided invalid security token", true);
                     }
                 } else {
                     // we could distinguish between denied and expired, but we don't
                     Debug.LogError("Request expired.");
+                    Global.FireStatusChange(this, "This remote login request has expired", true);
                 }
             } catch (Exception e) {
                 Debug.LogError(e);
+                Global.FireStatusChange(this, "Unknown Error. Check console for more information.", true);
             }
             // if we got this far, we failed.
             AuthState = AuthenticationState.LoggedOut;
-            Global.FireStatusChange(this, "Unknown Error. Check console for more information.", true);
             return LoginResult.Error;
 
         }
