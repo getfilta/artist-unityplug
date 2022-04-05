@@ -69,6 +69,6 @@
       "pluginMajorVersion": 5,
       "pluginMinorVersion": 10
     },
-    "releaseNotes": "- feat: add realtime testing of filter with separate ArRemote app"
+    "releaseNotes": "- feat: add realtime testing of filter with separate ArRemote app\n feat: change login method to remote-login"
   }
 ]
