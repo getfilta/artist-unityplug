@@ -1,11 +1,11 @@
-﻿//WARNING ENSURE ALL EDITOR FUNCTIONS ARE WRAPPED IN UNITY_EDITOR DIRECTIVE
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Mirror;
 using Unity.Collections;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -71,6 +71,8 @@ public class Simulator : SimulatorBase {
     private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
+
+    private DataSender _dataSender;
     private readonly float _coefficientScale = 100f;
 
     private Texture2D _tex;
@@ -90,11 +92,13 @@ public class Simulator : SimulatorBase {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
+        EditorApplication.hierarchyChanged += SetFilterLayers;
     }
 
     private void OnDisable() {
         EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
+        EditorApplication.hierarchyChanged -= SetFilterLayers;
     }
 
     public override void TryAutomaticSetup() {
@@ -186,8 +190,24 @@ public class Simulator : SimulatorBase {
             return;
         }
 
-        long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
-        Playback(time);
+        if (!EditorApplication.isPlaying) {
+            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            Playback(time);
+            return;
+        }
+
+        if (!NetworkClient.isConnected) {
+            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            Playback(time);
+        }
+        else {
+            if (_dataSender == null) {
+                _dataSender = FindObjectOfType<DataSender>();
+            }
+            else {
+                PlaybackFromRemote();
+            }
+        }
     }
 
     private void GetRecordingData() {
@@ -236,6 +256,19 @@ public class Simulator : SimulatorBase {
         Camera.main.transform.eulerAngles = faceData.camera.rotation;
     }
 
+    void PositionTrackers(DataSender.FaceData faceData) {
+        _faceTracker.localPosition = faceData.facePosition;
+        _faceTracker.localEulerAngles = faceData.faceRotation;
+        _leftEyeTracker.localPosition = faceData.leftEyePosition;
+        _leftEyeTracker.localEulerAngles = faceData.leftEyeRotation;
+        _rightEyeTracker.localPosition = faceData.rightEyePosition;
+        _rightEyeTracker.localEulerAngles = faceData.rightEyeRotation;
+        Vector3 noseBridgePosition = _leftEyeTracker.localPosition +
+                                     (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
+        _noseBridgeTracker.localPosition = noseBridgePosition;
+        _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
+    }
+
     protected override void EnforceObjectStructure() {
         _faceTracker.name = "FaceTracker";
         _leftEyeTracker.name = "LeftEyeTracker";
@@ -249,7 +282,6 @@ public class Simulator : SimulatorBase {
         _filterObject.position = Vector3.zero;
         _filterObject.rotation = Quaternion.identity;
         _filterObject.localScale = Vector3.one;
-        HandleVertexPairing();
     }
 
     private long _pauseTime;
@@ -266,6 +298,13 @@ public class Simulator : SimulatorBase {
         Replay();
         _pauseTime = 0;
         Playback(0);
+    }
+
+    void PlaybackFromRemote() {
+        PositionTrackers(_dataSender._data);
+        SetMeshTopology(_dataSender._data);
+        UpdateMasks(_dataSender._data);
+        HandleVertexPairing(_dataSender._data.vertices.ToList());
     }
 
     private void Playback(long currentTime) {
@@ -318,6 +357,7 @@ public class Simulator : SimulatorBase {
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
             SetMeshTopology();
             PositionTrackers(faceData);
+            HandleVertexPairing();
             FaceData prevFaceData = _faceRecording.faceDatas[i - frameOffset];
             UpdateMasks(faceData, prevFaceData, currentTime);
 
@@ -357,6 +397,27 @@ public class Simulator : SimulatorBase {
         }
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _maskCount = _faceMaskHolder.childCount;
+    }
+
+    private void UpdateMasks(DataSender.FaceData faceData) {
+        if (_faceMasks == null || _faceMasks.Count == 0) {
+            return;
+        }
+
+        if (faceData.blendshapeData == null || faceData.blendshapeData.Count <= 0) {
+            return;
+        }
+        for (int j = 0; j < faceData.blendshapeData.Count - 2; j++) {
+            for (int i = 0; i < _faceMasks.Count; i++) {
+                if (_faceMasks[i] != null) {
+                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
+                    if (index != -1) {
+                        _faceMasks[i].SetBlendShapeWeight(index, faceData.blendshapeData[j].coefficient * _coefficientScale);
+                    }
+                }
+
+            }
+        }
     }
 
     private void UpdateMasks(FaceData faceData, FaceData prevFaceData, long currentTime) {
@@ -416,23 +477,35 @@ public class Simulator : SimulatorBase {
     public Mesh mesh { get; private set; }
 
     void SetMeshTopology() {
+        SetMeshTopology(FaceData.Vector3Converter(_faceMesh.vertices), FaceData.Vector3Converter(_faceMesh.normals),
+            FaceData.Vector2Converter(_faceMesh.uvs), _faceMesh.indices);
+    }
+
+    void SetMeshTopology(DataSender.FaceData data) {
+        if (data.vertices == null || data.vertices.Length <= 0) {
+            return;
+        }
+        SetMeshTopology(data.vertices.ToList(), data.normals.ToList(), data.uvs.ToList(), data.indices.ToList());
+    }
+
+    void SetMeshTopology(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> indices) {
         if (mesh == null) {
             return;
         }
 
         mesh.Clear();
-        if (_faceMesh.vertices.Count > 0 && _faceMesh.indices.Count > 0) {
-            mesh.SetVertices(FaceData.Vector3Converter(_faceMesh.vertices));
-            mesh.SetIndices(_faceMesh.indices, MeshTopology.Triangles, 0, false);
+        if (vertices.Count > 0 && indices.Count > 0) {
+            mesh.SetVertices(vertices);
+            mesh.SetIndices(indices, MeshTopology.Triangles, 0, false);
             mesh.RecalculateBounds();
-            if (_faceMesh.normals.Count == _faceMesh.vertices.Count) {
-                mesh.SetNormals(FaceData.Vector3Converter(_faceMesh.normals));
+            if (normals.Count == vertices.Count) {
+                mesh.SetNormals(normals);
             } else {
                 mesh.RecalculateNormals();
             }
 
-            if (_faceMesh.uvs.Count > 0) {
-                mesh.SetUVs(0, FaceData.Vector2Converter(_faceMesh.uvs));
+            if (uvs.Count > 0) {
+                mesh.SetUVs(0, uvs);
             }
 
             var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
@@ -458,8 +531,16 @@ public class Simulator : SimulatorBase {
     [NonSerialized]
     public List<VertexTracker> vertexTrackers;
 
-    private void HandleVertexPairing() {
+    void HandleVertexPairing() {
+        HandleVertexPairing(FaceData.Vector3Converter(_faceMesh.vertices));
+    }
+
+    private void HandleVertexPairing(List<Vector3> vertices) {
         if (vertexTrackers == null) {
+            return;
+        }
+
+        if (vertices == null || vertices.Count <= 0) {
             return;
         }
         for (int i = 0; i < vertexTrackers.Count; i++) {
@@ -472,8 +553,8 @@ public class Simulator : SimulatorBase {
             }
             vertexTracker.holder.transform.SetParent(_vertices);
             vertexTracker.holder.name = $"VertexTrackerIndex_{vertexTracker.vertexIndex}";
-            if (vertexTracker.vertexIndex < _faceMesh.vertices.Count) {
-                vertexTracker.holder.transform.localPosition = _faceMesh.vertices[vertexTracker.vertexIndex];
+            if (vertexTracker.vertexIndex < vertices.Count) {
+                vertexTracker.holder.transform.localPosition = vertices[vertexTracker.vertexIndex];
             }
         }
     }
@@ -603,7 +684,8 @@ public class Simulator : SimulatorBase {
         public int videoWidth;
         public int videoHeight;
     }
-
+    
+    [Serializable]
     public struct ARKitBlendShapeCoefficient {
         public ARKitBlendShapeLocation blendShapeLocation;
         public float coefficient;

@@ -62,5 +62,13 @@
       "pluginMinorVersion": 9
     },
     "releaseNotes": "- feat: add loading default filter editor layout\n- visual: new simulator video with blink\n- add logo to artist panel"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 10
+    },
+    "releaseNotes": "- feat: add realtime testing of filter with separate ArRemote app\n feat: change login method to remote-login"
   }
 ]
