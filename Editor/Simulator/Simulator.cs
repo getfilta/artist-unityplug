@@ -10,6 +10,7 @@ using Unity.Collections;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 using UnityEditor;
+using UnityEngine.Events;
 
 
 public class Simulator : SimulatorBase {
@@ -74,8 +75,15 @@ public class Simulator : SimulatorBase {
 
     private DataSender _dataSender;
     private readonly float _coefficientScale = 100f;
+    private const float JawOpenFactor = 10f;
 
     private Texture2D _tex;
+
+    private bool _isMouthOpen;
+
+    public UnityEvent onMouthOpen;
+    public UnityEvent onMouthClose;
+    public UnityEvent<float> onMouthOpenValueChange;
 
     protected override void Awake() {
         base.Awake();
@@ -87,7 +95,7 @@ public class Simulator : SimulatorBase {
         Debug.Log("Starting playback");
         TryAutomaticSetup();
     }
-    
+
     protected override void OnEnable() {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
@@ -400,14 +408,17 @@ public class Simulator : SimulatorBase {
     }
 
     private void UpdateMasks(DataSender.FaceData faceData) {
-        if (_faceMasks == null || _faceMasks.Count == 0) {
-            return;
-        }
-
         if (faceData.blendshapeData == null || faceData.blendshapeData.Count <= 0) {
             return;
         }
         for (int j = 0; j < faceData.blendshapeData.Count - 2; j++) {
+            if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.JawOpen) {
+                float nowValue = faceData.blendshapeData[j].coefficient * _coefficientScale;
+                HandleMouthOpening(nowValue);
+            }
+            if (_faceMasks == null || _faceMasks.Count == 0) {
+                continue;
+            }
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
                     int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
@@ -432,6 +443,12 @@ public class Simulator : SimulatorBase {
         for (int j = 0; j < prevBlendShape.Count - 2; j++) {
             float nowValue = (prevBlendShape[j].coefficient * prevWeight) + (nextBlendShape[j].coefficient * nextWeight);
             nowValue *= _coefficientScale;
+            if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.JawOpen) {
+                HandleMouthOpening(nowValue);
+            }
+            if (_faceMasks == null || _faceMasks.Count == 0) {
+                continue;
+            }
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
                     //Cache this
@@ -442,6 +459,22 @@ public class Simulator : SimulatorBase {
                 }
 
             }
+        }
+    }
+
+    void HandleMouthOpening(float coefficient) {
+        onMouthOpenValueChange.Invoke(coefficient);
+        if (coefficient > JawOpenFactor) {
+            if (!_isMouthOpen) {
+                onMouthOpen.Invoke();
+            }
+            _isMouthOpen = true;
+        }
+        else {
+            if (_isMouthOpen) {
+                onMouthClose.Invoke();
+            }
+            _isMouthOpen = false;
         }
     }
 
