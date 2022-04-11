@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+﻿using System;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
@@ -9,10 +9,9 @@ using Mirror;
 using Unity.Collections;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+#if UNITY_EDITOR
 using UnityEditor;
 #endif
-
-using System;
 
 
 public class Simulator : SimulatorBase {
