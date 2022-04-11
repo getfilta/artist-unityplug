@@ -2,9 +2,9 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-#endif
 
 [ExecuteAlways]
+#endif
 public abstract class SimulatorBase : MonoBehaviour {
     #if UNITY_EDITOR
     public enum SimulatorType {

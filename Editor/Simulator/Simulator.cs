@@ -1,5 +1,4 @@
 ﻿#if UNITY_EDITOR
-using System;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
@@ -12,6 +11,8 @@ using UnityEngine.Serialization;
 using UnityEngine.UI;
 using UnityEditor;
 #endif
+
+using System;
 
 
 public class Simulator : SimulatorBase {
