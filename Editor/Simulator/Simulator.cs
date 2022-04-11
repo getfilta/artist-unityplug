@@ -18,6 +18,14 @@ public class Simulator : SimulatorBase {
     public EventHandler onMouthOpen = delegate { };
     public EventHandler onMouthClose = delegate { };
     public EventHandler<float> onMouthOpenValueChange = delegate { };
+    
+    public EventHandler onRightEyeOpen = delegate { };
+    public EventHandler onRightEyeClose = delegate { };
+    public EventHandler<float> onRightEyeValueChange = delegate { };
+    
+    public EventHandler onLeftEyeOpen = delegate { };
+    public EventHandler onLeftEyeClose = delegate { };
+    public EventHandler<float> onLeftEyeValueChange = delegate { };
 
 #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Face;
@@ -82,10 +90,13 @@ public class Simulator : SimulatorBase {
     private DataSender _dataSender;
     private readonly float _coefficientScale = 100f;
     private const float JawOpenFactor = 10f;
+    private const float EyeBlinkFactor = 60f;
 
     private Texture2D _tex;
 
     private bool _isMouthOpen;
+    private bool _isRightEyeOpen;
+    private bool _isLeftEyeOpen;
 
     protected override void Awake() {
         base.Awake();
@@ -425,10 +436,17 @@ public class Simulator : SimulatorBase {
         }
 
         for (int j = 0; j < faceData.blendshapeData.Count - 2; j++) {
+            float nowValue = faceData.blendshapeData[j].coefficient * _coefficientScale;
             if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.JawOpen) {
-                float nowValue = faceData.blendshapeData[j].coefficient * _coefficientScale;
                 HandleMouthOpening(nowValue);
             }
+            if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkLeft) {
+                HandleLeftEyeOpening(nowValue);
+            }
+            if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkRight) {
+                HandleRightEyeOpening(nowValue);
+            }
+            
 
             if (_faceMasks == null || _faceMasks.Count == 0) {
                 continue;
@@ -464,6 +482,12 @@ public class Simulator : SimulatorBase {
             if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.JawOpen) {
                 HandleMouthOpening(nowValue);
             }
+            if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.EyeBlinkLeft) {
+                HandleLeftEyeOpening(nowValue);
+            }
+            if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.EyeBlinkRight) {
+                HandleRightEyeOpening(nowValue);
+            }
 
             if (_faceMasks == null || _faceMasks.Count == 0) {
                 continue;
@@ -498,6 +522,42 @@ public class Simulator : SimulatorBase {
             }
 
             _isMouthOpen = false;
+        }
+    }
+
+    void HandleLeftEyeOpening(float coefficient) {
+        onLeftEyeValueChange(this, coefficient);
+        if (coefficient < EyeBlinkFactor) {
+            if (!_isLeftEyeOpen) {
+                onLeftEyeOpen(this, null);
+            }
+
+            _isLeftEyeOpen = true;
+        }
+        else {
+            if (_isLeftEyeOpen) {
+                onLeftEyeClose(this, null);
+            }
+
+            _isLeftEyeOpen = false;
+        }
+    }
+
+    void HandleRightEyeOpening(float coefficient) {
+        onRightEyeValueChange(this, coefficient);
+        if (coefficient < EyeBlinkFactor) {
+            if (!_isRightEyeOpen) {
+                onRightEyeOpen(this, null);
+            }
+
+            _isRightEyeOpen = true;
+        }
+        else {
+            if (_isRightEyeOpen) {
+                onRightEyeClose(this, null);
+            }
+
+            _isRightEyeOpen = false;
         }
     }
 
