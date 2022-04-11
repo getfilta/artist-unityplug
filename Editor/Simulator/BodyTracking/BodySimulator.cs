@@ -7,8 +7,10 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#endif
 
 public class BodySimulator : SimulatorBase {
+    #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Body;
 
     [SerializeField]
@@ -676,5 +678,5 @@ public class BodySimulator : SimulatorBase {
         }
     }
     #endregion
+    #endif
 }
-#endif

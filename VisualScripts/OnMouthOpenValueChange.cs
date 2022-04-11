@@ -1,5 +1,6 @@
+using System;
 using Unity.VisualScripting;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Filta {
     [UnitCategory("Events/Filta")]
@@ -23,18 +24,18 @@ namespace Filta {
             base.StartListening(stack);
             _graph = stack.AsReference();
             _simulator = Object.FindObjectOfType<Simulator>();
-            _simulator.onMouthOpenValueChange.AddListener(OnMouthOpenValueChanged);
+            _simulator.onMouthOpenValueChange += OnMouthOpenValueChanged;
         }
 
-        private void OnMouthOpenValueChanged(float value) {
-            _val = value;
+        private void OnMouthOpenValueChanged(object sender, float val) {
+            _val = val;
             Trigger(_graph, this);
         }
 
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _simulator.onMouthOpenValueChange.RemoveListener(OnMouthOpenValueChanged);
+            _simulator.onMouthOpenValueChange -= OnMouthOpenValueChanged;
         }
         
     }

@@ -2,9 +2,11 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+#endif
 
 [ExecuteAlways]
 public abstract class SimulatorBase : MonoBehaviour {
+    #if UNITY_EDITOR
     public enum SimulatorType {
         Face,
         Body
@@ -82,5 +84,5 @@ public abstract class SimulatorBase : MonoBehaviour {
             _objectsToHide[i].gameObject.hideFlags = _customHideFlags;
         }
     }
+    #endif
 }
-#endif
