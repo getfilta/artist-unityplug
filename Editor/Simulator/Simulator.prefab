@@ -431,6 +431,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7865246587420603576}
   - component: {fileID: 7865246587420603579}
+  - component: {fileID: 3231588854487278633}
   m_Layer: 6
   m_Name: Simulator
   m_TagString: Untagged
@@ -484,6 +485,18 @@ MonoBehaviour:
   _vertices: {fileID: 0}
   bounds: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
   _videoFeed: {fileID: 4417709659914063239}
+--- !u!114 &3231588854487278633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865246587420603578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05339af2d892b4da5bf3a445291560af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3271458007765944916
 PrefabInstance:
   m_ObjectHideFlags: 0

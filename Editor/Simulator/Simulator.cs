@@ -9,10 +9,14 @@ using Mirror;
 using Unity.Collections;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+#if UNITY_EDITOR
 using UnityEditor;
-
+#endif
 
 public class Simulator : SimulatorBase {
+    public EventHandler<UpdateBlendShapeWeightEventArgs> updateBlendShapeWeightEvent = delegate { };
+
+#if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Face;
 
     private long _recordingLength;
@@ -87,7 +91,7 @@ public class Simulator : SimulatorBase {
         Debug.Log("Starting playback");
         TryAutomaticSetup();
     }
-    
+
     protected override void OnEnable() {
         base.OnEnable();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
@@ -106,6 +110,7 @@ public class Simulator : SimulatorBase {
             SetFlags();
             return;
         }
+
         SetFlags(true);
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
@@ -145,6 +150,7 @@ public class Simulator : SimulatorBase {
                 _vertices = _faceTracker.Find("Vertices");
             }
         }
+
         SetFlags();
         if (IsSetUpProperly()) {
             _skipFaceSimulator = false;
@@ -153,7 +159,6 @@ public class Simulator : SimulatorBase {
             _skipFaceSimulator = true;
             Debug.LogError("Failed to set up simulator");
         }
-
     }
 
     public override bool IsSetUpProperly() {
@@ -168,18 +173,21 @@ public class Simulator : SimulatorBase {
         if (_skipFaceSimulator) {
             return;
         }
+
         if (!IsSetUpProperly()) {
             Debug.LogError(
                 "The simulator object is not set up properly. Try clicking the Automatically Set Up button in the Dev Panel");
             _skipFaceSimulator = true;
             return;
         }
+
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
         if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0) && !_skipFaceRecording) {
             try {
                 GetRecordingData();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 Debug.LogError($"Could not get recorded face data. {e.Message}");
                 _skipFaceRecording = true;
             }
@@ -191,20 +199,18 @@ public class Simulator : SimulatorBase {
         }
 
         if (!EditorApplication.isPlaying) {
-            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
             Playback(time);
             return;
         }
 
         if (!NetworkClient.isConnected) {
-            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
             Playback(time);
-        }
-        else {
+        } else {
             if (_dataSender == null) {
                 _dataSender = FindObjectOfType<DataSender>();
-            }
-            else {
+            } else {
                 PlaybackFromRemote();
             }
         }
@@ -225,6 +231,7 @@ public class Simulator : SimulatorBase {
     //added Y-offset because text labels are rendered below the actual point specified.
     //seems to be a Unity 2021.2 issue/change
     private float _offsetY = -45;
+
     private void OnDrawGizmos() {
         if (showVertexNumbers) {
             GUIStyle handleStyle = new GUIStyle();
@@ -285,6 +292,7 @@ public class Simulator : SimulatorBase {
     }
 
     private long _pauseTime;
+
     public void PauseSimulator() {
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
@@ -340,6 +348,7 @@ public class Simulator : SimulatorBase {
                 //we haven't found the future yet. try the next one.
                 continue;
             }
+
             var frameOffset = 1;
 
             if (i == 0) {
@@ -351,7 +360,7 @@ public class Simulator : SimulatorBase {
                 _tex.Apply();
                 _videoFeed.texture = _tex;
             }
-                
+
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
@@ -395,24 +404,31 @@ public class Simulator : SimulatorBase {
         if (_maskCount == _faceMaskHolder.childCount) {
             return;
         }
+
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _maskCount = _faceMaskHolder.childCount;
     }
 
     private void UpdateMasks(DataSender.FaceData faceData) {
-        if (_faceMasks == null || _faceMasks.Count == 0) {
-            return;
-        }
-
         if (faceData.blendshapeData == null || faceData.blendshapeData.Count <= 0) {
             return;
         }
+
         for (int j = 0; j < faceData.blendshapeData.Count - 2; j++) {
+            float nowValue = faceData.blendshapeData[j].coefficient * _coefficientScale;
+            updateBlendShapeWeightEvent(this,
+                new UpdateBlendShapeWeightEventArgs(faceData.blendshapeData[j].blendShapeLocation, nowValue));
+            if (_faceMasks == null || _faceMasks.Count == 0) {
+                continue;
+            }
+
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
-                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
+                    int index = _faceMasks[i].sharedMesh
+                        .GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
                     if (index != -1) {
-                        _faceMasks[i].SetBlendShapeWeight(index, faceData.blendshapeData[j].coefficient * _coefficientScale);
+                        _faceMasks[i].SetBlendShapeWeight(index,
+                            faceData.blendshapeData[j].coefficient * _coefficientScale);
                     }
                 }
 
@@ -430,12 +446,20 @@ public class Simulator : SimulatorBase {
 
         //now to grab the blendshape values of the prev and next frame and lerp + assign them
         for (int j = 0; j < prevBlendShape.Count - 2; j++) {
-            float nowValue = (prevBlendShape[j].coefficient * prevWeight) + (nextBlendShape[j].coefficient * nextWeight);
+            float nowValue = (prevBlendShape[j].coefficient * prevWeight) +
+                             (nextBlendShape[j].coefficient * nextWeight);
             nowValue *= _coefficientScale;
+            updateBlendShapeWeightEvent(this,
+                new UpdateBlendShapeWeightEventArgs(prevBlendShape[j].blendShapeLocation, nowValue));
+            if (_faceMasks == null || _faceMasks.Count == 0) {
+                continue;
+            }
+
             for (int i = 0; i < _faceMasks.Count; i++) {
                 if (_faceMasks[i] != null) {
                     //Cache this
-                    int index = _faceMasks[i].sharedMesh.GetBlendShapeIndex(prevBlendShape[j].blendShapeLocation.ToString());
+                    int index = _faceMasks[i].sharedMesh
+                        .GetBlendShapeIndex(prevBlendShape[j].blendShapeLocation.ToString());
                     if (index != -1) {
                         _faceMasks[i].SetBlendShapeWeight(index, nowValue);
                     }
@@ -466,10 +490,12 @@ public class Simulator : SimulatorBase {
         SetMeshTopology();
         return newFace;
     }
+
     private void GetFaceMeshFilters() {
         if (_faceCount == _facesHolder.childCount) {
             return;
         }
+
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         _faceCount = _facesHolder.childCount;
     }
@@ -485,6 +511,7 @@ public class Simulator : SimulatorBase {
         if (data.vertices == null || data.vertices.Length <= 0) {
             return;
         }
+
         SetMeshTopology(data.vertices.ToList(), data.normals.ToList(), data.uvs.ToList(), data.indices.ToList());
     }
 
@@ -543,6 +570,7 @@ public class Simulator : SimulatorBase {
         if (vertices == null || vertices.Count <= 0) {
             return;
         }
+
         for (int i = 0; i < vertexTrackers.Count; i++) {
             VertexTracker vertexTracker = vertexTrackers[i];
             if (vertexTracker.holder == null) {
@@ -551,6 +579,7 @@ public class Simulator : SimulatorBase {
                 // since this loop runs every frame, there is no negative impact.
                 break;
             }
+
             vertexTracker.holder.transform.SetParent(_vertices);
             vertexTracker.holder.name = $"VertexTrackerIndex_{vertexTracker.vertexIndex}";
             if (vertexTracker.vertexIndex < vertices.Count) {
@@ -563,7 +592,7 @@ public class Simulator : SimulatorBase {
         GameObject vertex = new GameObject();
         MeshFilter boundsFilter = vertex.AddComponent<MeshFilter>();
         boundsFilter.mesh = bounds;
-        VertexTracker vertexTracker = new VertexTracker { vertexIndex = index, holder = vertex };
+        VertexTracker vertexTracker = new VertexTracker {vertexIndex = index, holder = vertex};
         vertexTrackers.Add(vertexTracker);
         HandleVertexPairing();
         return vertex;
@@ -571,6 +600,8 @@ public class Simulator : SimulatorBase {
 
 
     #endregion
+
+#endif
 
     #region Class/Struct Definition
 
@@ -619,11 +650,11 @@ public class Simulator : SimulatorBase {
                 public float x, y, z;
 
                 public static implicit operator Vector3Json(Vector3 vector) {
-                    return new Vector3Json { x = vector.x, y = vector.y, z = vector.z };
+                    return new Vector3Json {x = vector.x, y = vector.y, z = vector.z};
                 }
 
                 public static implicit operator Vector3(Vector3Json vector) {
-                    return new Vector3 { x = vector.x, y = vector.y, z = vector.z };
+                    return new Vector3 {x = vector.x, y = vector.y, z = vector.z};
                 }
             }
 
@@ -632,11 +663,11 @@ public class Simulator : SimulatorBase {
                 public float x, y;
 
                 public static implicit operator Vector2Json(Vector2 vector) {
-                    return new Vector2Json { x = vector.x, y = vector.y };
+                    return new Vector2Json {x = vector.x, y = vector.y};
                 }
 
                 public static implicit operator Vector2(Vector2Json vector) {
-                    return new Vector2 { x = vector.x, y = vector.y };
+                    return new Vector2 {x = vector.x, y = vector.y};
                 }
             }
         }
@@ -684,15 +715,14 @@ public class Simulator : SimulatorBase {
         public int videoWidth;
         public int videoHeight;
     }
-    
+
     [Serializable]
     public struct ARKitBlendShapeCoefficient {
         public ARKitBlendShapeLocation blendShapeLocation;
         public float coefficient;
     }
-    
-    public enum ARKitBlendShapeLocation
-    {
+
+    public enum ARKitBlendShapeLocation {
         BrowDownLeft,
         BrowDownRight,
         BrowInnerUp,
@@ -745,6 +775,21 @@ public class Simulator : SimulatorBase {
         NoseSneerLeft,
         NoseSneerRight,
         TongueOut,
+    }
+
+    public class UpdateBlendShapeWeightEventArgs : EventArgs {
+        public ARKitBlendShapeLocation Location { get; }
+        public float Weight { get; }
+
+        public UpdateBlendShapeWeightEventArgs(ARKitBlendShapeLocation location, float weight) {
+            Location = location;
+            Weight = weight;
+        }
+
+        public UpdateBlendShapeWeightEventArgs(DataSender.FaceData.ARKitBlendShapeLocation location, float weight) {
+            Location = (ARKitBlendShapeLocation)location;
+            Weight = weight;
+        }
     }
 
     #endregion

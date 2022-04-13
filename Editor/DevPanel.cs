@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -350,6 +351,7 @@ namespace Filta {
                         break;
                 }
             } else {
+                DrawSimulator();
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
             }
@@ -360,23 +362,21 @@ namespace Filta {
 
         private void DrawSimulator() {
             simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
-            if (Authentication.Instance.IsLoggedIn) {
-                CreateNewScene();
-                if (_activeSimulator) {
-                    DrawUILine(Color.gray);
-                    HandleSimulator();
-                    DrawUILine(Color.gray);
-                } else {
-                    EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                    DrawUILine(Color.gray);
-                }
-                EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
-                float originalValue = EditorGUIUtility.labelWidth;
-                EditorGUIUtility.labelWidth = 215;
-                _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
-                EditorGUIUtility.labelWidth = originalValue;
+            CreateNewScene();
+            if (_activeSimulator) {
+                DrawUILine(Color.gray);
+                HandleSimulator();
+                DrawUILine(Color.gray);
+            } else {
+                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
                 DrawUILine(Color.gray);
             }
+            EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
+            float originalValue = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 215;
+            _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
+            EditorGUIUtility.labelWidth = originalValue;
+            DrawUILine(Color.gray);
 
             GUILayout.FlexibleSpace();
             HandleNewPluginVersion();
@@ -872,3 +872,4 @@ namespace Filta {
         }
     }
 }
+#endif

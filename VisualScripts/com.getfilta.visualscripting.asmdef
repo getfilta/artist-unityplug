@@ -1,18 +1,18 @@
 {
-    "name": "Filta.ArtistSuite",
+    "name": "Filta.VisualScripting",
     "rootNamespace": "",
     "references": [
-        "GUID:0c2363be6b8bd4ba4b1f3b7c55988216",
+        "GUID:21b0c8d1703a94250bfac916590cea4f",
+        "GUID:ea715009a4efd4c6cbc85be3ae097dd3",
+        "GUID:315d634a9ac6d460a9515f5a56be6311",
         "GUID:36dc1f6b8282b40d2a4978513459cfc8"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
