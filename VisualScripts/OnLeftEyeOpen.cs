@@ -2,20 +2,20 @@ using System;
 using Unity.VisualScripting;
 using Object = UnityEngine.Object;
 
-namespace Filta {
+namespace Filta.VisualScripting {
     [UnitCategory("Events/Filta")]
     public class OnLeftEyeOpen : ManualEventUnit<Unit> {
         protected override string hookName => "leftEyeOpen";
 
         GraphReference _graph;
-        private Simulator _simulator;
+        private ArTriggerEvents _arTriggerEvents;
 
         public override void StartListening(GraphStack stack)
         {
             base.StartListening(stack);
             _graph = stack.AsReference();
-            _simulator = Object.FindObjectOfType<Simulator>();
-            _simulator.onLeftEyeOpen += OnLeftEyeOpened;
+            _arTriggerEvents = Object.FindObjectOfType<ArTriggerEvents>();
+            _arTriggerEvents.onLeftEyeOpen += OnLeftEyeOpened;
         }
 
         private void OnLeftEyeOpened(object sender, EventArgs e) {
@@ -25,7 +25,7 @@ namespace Filta {
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _simulator.onLeftEyeOpen -= OnLeftEyeOpened;
+            _arTriggerEvents.onLeftEyeOpen -= OnLeftEyeOpened;
         }
         
     }

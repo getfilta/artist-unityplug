@@ -2,20 +2,20 @@ using System;
 using Unity.VisualScripting;
 using Object = UnityEngine.Object;
 
-namespace Filta {
+namespace Filta.VisualScripting {
     [UnitCategory("Events/Filta")]
     public class OnRightEyeClose : ManualEventUnit<Unit> {
         protected override string hookName => "rightEyeClose";
 
         GraphReference _graph;
-        private Simulator _simulator;
+        private ArTriggerEvents _arTriggerEvents;
 
         public override void StartListening(GraphStack stack)
         {
             base.StartListening(stack);
             _graph = stack.AsReference();
-            _simulator = Object.FindObjectOfType<Simulator>();
-            _simulator.onRightEyeClose += OnRightEyeClosed;
+            _arTriggerEvents = Object.FindObjectOfType<ArTriggerEvents>();
+            _arTriggerEvents.onRightEyeClose += OnRightEyeClosed;
         }
 
         private void OnRightEyeClosed(object sender, EventArgs e) {
@@ -25,7 +25,7 @@ namespace Filta {
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _simulator.onRightEyeClose -= OnRightEyeClosed;
+            _arTriggerEvents.onRightEyeClose -= OnRightEyeClosed;
         }
         
     }

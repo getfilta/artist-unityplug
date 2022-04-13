@@ -2,7 +2,7 @@ using System;
 using Unity.VisualScripting;
 using Object = UnityEngine.Object;
 
-namespace Filta {
+namespace Filta.VisualScripting {
     [UnitCategory("Events/Filta")]
     public class OnRightEyeOpenValueChange : ManualEventUnit<Unit> {
         protected override string hookName => "RightEyeOpen";
@@ -11,7 +11,7 @@ namespace Filta {
         private ValueOutput _rightEyeOpenValue;
 
         GraphReference _graph;
-        private Simulator _simulator;
+        private ArTriggerEvents _arTriggerEvents;
 
         private float _val;
         protected override void Definition() {
@@ -23,8 +23,8 @@ namespace Filta {
         {
             base.StartListening(stack);
             _graph = stack.AsReference();
-            _simulator = Object.FindObjectOfType<Simulator>();
-            _simulator.onRightEyeValueChange += OnRightEyeOpenValueChanged;
+            _arTriggerEvents = Object.FindObjectOfType<ArTriggerEvents>();
+            _arTriggerEvents.onRightEyeValueChange += OnRightEyeOpenValueChanged;
         }
 
         private void OnRightEyeOpenValueChanged(object sender, float val) {
@@ -35,7 +35,7 @@ namespace Filta {
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _simulator.onRightEyeValueChange -= OnRightEyeOpenValueChanged;
+            _arTriggerEvents.onRightEyeValueChange -= OnRightEyeOpenValueChanged;
         }
         
     }
