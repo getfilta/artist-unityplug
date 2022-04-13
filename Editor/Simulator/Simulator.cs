@@ -13,8 +13,21 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
-
 public class Simulator : SimulatorBase {
+    public class UpdateBlendShapeWeightEventArgs : EventArgs {
+        public ARKitBlendShapeLocation Location { get; }
+        public float Weight { get; }
+
+        public UpdateBlendShapeWeightEventArgs(ARKitBlendShapeLocation location, float weight) {
+            Location = location;
+            Weight = weight;
+        }
+
+        public UpdateBlendShapeWeightEventArgs(DataSender.FaceData.ARKitBlendShapeLocation location, float weight) {
+            Location = (ARKitBlendShapeLocation)location;
+            Weight = weight;
+        }
+    }
     public EventHandler<UpdateBlendShapeWeightEventArgs> updateBlendShapeWeightEvent = delegate { };
 
 #if UNITY_EDITOR
@@ -774,21 +787,6 @@ public class Simulator : SimulatorBase {
         NoseSneerLeft,
         NoseSneerRight,
         TongueOut,
-    }
-    
-    public class UpdateBlendShapeWeightEventArgs : EventArgs {
-        public ARKitBlendShapeLocation Location { get; }
-        public float Weight { get; }
-
-        public UpdateBlendShapeWeightEventArgs(ARKitBlendShapeLocation location, float weight) {
-            Location = location;
-            Weight = weight;
-        }
-        
-        public UpdateBlendShapeWeightEventArgs(DataSender.FaceData.ARKitBlendShapeLocation location, float weight) {
-            Location = (ARKitBlendShapeLocation)location;
-            Weight = weight;
-        }
     }
 
     #endregion
