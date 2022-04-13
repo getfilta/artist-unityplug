@@ -18,11 +18,11 @@ public class Simulator : SimulatorBase {
     public EventHandler onMouthOpen = delegate { };
     public EventHandler onMouthClose = delegate { };
     public EventHandler<float> onMouthOpenValueChange = delegate { };
-    
+
     public EventHandler onRightEyeOpen = delegate { };
     public EventHandler onRightEyeClose = delegate { };
     public EventHandler<float> onRightEyeValueChange = delegate { };
-    
+
     public EventHandler onLeftEyeOpen = delegate { };
     public EventHandler onLeftEyeClose = delegate { };
     public EventHandler<float> onLeftEyeValueChange = delegate { };
@@ -172,12 +172,10 @@ public class Simulator : SimulatorBase {
         if (IsSetUpProperly()) {
             _skipFaceSimulator = false;
             Debug.Log("Successfully Set up");
-        }
-        else {
+        } else {
             _skipFaceSimulator = true;
             Debug.LogError("Failed to set up simulator");
         }
-
     }
 
     public override bool IsSetUpProperly() {
@@ -218,20 +216,18 @@ public class Simulator : SimulatorBase {
         }
 
         if (!EditorApplication.isPlaying) {
-            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
             Playback(time);
             return;
         }
 
         if (!NetworkClient.isConnected) {
-            long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
             Playback(time);
-        }
-        else {
+        } else {
             if (_dataSender == null) {
                 _dataSender = FindObjectOfType<DataSender>();
-            }
-            else {
+            } else {
                 PlaybackFromRemote();
             }
         }
@@ -315,7 +311,7 @@ public class Simulator : SimulatorBase {
     private long _pauseTime;
 
     public void PauseSimulator() {
-        _pauseTime = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
     }
 
@@ -440,13 +436,17 @@ public class Simulator : SimulatorBase {
             if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.JawOpen) {
                 HandleMouthOpening(nowValue);
             }
-            if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkLeft) {
+
+            if (faceData.blendshapeData[j].blendShapeLocation ==
+                DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkLeft) {
                 HandleLeftEyeOpening(nowValue);
             }
-            if (faceData.blendshapeData[j].blendShapeLocation == DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkRight) {
+
+            if (faceData.blendshapeData[j].blendShapeLocation ==
+                DataSender.FaceData.ARKitBlendShapeLocation.EyeBlinkRight) {
                 HandleRightEyeOpening(nowValue);
             }
-            
+
 
             if (_faceMasks == null || _faceMasks.Count == 0) {
                 continue;
@@ -471,7 +471,7 @@ public class Simulator : SimulatorBase {
         List<ARKitBlendShapeCoefficient> nextBlendShape = faceData.blendshapeData;
         long prevTimeStamp = prevFaceData.timestamp;
         List<ARKitBlendShapeCoefficient> prevBlendShape = prevFaceData.blendshapeData;
-        float nextWeight = (float) (currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
+        float nextWeight = (float)(currentTime - prevTimeStamp) / (nextTimeStamp - prevTimeStamp);
         float prevWeight = 1f - nextWeight;
 
         //now to grab the blendshape values of the prev and next frame and lerp + assign them
@@ -482,9 +482,11 @@ public class Simulator : SimulatorBase {
             if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.JawOpen) {
                 HandleMouthOpening(nowValue);
             }
+
             if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.EyeBlinkLeft) {
                 HandleLeftEyeOpening(nowValue);
             }
+
             if (prevBlendShape[j].blendShapeLocation == ARKitBlendShapeLocation.EyeBlinkRight) {
                 HandleRightEyeOpening(nowValue);
             }
@@ -515,8 +517,7 @@ public class Simulator : SimulatorBase {
             }
 
             _isMouthOpen = true;
-        }
-        else {
+        } else {
             if (_isMouthOpen) {
                 onMouthClose(this, null);
             }
@@ -533,8 +534,7 @@ public class Simulator : SimulatorBase {
             }
 
             _isLeftEyeOpen = true;
-        }
-        else {
+        } else {
             if (_isLeftEyeOpen) {
                 onLeftEyeClose(this, null);
             }
@@ -551,8 +551,7 @@ public class Simulator : SimulatorBase {
             }
 
             _isRightEyeOpen = true;
-        }
-        else {
+        } else {
             if (_isRightEyeOpen) {
                 onRightEyeClose(this, null);
             }
@@ -619,8 +618,7 @@ public class Simulator : SimulatorBase {
             mesh.RecalculateBounds();
             if (normals.Count == vertices.Count) {
                 mesh.SetNormals(normals);
-            }
-            else {
+            } else {
                 mesh.RecalculateNormals();
             }
 
