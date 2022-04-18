@@ -1,13 +1,7 @@
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.IO;
-using System.Linq;
-using Filta.Datatypes;
 
 namespace Filta {
 
