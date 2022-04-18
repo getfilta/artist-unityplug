@@ -2,20 +2,14 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Networking;
 using System;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
-using EvtSource;
 using Newtonsoft.Json;
-using Filta.Datatypes;
-using Newtonsoft.Json.Linq;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
-using Object = System.Object;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
@@ -47,6 +41,11 @@ namespace Filta {
 
         private const int Uploading = -1;
         private const int Limbo = 999;
+        private const string TempSelectedArtKey = "temp";
+        
+        private const string KnowledgeBaseLink =
+            "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
+        private const string PublishPageLink = "https://www.getfilta.com/mint";
 
         [MenuItem("Filta/Artist Panel (Dockable)", false, 0)]
         static void InitDockable() {
@@ -66,7 +65,12 @@ namespace Filta {
             LayoutUtility.LoadLayoutFromAsset(path);
         }
 
-        [MenuItem("Filta/Log Out", false, 5)]
+        [MenuItem("Filta/Documentation, Tutorials, Examples and FAQ", false, 5)]
+        private static void OpenKnowledgeBase() {
+            Application.OpenURL(KnowledgeBaseLink);
+        }
+
+        [MenuItem("Filta/Log Out", false, 6)]
         static void LogOut() {
             Authentication.Instance.LogOut(true);
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
@@ -464,7 +468,7 @@ namespace Filta {
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-            string buttonTitle = selectedArtKey == "temp" ? "Upload new filter to Filta" : "Update your filta";
+            string buttonTitle = selectedArtKey == TempSelectedArtKey ? "Upload new filter to Filta" : "Update your filta";
             bool assetBundleButton = GUILayout.Button(buttonTitle);
             if (!assetBundleButton) { return; }
             if (!await EnsureUnexpiredLogin()) {
@@ -475,7 +479,7 @@ namespace Filta {
                 return;
             }
 
-            if (selectedArtKey != "temp" && artsAndBundleStatus.Bundles.ContainsKey(selectedArtKey)) {
+            if (selectedArtKey != TempSelectedArtKey && artsAndBundleStatus.Bundles.ContainsKey(selectedArtKey)) {
                 //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
                 //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
                 var bundle = artsAndBundleStatus.Bundles[selectedArtKey];
@@ -789,7 +793,7 @@ namespace Filta {
                 EditorGUILayout.Space();
                 if (newClicked) {
                     selectedArtTitle = SceneManager.GetActiveScene().name;
-                    selectedArtKey = "temp";
+                    selectedArtKey = TempSelectedArtKey;
                 }
                 if (artsAndBundleStatus == null || artsAndBundleStatus.ArtMetas.Count < 1) { return; }
 
@@ -803,6 +807,15 @@ namespace Filta {
                         selectedArtKey = item.Key;
                     }
                 }
+            }
+        }
+
+        private void GoToPublishingPage() {
+            if (selectedArtKey == TempSelectedArtKey) {
+                return;
+            }
+            if (GUILayout.Button("Go to publishing page")) {
+                Application.OpenURL($"{PublishPageLink}?id={selectedArtKey}");
             }
         }
 
@@ -842,6 +855,7 @@ namespace Filta {
             selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
             EditorGUILayout.Space();
             GenerateAndUploadAssetBundle();
+            GoToPublishingPage();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 

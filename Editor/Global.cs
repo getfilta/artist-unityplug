@@ -1,20 +1,5 @@
-using System.Collections.Generic;
 using UnityEditor;
-using UnityEngine;
-using UnityEngine.Networking;
 using System;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.IO;
-using System.Linq;
-using EvtSource;
-using Newtonsoft.Json;
-using Filta.Datatypes;
-using Newtonsoft.Json.Linq;
-using UnityEditor.PackageManager.Requests;
-using UnityEditor.SceneManagement;
-using UnityEngine.SceneManagement;
-using Object = System.Object;
 
 namespace Filta {
     public static class Global {
