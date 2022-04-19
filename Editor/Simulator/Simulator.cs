@@ -274,6 +274,8 @@ public class Simulator : SimulatorBase {
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
+        Camera.main.transform.position = faceData.cameraPosition;
+        Camera.main.transform.eulerAngles = faceData.cameraRotation;
     }
 
     protected override void EnforceObjectStructure() {
