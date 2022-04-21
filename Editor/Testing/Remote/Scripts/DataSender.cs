@@ -36,7 +36,7 @@ public class DataSender : NetworkBehaviour {
     [Client]
     void OnGottenResolution(Vector2Int oldValue, Vector2Int newValue) {
 #if UNITY_EDITOR
-        GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewSizeGroupType.iOS, newValue.x, newValue.y, "FiltaSimulatorRemote");
+        GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, newValue.x, newValue.y, "FiltaSimulatorRemote");
 #endif
         _remoteManager.videoSender.Initialize(newValue);
     }
