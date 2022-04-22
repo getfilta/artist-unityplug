@@ -11,7 +11,7 @@ public class DataSender : NetworkBehaviour {
     public FaceData _data;
 
     [SyncVar(hook = nameof(OnGottenResolution))]
-    private Vector2Int _screenResolution;
+    private Vector3Int _screenResolution;
     
     private int _count;
 
@@ -29,12 +29,7 @@ public class DataSender : NetworkBehaviour {
     }
 
     [Client]
-    public override void OnStopClient() {
-        _remoteManager.videoSender.UnInitialize();
-    }
-
-    [Client]
-    void OnGottenResolution(Vector2Int oldValue, Vector2Int newValue) {
+    void OnGottenResolution(Vector3Int oldValue, Vector3Int newValue) {
 #if UNITY_EDITOR
         GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, newValue.x, newValue.y, "FiltaSimulatorRemote");
 #endif
@@ -49,7 +44,7 @@ public class DataSender : NetworkBehaviour {
 
     [Command]
     private void RequestScreenResolution() {
-        _screenResolution = new Vector2Int(Display.main.systemWidth, Display.main.systemHeight);
+        _screenResolution = new Vector3Int(Display.main.systemWidth, Display.main.systemHeight);
     }
 
     public readonly struct FaceData : IEquatable<FaceData> {
