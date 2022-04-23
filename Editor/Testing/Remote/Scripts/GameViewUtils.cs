@@ -67,8 +67,9 @@ public class GameViewUtils {
         addCustomSize.Invoke(group, new object[] {newSize});
     }
 
-    public static void SetGameView(GameViewSizeType viewSizeType, GameViewSizeGroupType sizeGroupType, int width,
+    public static void SetGameView(GameViewSizeType viewSizeType, int width,
         int height, string text) {
+        GameViewSizeGroupType sizeGroupType = GetGroupType();
         List<string> existingSizes = GetViewListSize(sizeGroupType).ToList();
         int index = existingSizes.FindIndex((s => s.Contains(text)));
         if ( index != -1) {
@@ -76,6 +77,18 @@ public class GameViewUtils {
         }
         AddCustomSize(viewSizeType, sizeGroupType, width, height, text);
         SetSize(GetViewListSize(sizeGroupType).Length - 1);
+    }
+
+    private static GameViewSizeGroupType GetGroupType() {
+        switch (EditorUserBuildSettings.activeBuildTarget) {
+            case BuildTarget.iOS: return GameViewSizeGroupType.iOS;
+            case BuildTarget.Android: return GameViewSizeGroupType.Android;
+            case BuildTarget.StandaloneWindows: return GameViewSizeGroupType.Standalone;
+            case BuildTarget.StandaloneLinux64: return GameViewSizeGroupType.Standalone;
+            case BuildTarget.StandaloneOSX: return GameViewSizeGroupType.Standalone;
+            case BuildTarget.StandaloneWindows64: return GameViewSizeGroupType.Standalone;
+            default: return GameViewSizeGroupType.Standalone;
+        }
     }
 
 }

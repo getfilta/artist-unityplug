@@ -11,9 +11,8 @@ public class DataSender : NetworkBehaviour {
     public FaceData _data;
 
     [SyncVar(hook = nameof(OnGottenResolution))]
-    private Vector2Int _screenResolution;
-
-    private bool _cliented;
+    private Vector3Int _screenResolution;
+    
     private int _count;
 
     [Server]
@@ -25,17 +24,16 @@ public class DataSender : NetworkBehaviour {
     [Client]
     public override void OnStartLocalPlayer() {
         _remoteManager = FindObjectOfType<RemoteManager>();
-        _cliented = true;
+        _remoteManager.videoSender.SetupClient();
         RequestScreenResolution();
     }
 
     [Client]
-    void OnGottenResolution(Vector2Int oldValue, Vector2Int newValue) {
+    void OnGottenResolution(Vector3Int oldValue, Vector3Int newValue) {
 #if UNITY_EDITOR
-        GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewSizeGroupType.iOS, newValue.x, newValue.y, "FiltaSimulatorRemote");
+        GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, newValue.x, newValue.y, "FiltaSimulatorRemote");
 #endif
-        _remoteManager.videoSender.Initialize(new Vector2Int(newValue.x / _remoteManager.ResolutionFactor,
-            newValue.y / _remoteManager.ResolutionFactor));
+        _remoteManager.videoSender.Initialize(newValue);
     }
 
 
@@ -44,17 +42,9 @@ public class DataSender : NetworkBehaviour {
         _data = faceData;
     }
 
-    [Client]
-    private void Update() {
-        if (_cliented) {
-            _remoteManager.captureCamera.position = _data.cameraPosition;
-            _remoteManager.captureCamera.eulerAngles = _data.cameraRotation;
-        }
-    }
-
     [Command]
     private void RequestScreenResolution() {
-        _screenResolution = new Vector2Int(Display.main.systemWidth, Display.main.systemHeight);
+        _screenResolution = new Vector3Int(Display.main.systemWidth, Display.main.systemHeight);
     }
 
     public readonly struct FaceData : IEquatable<FaceData> {
