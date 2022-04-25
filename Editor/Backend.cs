@@ -95,6 +95,11 @@ namespace Filta {
             }
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
+            if (!string.IsNullOrEmpty(upload.error)) {
+                Global.FireStatusChange(this, $"Error Uploading: {upload.error}");
+                Debug.LogError($"{upload.downloadHandler.text}:{upload.error}");
+                return null;
+            }
             return parsed.artid;
         }
 
