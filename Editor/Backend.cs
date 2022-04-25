@@ -218,11 +218,11 @@ namespace Filta {
                         bundleStatus = artMeta.Value.bundleStatus,
                         lastUpdated = artMeta.Value.lastUpdated
                     });
-                } else if (artMeta.Value.title == _currentBundle && artMeta.Value.bundleStatus == "bundled") {
+                } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "bundled") {
                     _currentBundle = null;
                     Global.FireStatusChange(this, $"{artMeta.Value.title} successfully processed! (5/5)", false);
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Success;
-                } else if (artMeta.Value.title == _currentBundle && artMeta.Value.bundleStatus == "error-bundling") {
+                } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "error-bundling") {
                     _currentBundle = null;
                     Global.FireStatusChange(this, $"{artMeta.Value.title} : error processing :(", true);
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Error;
