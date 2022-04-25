@@ -78,5 +78,13 @@
       "pluginMinorVersion": 11
     },
     "releaseNotes": "- feat: add filta event triggers to visual scripting. event triggers include events that are triggered by mouth, left eye and right eye movements."
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 12
+    },
+    "releaseNotes": "- feat: upgraded realtime testing of filter. now has better quality and shows filter on both editor and app. fix: status bar correctly shows when filter is done processing"
   }
 ]
