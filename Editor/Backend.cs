@@ -39,6 +39,7 @@ namespace Filta {
 
 
         private EventSourceReader _evt = null;
+        private string _currentBundle;
 
         public void ListenToQueue() {
             if (_evt == null) {
@@ -67,6 +68,7 @@ namespace Filta {
         }
 
         public async Task<string> Upload(string selectedArtKey, string selectedArtTitle, Hash128 hash, byte[] bytes) {
+            _currentBundle = null;
             WWWForm postData = new();
             if (selectedArtKey != "temp") {
                 Debug.LogWarning("Updating Art with artid: " + selectedArtKey);
@@ -95,6 +97,12 @@ namespace Filta {
             }
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
+            if (!string.IsNullOrEmpty(upload.error)) {
+                Global.FireStatusChange(this, $"Error Uploading: {upload.error}");
+                Debug.LogError($"{upload.downloadHandler.text}:{upload.error}");
+                return null;
+            }
+            _currentBundle = parsed.artid;
             return parsed.artid;
         }
 
@@ -210,10 +218,12 @@ namespace Filta {
                         bundleStatus = artMeta.Value.bundleStatus,
                         lastUpdated = artMeta.Value.lastUpdated
                     });
-                } else if (artMeta.Value.bundleStatus == "bundled" && Global.GetTimeSince(artMeta.Value.lastUpdated) < TimeSpan.FromSeconds(10)) {
+                } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "bundled") {
+                    _currentBundle = null;
                     Global.FireStatusChange(this, $"{artMeta.Value.title} successfully processed! (5/5)", false);
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Success;
-                } else if (artMeta.Value.bundleStatus == "error-bundling" && Global.GetTimeSince(artMeta.Value.lastUpdated) < TimeSpan.FromSeconds(10)) {
+                } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "error-bundling") {
+                    _currentBundle = null;
                     Global.FireStatusChange(this, $"{artMeta.Value.title} : error processing :(", true);
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Error;
                 }

@@ -578,8 +578,8 @@ namespace Filta {
             await RefreshArtsAndBundleStatus();
             if (uploadResultKey != null) {
                 selectedArtKey = uploadResultKey;
+                SetStatusMessage("Upload successful. Processing... (4/5)");
             }
-            SetStatusMessage("Upload successful. Processing... (4/5)");
             AssetDatabase.DeleteAsset(variantTempSave);
         }
 
