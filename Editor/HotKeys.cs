@@ -3,7 +3,7 @@ using UnityEditor;
 
 public class HotKeys : Editor
 {
-    [MenuItem("Filta Hotkeys/Pause or Resume Simulator #e")]
+    [MenuItem("Filta Hotkeys/Pause or Resume Simulator &e")]
         static void ToggleSimulatorPlaying() {
             SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
             if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
@@ -32,7 +32,7 @@ public class HotKeys : Editor
             }
         }
         
-        [MenuItem("Filta Hotkeys/Reset Simulator #r")]
+        [MenuItem("Filta Hotkeys/Reset Simulator &r")]
         static void ResetSimulatorPlaying() {
             SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
             if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
