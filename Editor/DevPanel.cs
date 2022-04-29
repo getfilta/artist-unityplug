@@ -354,8 +354,9 @@ namespace Filta {
                         DrawUploader();
                         break;
                 }
-            } else {
+            } else if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut){
                 DrawSimulator();
+            } else {
                 GUILayout.FlexibleSpace();
                 HandleNewPluginVersion();
             }
