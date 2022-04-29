@@ -721,6 +721,9 @@ namespace Filta {
                     SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
                     Debug.LogError("Error downloading: " + e.Message);
                 }
+            } else {
+                SetStatusMessage("Login failed");
+                Debug.LogError($"Login failed with result: {result}");
             }
             return result == LoginResult.Success;
         }
