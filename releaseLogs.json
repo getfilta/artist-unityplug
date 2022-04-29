@@ -93,6 +93,6 @@
       "pluginMajorVersion": 5,
       "pluginMinorVersion": 13
     },
-    "releaseNotes": "- fix: many small bugs"
+    "releaseNotes": "- feat: add hotkeys. fix: many small bugs"
   }
 ]
