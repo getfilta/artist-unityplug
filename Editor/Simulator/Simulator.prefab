@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1871096965488121260}
   - component: {fileID: 7382256431116267783}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: RemoteFeed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -559,6 +559,7 @@ MonoBehaviour:
   _vertices: {fileID: 0}
   bounds: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
   _videoFeed: {fileID: 4417709659914063239}
+  _remoteFeed: {fileID: 7382256431116267783}
 --- !u!114 &3231588854487278633
 MonoBehaviour:
   m_ObjectHideFlags: 0

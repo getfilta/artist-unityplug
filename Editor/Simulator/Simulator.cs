@@ -67,6 +67,9 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private RawImage _videoFeed;
 
+    [SerializeField]
+    private RawImage _remoteFeed;
+
     private long _prevTime;
     private int _previousFrame;
     private bool _skipFaceSimulator;
@@ -94,6 +97,9 @@ public class Simulator : SimulatorBase {
 
     protected override void OnEnable() {
         base.OnEnable();
+        if (!EditorApplication.isPlaying) {
+            _remoteFeed.gameObject.SetActive(false);
+        }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
         EditorApplication.hierarchyChanged += SetFilterLayers;
