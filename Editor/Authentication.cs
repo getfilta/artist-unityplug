@@ -56,7 +56,7 @@ namespace Filta {
         public string LoginToken { get { return loginData.idToken; } }
         public string Uid { get { return loginData.localId; } }
 
-        public bool IsLoginExpired { get { return _expiryTime > DateTime.Now; } }
+        public bool IsLoginExpired { get { return _expiryTime < DateTime.Now; } }
 
         public void LogOut(bool hardLogout = true) {
             loginData = null;

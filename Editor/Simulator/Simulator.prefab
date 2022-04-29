@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1871096965488121260}
   - component: {fileID: 7382256431116267783}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: RemoteFeed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 86eab99d77a244ba3af25c8b4ae476f1, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -559,6 +559,7 @@ MonoBehaviour:
   _vertices: {fileID: 0}
   bounds: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
   _videoFeed: {fileID: 4417709659914063239}
+  _remoteFeed: {fileID: 7382256431116267783}
 --- !u!114 &3231588854487278633
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -86,5 +86,13 @@
       "pluginMinorVersion": 12
     },
     "releaseNotes": "- feat: upgraded realtime testing of filter. now has better quality and shows filter on both editor and app. fix: status bar correctly shows when filter is done processing"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 13
+    },
+    "releaseNotes": "- feat: add hotkeys. fix: many small bugs"
   }
 ]
