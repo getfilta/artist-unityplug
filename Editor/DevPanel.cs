@@ -43,7 +43,7 @@ namespace Filta {
         private const int Limbo = 999;
         private const string TempSelectedArtKey = "temp";
         private const float RefreshTime = 120;
-
+        private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
         
@@ -789,13 +789,18 @@ namespace Filta {
         }
 
         private async void AutoRefreshArts() {
+            if (_isRefreshing) {
+                return;
+            }
             if (_lastGuiTime == DateTime.MinValue) {
                 _lastGuiTime = DateTime.Now;
             }
             double seconds = (DateTime.Now - _lastGuiTime).TotalSeconds;
             _refreshTimer += seconds;
             if (_refreshTimer > RefreshTime) {
+                _isRefreshing = true;
                 await RefreshArtsAndBundleStatus();
+                _isRefreshing = false;
                 _refreshTimer = 0;
             }
             _lastGuiTime = DateTime.Now;
