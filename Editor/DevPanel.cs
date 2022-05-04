@@ -42,6 +42,10 @@ namespace Filta {
         private const int Uploading = -1;
         private const int Limbo = 999;
         private const string TempSelectedArtKey = "temp";
+        private const float RefreshTime = 15;
+        private bool _isRefreshing;
+        private double _refreshTimer;
+        private DateTime _lastGuiTime;
         
         private const string KnowledgeBaseLink =
             "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
@@ -344,6 +348,7 @@ namespace Filta {
         #endregion
         void OnGUI() {
             Login();
+            AutoRefreshArts();
             if (Authentication.Instance.IsLoggedIn) {
                 _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
                 switch (_selectedTab) {
@@ -783,7 +788,36 @@ namespace Filta {
 
         }
 
+        private async void AutoRefreshArts() {
+            if (artsAndBundleStatus == null || artsAndBundleStatus.Bundles == null ||
+                artsAndBundleStatus.Bundles.Count == 0) {
+                return;
+            }
+
+            if (_isRefreshing) {
+                return;
+            }
+
+            if (_lastGuiTime == DateTime.MinValue) {
+                _lastGuiTime = DateTime.Now;
+            }
+
+            double seconds = (DateTime.Now - _lastGuiTime).TotalSeconds;
+            _refreshTimer += seconds;
+            if (_refreshTimer > RefreshTime) {
+                _isRefreshing = true;
+                await RefreshArtsAndBundleStatus();
+                _isRefreshing = false;
+                _refreshTimer = 0;
+            }
+
+            _lastGuiTime = DateTime.Now;
+        }
+
         private async Task RefreshArtsAndBundleStatus() {
+            if (!Authentication.Instance.IsLoggedIn) {
+                return;
+            }
             this.artsAndBundleStatus = new ArtsAndBundleStatus();
             this.artsAndBundleStatus = await Backend.Instance.GetArtsAndBundleStatus();
             this.Repaint();
