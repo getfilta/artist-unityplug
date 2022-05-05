@@ -339,7 +339,7 @@ namespace Filta {
     }
 
     public struct PluginInfo {
-        public enum FilterType { Face, Body }
+        public enum FilterType { Face, Body, Fusion }
         public int version;
         public FilterType filterType;
         public bool resetOnRecord;

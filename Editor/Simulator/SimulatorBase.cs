@@ -10,7 +10,8 @@ public abstract class SimulatorBase : MonoBehaviour {
     #if UNITY_EDITOR
     public enum SimulatorType {
         Face,
-        Body
+        Body,
+        Fusion
     }
 
     public virtual SimulatorType _simulatorType { get; }
@@ -54,6 +55,14 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     public virtual void TryAutomaticSetup() {
 
+    }
+
+    public virtual void Disable() {
+        
+    }
+
+    public virtual void Enable() {
+        
     }
 
     [ContextMenu("Toggle Visibility")]
