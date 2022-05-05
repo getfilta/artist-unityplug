@@ -111,6 +111,20 @@ public class Simulator : SimulatorBase {
         EditorApplication.hierarchyChanged -= SetFilterLayers;
     }
 
+    public override void Disable() {
+        _filterObject.gameObject.SetActive(false);
+        _faceMeshVisualiser.SetActive(false);
+        PauseSimulator();
+        _videoFeed.gameObject.SetActive(false);
+    }
+
+    public override void Enable() {
+        _filterObject.gameObject.SetActive(true);
+        _faceMeshVisualiser.SetActive(true);
+        ResumeSimulator();
+        _videoFeed.gameObject.SetActive(true);
+    }
+
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
             SetFlags();
