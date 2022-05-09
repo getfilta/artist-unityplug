@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 
 public class FusionSimulator : MonoBehaviour {
+    #if UNITY_EDITOR
     [NonSerialized]
     public SimulatorBase.SimulatorType activeType;
     
@@ -15,4 +16,5 @@ public class FusionSimulator : MonoBehaviour {
         _developerMode = !_developerMode;
         gameObject.hideFlags = _developerMode? HideFlags.None: HideFlags.NotEditable;
     }
+    #endif
 }

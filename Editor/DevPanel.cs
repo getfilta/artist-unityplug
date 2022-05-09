@@ -576,6 +576,7 @@ namespace Filta {
             if (CheckForUnreadableMeshes(filterObject)) {
                 return;
             }
+            //ToDo: Cater for fusion filters
             if (CheckObjectsOutsideFilter()) {
                 return;
             }
