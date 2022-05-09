@@ -568,7 +568,9 @@ namespace Filta {
                 }
             }
 
-            GameObject filterObject = _simulator._filterObject.gameObject;
+            GameObject filterObject = _simulatorType == SimulatorBase.SimulatorType.Fusion
+                ? _simulator._filterObject.parent.gameObject
+                : _simulator._filterObject.gameObject;
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
@@ -576,7 +578,6 @@ namespace Filta {
             if (CheckForUnreadableMeshes(filterObject)) {
                 return;
             }
-            //ToDo: Cater for fusion filters
             if (CheckObjectsOutsideFilter()) {
                 return;
             }
@@ -748,7 +749,15 @@ namespace Filta {
             for (int i = 0; i < rootObjects.Count; i++) {
                 //Check if it's the simulator, filter, main camera or it's inactive.
                 //This works under the assumption that artists would still want to be warned even if object is disabled.
-                if (rootObjects[i] == _simulator.gameObject || rootObjects[i] == _simulator._filterObject.gameObject ||
+                GameObject sim, filter;
+                if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                    sim = _fusionSimulator.gameObject;
+                    filter = _simulator._filterObject.parent.gameObject;
+                } else {
+                    sim = _simulator.gameObject;
+                    filter = _simulator._filterObject.gameObject;
+                }
+                if (rootObjects[i] == sim || rootObjects[i] == filter ||
                     rootObjects[i] == Camera.main.gameObject) {
                     continue;
                 }
