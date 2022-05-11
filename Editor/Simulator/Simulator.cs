@@ -102,13 +102,11 @@ public class Simulator : SimulatorBase {
         }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
-        EditorApplication.hierarchyChanged += SetFilterLayers;
     }
 
     private void OnDisable() {
         EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
-        EditorApplication.hierarchyChanged -= SetFilterLayers;
     }
 
     public override void TryAutomaticSetup() {

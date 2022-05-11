@@ -102,5 +102,13 @@
       "pluginMinorVersion": 14
     },
     "releaseNotes": "- feat: auto-refresh filter queue."
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 15
+    },
+    "releaseNotes": "- fix: post processing not working on artist remote."
   }
 ]
