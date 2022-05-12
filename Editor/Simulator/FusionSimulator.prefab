@@ -1065,6 +1065,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7296610774491037923, guid: 43c5e14d0d87d4560840f7707c6fc8c7, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7296610774491037923, guid: 43c5e14d0d87d4560840f7707c6fc8c7, type: 3}
       propertyPath: _bodyAvatars
       value: 
       objectReference: {fileID: 0}
