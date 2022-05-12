@@ -86,13 +86,13 @@ public class Simulator : SimulatorBase {
 
     protected override void Awake() {
         base.Awake();
-        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
-        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         mesh = new Mesh();
         isPlaying = true;
         _startTime = DateTime.Now;
         Debug.Log("Starting playback");
         TryAutomaticSetup();
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
     }
 
     protected override void OnEnable() {
