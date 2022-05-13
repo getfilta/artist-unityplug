@@ -368,14 +368,16 @@ namespace Filta {
                 case SimulatorBase.SimulatorType.Face:
                     if ((_faceToggle && !_bodyToggle) || (!_faceToggle && !_bodyToggle))
                         return;
-                    DestroyImmediate(_simulator._filterObject.gameObject);
+                    if (!_faceToggle && _bodyToggle) {
+                        DestroyImmediate(_simulator._filterObject.gameObject);
+                    }
                     DestroyImmediate(_simulator.gameObject);
                     switch (_bodyToggle) {
                         case true when !_faceToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Body);
+                            SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Face);
                             break;
                         case true when _faceToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion);
+                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Face);
                             break;
                     }
 
@@ -383,14 +385,16 @@ namespace Filta {
                 case SimulatorBase.SimulatorType.Body:
                     if ((!_faceToggle && _bodyToggle) || (!_faceToggle && !_bodyToggle))
                         return;
-                    DestroyImmediate(_simulator._filterObject.gameObject);
+                    if (!_bodyToggle && _faceToggle) {
+                        DestroyImmediate(_simulator._filterObject.gameObject);
+                    }
                     DestroyImmediate(_simulator.gameObject);
                     switch (_faceToggle) {
                         case true when !_bodyToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Face);
+                            SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Body);
                             break;
                         case true when _bodyToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion);
+                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Body);
                             break;
                     }
 
@@ -398,12 +402,16 @@ namespace Filta {
                 case SimulatorBase.SimulatorType.Fusion:
                     if (_faceToggle && _bodyToggle)
                         return;
-                    DestroyImmediate(_simulator._filterObject.parent.gameObject);
-                    DestroyImmediate(_fusionSimulator.gameObject);
                     if (_bodyToggle && !_faceToggle) {
-                        SpawnNewFilterType(SimulatorBase.SimulatorType.Body);
+                        SetSimulator(SimulatorBase.SimulatorType.Body);
+                        DestroyImmediate(_fusionSimulator.gameObject);
+                        DestroyImmediate(_faceSimulator._filterObject.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Fusion);
                     } else if (_faceToggle && !_bodyToggle) {
-                        SpawnNewFilterType(SimulatorBase.SimulatorType.Face);
+                        SetSimulator(SimulatorBase.SimulatorType.Face);
+                        DestroyImmediate(_fusionSimulator.gameObject);
+                        DestroyImmediate(_bodySimulator._filterObject.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Fusion);
                     }
 
                     break;
@@ -412,9 +420,9 @@ namespace Filta {
             FindSimulator(PlayModeStateChange.EnteredEditMode);
         }
 
-        void SpawnNewFilterType(SimulatorBase.SimulatorType simulatorType) {
+        void SpawnNewFilterType(SimulatorBase.SimulatorType newSimType, SimulatorBase.SimulatorType oldSimType) {
             string simPath, filterPath;
-            switch (simulatorType) {
+            switch (newSimType) {
                 case SimulatorBase.SimulatorType.Face:
                     simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
                     filterPath = $"{packagePath}/Core/Filter.prefab";
@@ -425,7 +433,9 @@ namespace Filta {
                     break;
                 case SimulatorBase.SimulatorType.Fusion:
                     simPath = $"{packagePath}/Editor/Simulator/FusionSimulator.prefab";
-                    filterPath = $"{packagePath}/Core/FilterFusion.prefab";
+                    filterPath = oldSimType == SimulatorBase.SimulatorType.Face
+                        ? $"{packagePath}/Core/FilterBody.prefab"
+                        : $"{packagePath}/Core/Filter.prefab";
                     break;
                 default:
                     simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
@@ -433,12 +443,21 @@ namespace Filta {
                     break;
             }
 
-            GameObject filter = AssetDatabase.LoadAssetAtPath<GameObject>(filterPath);
+            GameObject localFilter = null;
+            if (oldSimType != SimulatorBase.SimulatorType.Fusion) {
+                GameObject filter = AssetDatabase.LoadAssetAtPath<GameObject>(filterPath);
+                localFilter = PrefabUtility.InstantiatePrefab(filter) as GameObject;
+            }
+
             GameObject sim = AssetDatabase.LoadAssetAtPath<GameObject>(simPath);
-            GameObject localFilter = PrefabUtility.InstantiatePrefab(filter) as GameObject;
             GameObject localSim = PrefabUtility.InstantiatePrefab(sim) as GameObject;
-            localSim.transform.SetAsFirstSibling();
-            localFilter.transform.SetAsLastSibling();
+            if (localSim is not null) {
+                localSim.transform.SetAsFirstSibling();
+            }
+
+            if (localFilter is not null) {
+                localFilter.transform.SetAsLastSibling();
+            }
         }
 
         #endregion
@@ -637,9 +656,13 @@ namespace Filta {
                 }
             }
 
-            GameObject filterObject = _simulatorType == SimulatorBase.SimulatorType.Fusion
-                ? _simulator._filterObject.parent.gameObject
-                : _simulator._filterObject.gameObject;
+            GameObject filterObject = _simulator._filterObject.gameObject;
+            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                filterObject = new GameObject("FilterFusion");
+                _bodySimulator._filterObject.SetParent(filterObject.transform);
+                _faceSimulator._filterObject.SetParent(filterObject.transform);
+            }
+
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
@@ -662,6 +685,13 @@ namespace Filta {
                 filterDuplicate.name = "Filter";
                 PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
                 DestroyImmediate(filterDuplicate);
+                if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                    _bodySimulator._filterObject.SetParent(null);
+                    _faceSimulator._filterObject.SetParent(null);
+                    _faceSimulator._filterObject.SetAsLastSibling();
+                    _bodySimulator._filterObject.SetAsLastSibling();
+                    DestroyImmediate(filterObject);
+                }
                 if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";

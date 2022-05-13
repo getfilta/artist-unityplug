@@ -52,6 +52,8 @@ public class Simulator : SimulatorBase {
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
+    private Canvas _canvas;
+
     [SerializeField]
     private Mesh bounds;
 
@@ -130,6 +132,11 @@ public class Simulator : SimulatorBase {
         }
 
         SetFlags(true);
+        if (_videoFeed != null) {
+            _canvas = _videoFeed.GetComponentInParent<Canvas>();
+            _canvas.worldCamera = Camera.main;
+        }
+        
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
@@ -183,7 +190,7 @@ public class Simulator : SimulatorBase {
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
-               _facesHolder != null && _vertices != null;
+               _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
