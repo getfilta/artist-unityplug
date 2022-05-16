@@ -118,5 +118,13 @@
       "pluginMinorVersion": 16
     },
     "releaseNotes": "- feat: add switching between face and body filter and also add face + body filter"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 17
+    },
+    "releaseNotes": "- fix: small bugs"
   }
 ]

@@ -121,6 +121,7 @@ namespace Filta {
         private int _vertexNumber;
 
         private int _simulatorIndex;
+        private bool _resetOnRecord;
 
         private readonly string[] _simulatorOptions = {"Face", "Body", "Face + Body"};
 
@@ -230,7 +231,7 @@ namespace Filta {
                     filterType = PluginInfo.FilterType.Fusion;
                     break;
             }
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false };
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = _resetOnRecord };
         }
 
         private void OnDisable() {
@@ -593,7 +594,7 @@ namespace Filta {
             EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
             float originalValue = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 215;
-            _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
+            _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
@@ -751,6 +752,7 @@ namespace Filta {
                     _bodySimulator.ResumeSimulator();
                 }
             }
+            SetPluginInfo();
 
             string pluginInfoPath = Path.Combine(Application.dataPath, "pluginInfo.json");
             try {
