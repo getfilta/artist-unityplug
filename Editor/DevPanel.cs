@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using PlasticGui;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
@@ -18,7 +19,6 @@ namespace Filta {
         private int _selectedTab = 0;
         private string[] _toolbarTitles = { "Simulator", "Uploader" };
         private int _selectedSimulator;
-        private string[] _simulatorTitles = {"Face", "Body"};
         private const long UPLOAD_LIMIT = 100000000;
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string variantTempSave = "Assets/Filter.prefab";
@@ -120,9 +120,10 @@ namespace Filta {
         private BodySimulator _bodySimulator;
         private bool _activeSimulator;
         private int _vertexNumber;
-        
-        private bool _faceToggle;
-        private bool _bodyToggle;
+
+        private int _simulatorIndex;
+
+        private readonly string[] _simulatorOptions = {"Face", "Body", "Face + Body"};
 
         private static string GetVersionNumber() {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
@@ -133,6 +134,7 @@ namespace Filta {
             Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{packagePath}/Editor/icon.png");
             titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
             s = new GUIStyle();
+            _normalBackgroundColor = GUI.backgroundColor;
             EditorApplication.playModeStateChanged += FindSimulator;
             EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
             Global.StatusChange += HandleStatusChange;
@@ -185,9 +187,9 @@ namespace Filta {
                 _faceSimulator = _fusionSimulator.faceSimulator;
                 _bodySimulator = _fusionSimulator.bodySimulator;
                 SetSimulator(SimulatorBase.SimulatorType.Body);
+                _tabIndex = (int)SimulatorBase.SimulatorType.Body;
                 _activeSimulator = true;
-                _faceToggle = true;
-                _bodyToggle = true;
+                _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
             } else {
                 _simulator = FindObjectOfType<SimulatorBase>();
                 if (_simulator == null) {
@@ -200,13 +202,13 @@ namespace Filta {
                     if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                         _faceSimulator = simulatorObject.GetComponent<Simulator>();
                         _simulatorType = SimulatorBase.SimulatorType.Face;
-                        _faceToggle = true;
-                        _bodyToggle = false;
+                        _simulatorIndex = (int)SimulatorBase.SimulatorType.Face;
+                        _tabIndex = (int)SimulatorBase.SimulatorType.Face;
                     } else {
                         _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
                         _simulatorType = SimulatorBase.SimulatorType.Body;
-                        _faceToggle = false;
-                        _bodyToggle = true;
+                        _simulatorIndex = (int)SimulatorBase.SimulatorType.Body;
+                        _tabIndex = (int)SimulatorBase.SimulatorType.Body;
                     }
                 }
             }
@@ -245,18 +247,41 @@ namespace Filta {
             SetStatusMessage(e.Message, e.IsError);
         }
 
-        private void HandleSimulator() {
-            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
-                _selectedSimulator = GUILayout.Toolbar(_selectedSimulator, _simulatorTitles);
-                switch (_selectedSimulator) {
-                    case 0:
-                        SetSimulator(SimulatorBase.SimulatorType.Face);
-                        break;
-                    case 1:
-                        SetSimulator(SimulatorBase.SimulatorType.Body);
-                        break;
+        private int _tabIndex;
+
+        private void ShowSimulatorTabs() {
+            GUILayout.BeginHorizontal();
+            {
+                GUI.backgroundColor = _tabIndex == (int)SimulatorBase.SimulatorType.Face ? Color.green : _normalBackgroundColor;
+                GUI.enabled = _simulatorType != SimulatorBase.SimulatorType.Body;
+                if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Face], EditorStyles.miniButtonLeft, GUILayout.ExpandHeight(true))) {
+                    _tabIndex = (int)SimulatorBase.SimulatorType.Face;
                 }
+                
+                GUI.backgroundColor = _tabIndex == (int)SimulatorBase.SimulatorType.Body ? Color.green : _normalBackgroundColor;
+                GUI.enabled = _simulatorType != SimulatorBase.SimulatorType.Face;
+                if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Body], EditorStyles.miniButtonRight, GUILayout.ExpandHeight(true))) {
+                    _tabIndex = (int)SimulatorBase.SimulatorType.Body;
+                }
+
+                GUI.enabled = true;
+                GUI.backgroundColor = _normalBackgroundColor;
             }
+            GUILayout.EndHorizontal();
+        }
+
+        private void HandleSimulator() {
+            ShowSimulatorTabs();
+            switch (_tabIndex) {
+                case 0:
+                    SetSimulator(SimulatorBase.SimulatorType.Face);
+                    break;
+                case 1:
+                    SetSimulator(SimulatorBase.SimulatorType.Body);
+                    break;
+            }
+            HandleFilterTypeSwitching();
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
@@ -360,54 +385,72 @@ namespace Filta {
                 return;
             }
 
-            _faceToggle =
-                EditorGUILayout.Toggle("Face Filter", _faceToggle);
-            _bodyToggle =
-                EditorGUILayout.Toggle("Body Filter", _bodyToggle);
+            EditorGUILayout.LabelField("Choose Filter type", EditorStyles.boldLabel);
+            _simulatorIndex = EditorGUILayout.Popup(_simulatorIndex, _simulatorOptions);
             switch (_simulatorType) {
                 case SimulatorBase.SimulatorType.Face:
-                    if ((_faceToggle && !_bodyToggle) || (!_faceToggle && !_bodyToggle))
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face)
                         return;
-                    if (!_faceToggle && _bodyToggle) {
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face filter to a body filter. Any face filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Face;
+                            return;
+                        }
                         DestroyImmediate(_simulator._filterObject.gameObject);
-                    }
-                    DestroyImmediate(_simulator.gameObject);
-                    switch (_bodyToggle) {
-                        case true when !_faceToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Face);
-                            break;
-                        case true when _faceToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Face);
-                            break;
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Face);
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Face);
                     }
 
                     break;
                 case SimulatorBase.SimulatorType.Body:
-                    if ((!_faceToggle && _bodyToggle) || (!_faceToggle && !_bodyToggle))
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body)
                         return;
-                    if (!_bodyToggle && _faceToggle) {
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a body filter to a face filter. Any body filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Body;
+                            return;
+                        }
                         DestroyImmediate(_simulator._filterObject.gameObject);
-                    }
-                    DestroyImmediate(_simulator.gameObject);
-                    switch (_faceToggle) {
-                        case true when !_bodyToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Body);
-                            break;
-                        case true when _bodyToggle:
-                            SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Body);
-                            break;
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Body);
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Body);
                     }
 
                     break;
                 case SimulatorBase.SimulatorType.Fusion:
-                    if (_faceToggle && _bodyToggle)
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion)
                         return;
-                    if (_bodyToggle && !_faceToggle) {
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face + body filter to just a body filter. Any face filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
+                            return;
+                        }
                         SetSimulator(SimulatorBase.SimulatorType.Body);
                         DestroyImmediate(_fusionSimulator.gameObject);
                         DestroyImmediate(_faceSimulator._filterObject.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Fusion);
-                    } else if (_faceToggle && !_bodyToggle) {
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face + body filter to just a face filter. Any body filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
+                            return;
+                        }
                         SetSimulator(SimulatorBase.SimulatorType.Face);
                         DestroyImmediate(_fusionSimulator.gameObject);
                         DestroyImmediate(_bodySimulator._filterObject.gameObject);
@@ -548,9 +591,6 @@ namespace Filta {
                 EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
                 DrawUILine(Color.gray);
             }
-            EditorGUILayout.LabelField("Choose Filter type", EditorStyles.boldLabel);
-            HandleFilterTypeSwitching();
-            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
             float originalValue = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 215;
