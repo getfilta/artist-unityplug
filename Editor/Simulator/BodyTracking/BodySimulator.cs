@@ -125,6 +125,18 @@ public class BodySimulator : SimulatorBase {
         _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
         _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
     }
+    
+    public override void Disable() {
+        _filterObject.gameObject.SetActive(false);
+        _bodyVisualiser.gameObject.SetActive(false);
+        PauseSimulator();
+    }
+
+    public override void Enable() {
+        _filterObject.gameObject.SetActive(true);
+        _bodyVisualiser.gameObject.SetActive(true);
+        ResumeSimulator();
+    }
 
     public override bool IsSetUpProperly() {
         return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&

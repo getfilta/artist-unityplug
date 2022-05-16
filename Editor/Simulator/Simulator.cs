@@ -52,6 +52,8 @@ public class Simulator : SimulatorBase {
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
+    private Canvas _canvas;
+
     [SerializeField]
     private Mesh bounds;
 
@@ -86,13 +88,13 @@ public class Simulator : SimulatorBase {
 
     protected override void Awake() {
         base.Awake();
-        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
-        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         mesh = new Mesh();
         isPlaying = true;
         _startTime = DateTime.Now;
         Debug.Log("Starting playback");
         TryAutomaticSetup();
+        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
     }
 
     protected override void OnEnable() {
@@ -109,6 +111,20 @@ public class Simulator : SimulatorBase {
         EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
     }
 
+    public override void Disable() {
+        _filterObject.gameObject.SetActive(false);
+        _faceMeshVisualiser.SetActive(false);
+        PauseSimulator();
+        _videoFeed.gameObject.SetActive(false);
+    }
+
+    public override void Enable() {
+        _filterObject.gameObject.SetActive(true);
+        _faceMeshVisualiser.SetActive(true);
+        ResumeSimulator();
+        _videoFeed.gameObject.SetActive(true);
+    }
+
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
             SetFlags();
@@ -116,6 +132,11 @@ public class Simulator : SimulatorBase {
         }
 
         SetFlags(true);
+        if (_videoFeed != null) {
+            _canvas = _videoFeed.GetComponentInParent<Canvas>();
+            _canvas.worldCamera = Camera.main;
+        }
+        
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
@@ -169,7 +190,7 @@ public class Simulator : SimulatorBase {
         return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
-               _facesHolder != null && _vertices != null;
+               _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
     }
 
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.

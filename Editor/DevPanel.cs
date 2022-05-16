@@ -17,6 +17,7 @@ namespace Filta {
 
         private int _selectedTab = 0;
         private string[] _toolbarTitles = { "Simulator", "Uploader" };
+        private int _selectedSimulator;
         private const long UPLOAD_LIMIT = 100000000;
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string variantTempSave = "Assets/Filter.prefab";
@@ -110,11 +111,18 @@ namespace Filta {
         }
 
         #region Simulator
+
+        private SimulatorBase.SimulatorType _simulatorType;
+        private FusionSimulator _fusionSimulator;
         private SimulatorBase _simulator;
         private Simulator _faceSimulator;
         private BodySimulator _bodySimulator;
         private bool _activeSimulator;
         private int _vertexNumber;
+
+        private int _simulatorIndex;
+
+        private readonly string[] _simulatorOptions = {"Face", "Body", "Face + Body"};
 
         private static string GetVersionNumber() {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
@@ -125,6 +133,7 @@ namespace Filta {
             Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{packagePath}/Editor/icon.png");
             titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
             s = new GUIStyle();
+            _normalBackgroundColor = GUI.backgroundColor;
             EditorApplication.playModeStateChanged += FindSimulator;
             EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
             Global.StatusChange += HandleStatusChange;
@@ -149,21 +158,57 @@ namespace Filta {
             SetPluginInfo();
         }
 
+        private void SetSimulator(SimulatorBase.SimulatorType type) {
+            if (_fusionSimulator == null || _fusionSimulator.activeType == type) {
+                return;
+            }
+            _fusionSimulator.activeType = type;
+            switch (type) {
+                case SimulatorBase.SimulatorType.Face:
+                    _simulator = _fusionSimulator.faceSimulator;
+                    _fusionSimulator.faceSimulator.Enable();
+                    _fusionSimulator.bodySimulator.Disable();
+                    break;
+                case SimulatorBase.SimulatorType.Body:
+                    _simulator = _fusionSimulator.bodySimulator;
+                    _fusionSimulator.faceSimulator.Disable();
+                    _fusionSimulator.bodySimulator.Enable();
+                    break;
+            }
+        }
+
         private void FindSimulator(PlayModeStateChange stateChange) {
             _simulator = null;
             _activeSimulator = false;
-            _simulator = FindObjectOfType<SimulatorBase>();
-            if (_simulator == null) {
-                SetStatusMessage("Not a filter scene. Create a filter by selecting Create New Filter in the dev panel", true);
-                return;
-            }
-            GameObject simulatorObject = _simulator.gameObject;
-            if (_simulator != null) {
+            _fusionSimulator = FindObjectOfType<FusionSimulator>();
+            if (_fusionSimulator != null) {
+                _simulatorType = SimulatorBase.SimulatorType.Fusion;
+                _faceSimulator = _fusionSimulator.faceSimulator;
+                _bodySimulator = _fusionSimulator.bodySimulator;
+                SetSimulator(SimulatorBase.SimulatorType.Body);
+                _tabIndex = (int)SimulatorBase.SimulatorType.Body;
                 _activeSimulator = true;
-                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
-                    _faceSimulator = simulatorObject.GetComponent<Simulator>();
-                } else {
-                    _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
+                _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
+            } else {
+                _simulator = FindObjectOfType<SimulatorBase>();
+                if (_simulator == null) {
+                    SetStatusMessage("Not a filter scene. Create a filter by selecting Create New Filter in the dev panel", true);
+                    return;
+                }
+                GameObject simulatorObject = _simulator.gameObject;
+                if (_simulator != null) {
+                    _activeSimulator = true;
+                    if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
+                        _faceSimulator = simulatorObject.GetComponent<Simulator>();
+                        _simulatorType = SimulatorBase.SimulatorType.Face;
+                        _simulatorIndex = (int)SimulatorBase.SimulatorType.Face;
+                        _tabIndex = (int)SimulatorBase.SimulatorType.Face;
+                    } else {
+                        _bodySimulator = simulatorObject.GetComponent<BodySimulator>();
+                        _simulatorType = SimulatorBase.SimulatorType.Body;
+                        _simulatorIndex = (int)SimulatorBase.SimulatorType.Body;
+                        _tabIndex = (int)SimulatorBase.SimulatorType.Body;
+                    }
                 }
             }
         }
@@ -172,9 +217,19 @@ namespace Filta {
             if (!_activeSimulator) {
                 return;
             }
-            PluginInfo.FilterType filterType = _simulator._simulatorType == SimulatorBase.SimulatorType.Body
-                ? PluginInfo.FilterType.Body
-                : PluginInfo.FilterType.Face;
+
+            PluginInfo.FilterType filterType = PluginInfo.FilterType.Face;
+            switch (_simulatorType) {
+                case SimulatorBase.SimulatorType.Face:
+                    filterType = PluginInfo.FilterType.Face;
+                    break;
+                case SimulatorBase.SimulatorType.Body:
+                    filterType = PluginInfo.FilterType.Body;
+                    break;
+                case SimulatorBase.SimulatorType.Fusion:
+                    filterType = PluginInfo.FilterType.Fusion;
+                    break;
+            }
             _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = false };
         }
 
@@ -191,7 +246,41 @@ namespace Filta {
             SetStatusMessage(e.Message, e.IsError);
         }
 
+        private int _tabIndex;
+
+        private void ShowSimulatorTabs() {
+            GUILayout.BeginHorizontal();
+            {
+                GUI.backgroundColor = _tabIndex == (int)SimulatorBase.SimulatorType.Face ? Color.green : _normalBackgroundColor;
+                GUI.enabled = _simulatorType != SimulatorBase.SimulatorType.Body;
+                if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Face], EditorStyles.miniButtonLeft, GUILayout.ExpandHeight(true))) {
+                    _tabIndex = (int)SimulatorBase.SimulatorType.Face;
+                }
+                
+                GUI.backgroundColor = _tabIndex == (int)SimulatorBase.SimulatorType.Body ? Color.green : _normalBackgroundColor;
+                GUI.enabled = _simulatorType != SimulatorBase.SimulatorType.Face;
+                if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Body], EditorStyles.miniButtonRight, GUILayout.ExpandHeight(true))) {
+                    _tabIndex = (int)SimulatorBase.SimulatorType.Body;
+                }
+
+                GUI.enabled = true;
+                GUI.backgroundColor = _normalBackgroundColor;
+            }
+            GUILayout.EndHorizontal();
+        }
+
         private void HandleSimulator() {
+            ShowSimulatorTabs();
+            switch (_tabIndex) {
+                case 0:
+                    SetSimulator(SimulatorBase.SimulatorType.Face);
+                    break;
+                case 1:
+                    SetSimulator(SimulatorBase.SimulatorType.Body);
+                    break;
+            }
+            HandleFilterTypeSwitching();
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Simulator", EditorStyles.boldLabel);
             if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 HandleFaceSimulator();
@@ -205,7 +294,6 @@ namespace Filta {
                     _simulator.TryAutomaticSetup();
                 }
             }
-
         }
 
 
@@ -228,7 +316,6 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
-
         }
 
         private void SetButtonColor(bool isRed) {
@@ -241,7 +328,6 @@ namespace Filta {
         }
 
         private void HandleFaceSimulator() {
-
             EditorGUILayout.BeginHorizontal();
             if (_faceSimulator.isPlaying) {
                 if (GUILayout.Button("Pause")) {
@@ -290,6 +376,129 @@ namespace Filta {
             if (GUILayout.Button("Create")) {
                 GameObject newFace = _faceSimulator.SpawnNewFaceMesh();
                 Selection.activeGameObject = newFace;
+            }
+        }
+
+        void HandleFilterTypeSwitching() {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) {
+                return;
+            }
+
+            EditorGUILayout.LabelField("Choose Filter type", EditorStyles.boldLabel);
+            _simulatorIndex = EditorGUILayout.Popup(_simulatorIndex, _simulatorOptions);
+            switch (_simulatorType) {
+                case SimulatorBase.SimulatorType.Face:
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face)
+                        return;
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face filter to a body filter. Any face filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Face;
+                            return;
+                        }
+                        DestroyImmediate(_simulator._filterObject.gameObject);
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Face);
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Face);
+                    }
+
+                    break;
+                case SimulatorBase.SimulatorType.Body:
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body)
+                        return;
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a body filter to a face filter. Any body filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Body;
+                            return;
+                        }
+                        DestroyImmediate(_simulator._filterObject.gameObject);
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Body);
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
+                        DestroyImmediate(_simulator.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Body);
+                    }
+
+                    break;
+                case SimulatorBase.SimulatorType.Fusion:
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion)
+                        return;
+                    if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Body) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face + body filter to just a body filter. Any face filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
+                            return;
+                        }
+                        SetSimulator(SimulatorBase.SimulatorType.Body);
+                        DestroyImmediate(_fusionSimulator.gameObject);
+                        DestroyImmediate(_faceSimulator._filterObject.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Fusion);
+                    } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face) {
+                        bool answer = EditorUtility.DisplayDialog("Warning",
+                            $"You are switching from a face + body filter to just a face filter. Any body filter work done will be lost. \nDo you wish to proceed?",
+                            "Continue", "Cancel");
+                        if (!answer) {
+                            _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
+                            return;
+                        }
+                        SetSimulator(SimulatorBase.SimulatorType.Face);
+                        DestroyImmediate(_fusionSimulator.gameObject);
+                        DestroyImmediate(_bodySimulator._filterObject.gameObject);
+                        SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Fusion);
+                    }
+
+                    break;
+            }
+
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
+        }
+
+        void SpawnNewFilterType(SimulatorBase.SimulatorType newSimType, SimulatorBase.SimulatorType oldSimType) {
+            string simPath, filterPath;
+            switch (newSimType) {
+                case SimulatorBase.SimulatorType.Face:
+                    simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
+                    filterPath = $"{packagePath}/Core/Filter.prefab";
+                    break;
+                case SimulatorBase.SimulatorType.Body:
+                    simPath = $"{packagePath}/Editor/Simulator/BodyTracking/BodySimulator.prefab";
+                    filterPath = $"{packagePath}/Core/FilterBody.prefab";
+                    break;
+                case SimulatorBase.SimulatorType.Fusion:
+                    simPath = $"{packagePath}/Editor/Simulator/FusionSimulator.prefab";
+                    filterPath = oldSimType == SimulatorBase.SimulatorType.Face
+                        ? $"{packagePath}/Core/FilterBody.prefab"
+                        : $"{packagePath}/Core/Filter.prefab";
+                    break;
+                default:
+                    simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
+                    filterPath = $"{packagePath}/Core/Filter.prefab";
+                    break;
+            }
+
+            GameObject localFilter = null;
+            if (oldSimType != SimulatorBase.SimulatorType.Fusion) {
+                GameObject filter = AssetDatabase.LoadAssetAtPath<GameObject>(filterPath);
+                localFilter = PrefabUtility.InstantiatePrefab(filter) as GameObject;
+            }
+
+            GameObject sim = AssetDatabase.LoadAssetAtPath<GameObject>(simPath);
+            GameObject localSim = PrefabUtility.InstantiatePrefab(sim) as GameObject;
+            if (localSim is not null) {
+                localSim.transform.SetAsFirstSibling();
+            }
+
+            if (localFilter is not null) {
+                localFilter.transform.SetAsLastSibling();
             }
         }
 
@@ -387,7 +596,6 @@ namespace Filta {
             _pluginInfo.resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _pluginInfo.resetOnRecord);
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
-
             GUILayout.FlexibleSpace();
             HandleNewPluginVersion();
             GUILayout.EndScrollView();
@@ -426,29 +634,19 @@ namespace Filta {
             EditorGUILayout.LabelField("Create new filter scene", EditorStyles.boldLabel);
             _sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", _sceneName);
             GUI.enabled = !String.IsNullOrWhiteSpace(_sceneName);
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Create Face Filter")) {
-                CreateScene(SimulatorBase.SimulatorType.Face);
+            //EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Create Filter")) {
+                CreateScene();
                 _sceneName = "";
                 GUI.FocusControl(null);
             }
 
-            if (GUILayout.Button("Create Body Filter ")) {
-                CreateScene(SimulatorBase.SimulatorType.Body);
-                _sceneName = "";
-                GUI.FocusControl(null);
-            }
-
-            EditorGUILayout.EndHorizontal();
             GUI.enabled = true;
 
         }
 
-        void CreateScene(SimulatorBase.SimulatorType type) {
-            string templateSceneName = type == SimulatorBase.SimulatorType.Face
-                ? "templateScene.unity"
-                : "templateScene-body.unity";
-            string scenePath = $"{packagePath}/Core/{templateSceneName}";
+        void CreateScene() {
+            string scenePath = $"{packagePath}/Core/templateScene.unity";
             bool success;
             if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
                 AssetDatabase.CreateFolder("Assets", "Filters");
@@ -498,6 +696,12 @@ namespace Filta {
             }
 
             GameObject filterObject = _simulator._filterObject.gameObject;
+            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                filterObject = new GameObject("FilterFusion");
+                _bodySimulator._filterObject.SetParent(filterObject.transform);
+                _faceSimulator._filterObject.SetParent(filterObject.transform);
+            }
+
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
                 return;
@@ -520,6 +724,13 @@ namespace Filta {
                 filterDuplicate.name = "Filter";
                 PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
                 DestroyImmediate(filterDuplicate);
+                if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                    _bodySimulator._filterObject.SetParent(null);
+                    _faceSimulator._filterObject.SetParent(null);
+                    _faceSimulator._filterObject.SetAsLastSibling();
+                    _bodySimulator._filterObject.SetAsLastSibling();
+                    DestroyImmediate(filterObject);
+                }
                 if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
@@ -676,7 +887,15 @@ namespace Filta {
             for (int i = 0; i < rootObjects.Count; i++) {
                 //Check if it's the simulator, filter, main camera or it's inactive.
                 //This works under the assumption that artists would still want to be warned even if object is disabled.
-                if (rootObjects[i] == _simulator.gameObject || rootObjects[i] == _simulator._filterObject.gameObject ||
+                GameObject sim, filter;
+                if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
+                    sim = _fusionSimulator.gameObject;
+                    filter = _simulator._filterObject.parent.gameObject;
+                } else {
+                    sim = _simulator.gameObject;
+                    filter = _simulator._filterObject.gameObject;
+                }
+                if (rootObjects[i] == sim || rootObjects[i] == filter ||
                     rootObjects[i] == Camera.main.gameObject) {
                     continue;
                 }
