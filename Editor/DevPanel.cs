@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using PlasticGui;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
