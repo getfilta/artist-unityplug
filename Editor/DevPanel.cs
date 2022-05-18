@@ -529,7 +529,7 @@ namespace Filta {
                 if (bundle.Value.bundleQueuePosition == Uploading) {
                     GUILayout.Label("still uploading");
                 } else if (bundle.Value.bundleQueuePosition == Limbo) {
-                    GUILayout.Label("in Limbo");
+                    GUILayout.Label("Error during processing. Try again");
                 } else {
                     GUILayout.Label(bundle.Value.bundleQueuePosition.ToString());
                 }
