@@ -306,6 +306,9 @@ public class Simulator : SimulatorBase {
         _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
         Camera.main.transform.position = faceData.cameraPosition;
         Camera.main.transform.eulerAngles = faceData.cameraRotation;
+        
+        //Clear cloth transform motion when artist remote finds face.
+        //Eventually artist remote might send events to better handle this.
         if (!_clearedInitialTransform && faceData.facePosition != Vector3.zero) {
             if (_cloths is {Length: > 0}) {
                 for (int i = 0; i < _cloths.Length; i++) {
