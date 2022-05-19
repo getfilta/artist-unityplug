@@ -42,20 +42,20 @@ namespace Filta {
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), FileName);
             FileInfo fileInfo = new FileInfo(pathToPackage);
+            string readout = CheckForFileSizes(PackagePaths);
             if (fileInfo.Length > UploadLimit) {
-                string readout = CheckForOversizeFiles(PackagePaths);
                 //Your filter is {size}MB. This is over the {uploadlimit}MB limit. Please reduce the size. {readout}
                 _result =
-                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {UploadLimit / 1000000}MB limit. {readout}";
+                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {UploadLimit / 1000000}MB limit.\n{readout}";
             } else {
                 
-                _result = $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB.";
+                _result = $"Your compressed Filter is {fileInfo.Length / 1000000f:#.##}MB.\n{readout}";
             }
             File.Delete(pathToPackage);
             AssetDatabase.DeleteAsset(VariantTempSave);
         }
 
-        public static string CheckForOversizeFiles(string[] path) {
+        public static string CheckForFileSizes(string[] path) {
             string[] pathNames = AssetDatabase.GetDependencies(path);
             string readout = "";
             Dictionary<string, long> fileSizes = new();
@@ -65,13 +65,8 @@ namespace Filta {
                 fileSizes.Add(pathNames[i], fileInfo.Length);
             }
             fileSizes = new Dictionary<string, long>(fileSizes.OrderByDescending(pair => pair.Value));
-            long limit = 0;
             foreach (KeyValuePair<string, long> file in fileSizes) {
                 readout += $"\n {file.Key} - {file.Value / 1000000f:#.##}MB";
-                limit += file.Value;
-                if (limit > UploadLimit && file.Value < UploadLimit) {
-                    break;
-                }
             }
             return readout;
         }

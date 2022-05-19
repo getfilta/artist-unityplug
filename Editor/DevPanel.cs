@@ -757,9 +757,9 @@ namespace Filta {
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
             FileInfo fileInfo = new FileInfo(pathToPackage);
             if (fileInfo.Length > FilterSizeWindow.UploadLimit) {
-                string readout = FilterSizeWindow.CheckForOversizeFiles(packagePaths);
+                string readout = FilterSizeWindow.CheckForFileSizes(packagePaths);
                 EditorUtility.DisplayDialog("Error",
-                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {FilterSizeWindow.UploadLimit / 1000000}MB limit. {readout}",
+                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {FilterSizeWindow.UploadLimit / 1000000}MB limit.\n{readout}",
                     "Ok");
                 return;
             }
