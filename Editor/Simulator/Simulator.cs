@@ -86,7 +86,7 @@ public class Simulator : SimulatorBase {
 
     private Texture2D _tex;
 
-    private List<Cloth> _cloths;
+    private Cloth[] _cloths;
     private bool _clearedInitialTransform;
 
     protected override void Awake() {
@@ -105,8 +105,7 @@ public class Simulator : SimulatorBase {
         if (!EditorApplication.isPlaying) {
             _remoteFeed.gameObject.SetActive(false);
         } else {
-            _cloths = _filterObject.GetComponentsInChildren<Cloth>().ToList();
-            Debug.Log(_cloths.Count);
+            _cloths = _filterObject.GetComponentsInChildren<Cloth>();
         }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
@@ -308,8 +307,10 @@ public class Simulator : SimulatorBase {
         Camera.main.transform.position = faceData.cameraPosition;
         Camera.main.transform.eulerAngles = faceData.cameraRotation;
         if (!_clearedInitialTransform && faceData.facePosition != Vector3.zero) {
-            for (int i = 0; i < _cloths.Count; i++) {
-                _cloths[i].ClearTransformMotion();
+            if (_cloths is {Length: > 0}) {
+                for (int i = 0; i < _cloths.Length; i++) {
+                    _cloths[i].ClearTransformMotion();
+                }
             }
             _clearedInitialTransform = true;
         }
