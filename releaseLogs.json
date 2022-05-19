@@ -126,5 +126,13 @@
       "pluginMinorVersion": 17
     },
     "releaseNotes": "- fix: small bugs"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 17
+    },
+    "releaseNotes": "- feat: add filter size window for easy checking of filter size and big files.\n fix: small bugs"
   }
 ]

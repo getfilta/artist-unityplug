@@ -18,9 +18,9 @@ namespace Filta {
         private int _selectedTab = 0;
         private string[] _toolbarTitles = { "Simulator", "Uploader" };
         private int _selectedSimulator;
-        private const long UPLOAD_LIMIT = 100000000;
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string variantTempSave = "Assets/Filter.prefab";
+        private readonly string[] packagePaths = { "Assets/pluginInfo.json", variantTempSave };
         private string _statusBar = "";
         private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
         private string selectedArtTitle = "";
@@ -125,7 +125,7 @@ namespace Filta {
 
         private readonly string[] _simulatorOptions = {"Face", "Body", "Face + Body"};
 
-        private static string GetVersionNumber() {
+        public static string GetVersionNumber() {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
             return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
         }
@@ -529,7 +529,7 @@ namespace Filta {
                 if (bundle.Value.bundleQueuePosition == Uploading) {
                     GUILayout.Label("still uploading");
                 } else if (bundle.Value.bundleQueuePosition == Limbo) {
-                    GUILayout.Label("in Limbo");
+                    GUILayout.Label("Error during processing. Try again");
                 } else {
                     GUILayout.Label(bundle.Value.bundleQueuePosition.ToString());
                 }
@@ -666,7 +666,7 @@ namespace Filta {
                 SetStatusMessage("Created new scene");
             }
         }
-
+        
         private async void GenerateAndUploadAssetBundle() {
             if (String.IsNullOrEmpty(selectedArtKey)) {
                 //selectedArtKey = SceneManager.GetActiveScene().name;
@@ -696,12 +696,7 @@ namespace Filta {
                 }
             }
 
-            GameObject filterObject = _simulator._filterObject.gameObject;
-            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
-                filterObject = new GameObject("FilterFusion");
-                _bodySimulator._filterObject.SetParent(filterObject.transform);
-                _faceSimulator._filterObject.SetParent(filterObject.transform);
-            }
+            GameObject filterObject = Util.GetFilterObject();
 
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
@@ -721,17 +716,7 @@ namespace Filta {
                 }
 
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                GameObject filterDuplicate = Instantiate(filterObject);
-                filterDuplicate.name = "Filter";
-                PrefabUtility.SaveAsPrefabAsset(filterDuplicate, variantTempSave, out bool success);
-                DestroyImmediate(filterDuplicate);
-                if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
-                    _bodySimulator._filterObject.SetParent(null);
-                    _faceSimulator._filterObject.SetParent(null);
-                    _faceSimulator._filterObject.SetAsLastSibling();
-                    _bodySimulator._filterObject.SetAsLastSibling();
-                    DestroyImmediate(filterObject);
-                }
+                bool success = Util.GenerateFilterPrefab(filterObject, variantTempSave);
                 if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
@@ -766,13 +751,16 @@ namespace Filta {
                 return;
             }
 
-            string[] packagePaths = { "Assets/pluginInfo.json", variantTempSave };
+            
             AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
             FileInfo fileInfo = new FileInfo(pathToPackage);
-            if (fileInfo.Length > UPLOAD_LIMIT) {
-                HandleOversizePackage(packagePaths);
+            if (fileInfo.Length > FilterSizeWindow.UploadLimit) {
+                string readout = FilterSizeWindow.CheckForFileSizes(packagePaths);
+                EditorUtility.DisplayDialog("Error",
+                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {FilterSizeWindow.UploadLimit / 1000000}MB limit.\n{readout}",
+                    "Ok");
                 return;
             }
             /*string assetBundleDirectory = "AssetBundles";
@@ -853,32 +841,6 @@ namespace Filta {
         private static ReleaseInfo GetLocalReleaseInfo() {
             string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
             return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
-        }
-
-
-
-        private void HandleOversizePackage(string[] path) {
-            string[] pathNames = AssetDatabase.GetDependencies(path);
-            string readout = "";
-            Dictionary<string, long> fileSizes = new();
-            for (int i = 0; i < pathNames.Length; i++) {
-                string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), pathNames[i]);
-                FileInfo fileInfo = new(fullPath);
-                fileSizes.Add(pathNames[i], fileInfo.Length);
-            }
-            fileSizes = new Dictionary<string, long>(fileSizes.OrderByDescending(pair => pair.Value));
-            long limit = 0;
-            foreach (KeyValuePair<string, long> file in fileSizes) {
-                readout += $"\n {file.Key} - {file.Value / 1000000f:#.##}MB";
-                limit += file.Value;
-                if (limit > UPLOAD_LIMIT) {
-                    break;
-                }
-            }
-
-            EditorUtility.DisplayDialog("Error",
-                $"Your filter is over {UPLOAD_LIMIT / 1000000}MB, please reduce the size. These are the files that might be causing this. {readout}",
-                "Ok");
         }
 
         private bool CheckObjectsOutsideFilter() {

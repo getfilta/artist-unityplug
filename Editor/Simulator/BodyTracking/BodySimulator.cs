@@ -370,6 +370,9 @@ public class BodySimulator : SimulatorBase {
         List<ARBodyData.Joint> joints = bodyData._joints;
         _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
         _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        
+        _bodyAvatars.localPosition = Vector3.zero;
+        _bodyAvatars.localRotation = Quaternion.identity;
         _lShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorPose;
         _lShoulderTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorRotation;
         _rShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.RightShoulder1]._anchorPose;
@@ -632,7 +635,8 @@ public class BodySimulator : SimulatorBase {
                 ARBodyData.Joint joint = joints[i];
                 var bone = _boneMapping[i];
                 if (bone != null) {
-                    bone.transform.rotation = Quaternion.Euler(joint._anchorRotation) * compensation[i];
+                    Quaternion rot = Quaternion.Euler(joint._anchorRotation) * compensation[i];
+                    bone.transform.rotation = root.rotation * rot;
                 }
             }
         }
