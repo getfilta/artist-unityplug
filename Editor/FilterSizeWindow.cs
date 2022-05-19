@@ -1,5 +1,4 @@
 #if UNITY_EDITOR
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,10 +15,10 @@ namespace Filta {
 
         private string _result;
         
-        [MenuItem("Filta/Size Window", false, 2)]
+        [MenuItem("Filta/Asset Size Summary", false, 2)]
         static void InitFloating() {
-            FilterSizeWindow window = (FilterSizeWindow)GetWindow(typeof(FilterSizeWindow), true, $"Filta Size Window");
-            window.ShowUtility();
+            FilterSizeWindow window = (FilterSizeWindow)GetWindow(typeof(FilterSizeWindow), false, "Asset Size Summary");
+            window.Show();
         }
 
         private void OnGUI() {
@@ -32,19 +31,25 @@ namespace Filta {
         }
 
         private void RefreshCheck() {
-            DevPanel devPanel = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {DevPanel.GetVersionNumber()}");
-            GameObject filterObject = devPanel.GetFilterObject();
-            devPanel.GenerateFilterPrefab(filterObject, VariantTempSave);
+            GameObject filterObject = Util.GetFilterObject();
+            bool success = Util.GenerateFilterPrefab(filterObject, VariantTempSave);
+            if (!success) {
+                Debug.LogError("Failed to generate filter prefab.");
+                _result = "Could not check Asset size.";
+                return;
+            }
             AssetDatabase.ExportPackage(PackagePaths, FileName,
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), FileName);
             FileInfo fileInfo = new FileInfo(pathToPackage);
             if (fileInfo.Length > UploadLimit) {
                 string readout = CheckForOversizeFiles(PackagePaths);
+                //Your filter is {size}MB. This is over the {uploadlimit}MB limit. Please reduce the size. {readout}
                 _result =
-                    $"Your Filter is over {UploadLimit / 1000000}MB, please reduce the size. These are the files that might be causing this. {readout}";
+                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {UploadLimit / 1000000}MB limit. {readout}";
             } else {
-                _result = $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is within the upload limit";
+                
+                _result = $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB.";
             }
             File.Delete(pathToPackage);
             AssetDatabase.DeleteAsset(VariantTempSave);

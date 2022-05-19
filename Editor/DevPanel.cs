@@ -666,33 +666,7 @@ namespace Filta {
                 SetStatusMessage("Created new scene");
             }
         }
-
-        public GameObject GetFilterObject() {
-            GameObject filterObject = _simulator._filterObject.gameObject;
-            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
-                filterObject = new GameObject("FilterFusion");
-                _bodySimulator._filterObject.SetParent(filterObject.transform);
-                _faceSimulator._filterObject.SetParent(filterObject.transform);
-            }
-
-            return filterObject;
-        }
-
-        public bool GenerateFilterPrefab(GameObject filterObject, string savePath) {
-            GameObject filterDuplicate = Instantiate(filterObject);
-            filterDuplicate.name = "Filter";
-            PrefabUtility.SaveAsPrefabAsset(filterDuplicate, savePath, out bool success);
-            DestroyImmediate(filterDuplicate);
-            if (_simulatorType == SimulatorBase.SimulatorType.Fusion) {
-                _bodySimulator._filterObject.SetParent(null);
-                _faceSimulator._filterObject.SetParent(null);
-                _faceSimulator._filterObject.SetAsLastSibling();
-                _bodySimulator._filterObject.SetAsLastSibling();
-                DestroyImmediate(filterObject);
-            }
-
-            return success;
-        }
+        
         private async void GenerateAndUploadAssetBundle() {
             if (String.IsNullOrEmpty(selectedArtKey)) {
                 //selectedArtKey = SceneManager.GetActiveScene().name;
@@ -722,7 +696,7 @@ namespace Filta {
                 }
             }
 
-            GameObject filterObject = GetFilterObject();
+            GameObject filterObject = Util.GetFilterObject();
 
             if (filterObject == null) {
                 EditorUtility.DisplayDialog("Error", "The object 'Filter' wasn't found in the hierarchy. Did you rename/remove it?", "Ok");
@@ -742,7 +716,7 @@ namespace Filta {
                 }
 
                 //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                bool success = GenerateFilterPrefab(filterObject, variantTempSave);
+                bool success = Util.GenerateFilterPrefab(filterObject, variantTempSave);
                 if (success) {
                     AssetImporter.GetAtPath(variantTempSave).assetBundleName =
                         "filter";
@@ -785,7 +759,7 @@ namespace Filta {
             if (fileInfo.Length > FilterSizeWindow.UploadLimit) {
                 string readout = FilterSizeWindow.CheckForOversizeFiles(packagePaths);
                 EditorUtility.DisplayDialog("Error",
-                    $"Your filter is over {FilterSizeWindow.UploadLimit / 1000000}MB, please reduce the size. These are the files that might be causing this. {readout}",
+                    $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {FilterSizeWindow.UploadLimit / 1000000}MB limit. {readout}",
                     "Ok");
                 return;
             }
