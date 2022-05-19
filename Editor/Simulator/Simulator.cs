@@ -86,6 +86,9 @@ public class Simulator : SimulatorBase {
 
     private Texture2D _tex;
 
+    private Cloth[] _cloths;
+    private bool _clearedInitialTransform;
+
     protected override void Awake() {
         base.Awake();
         mesh = new Mesh();
@@ -101,6 +104,8 @@ public class Simulator : SimulatorBase {
         base.OnEnable();
         if (!EditorApplication.isPlaying) {
             _remoteFeed.gameObject.SetActive(false);
+        } else {
+            _cloths = _filterObject.GetComponentsInChildren<Cloth>();
         }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
@@ -287,7 +292,7 @@ public class Simulator : SimulatorBase {
         Camera.main.transform.position = faceData.camera.position;
         Camera.main.transform.eulerAngles = faceData.camera.rotation;
     }
-
+    
     void PositionTrackers(DataSender.FaceData faceData) {
         _faceTracker.localPosition = faceData.facePosition;
         _faceTracker.localEulerAngles = faceData.faceRotation;
@@ -301,6 +306,17 @@ public class Simulator : SimulatorBase {
         _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
         Camera.main.transform.position = faceData.cameraPosition;
         Camera.main.transform.eulerAngles = faceData.cameraRotation;
+        
+        //Clear cloth transform motion when artist remote finds face.
+        //Eventually artist remote might send events to better handle this.
+        if (!_clearedInitialTransform && faceData.facePosition != Vector3.zero) {
+            if (_cloths is {Length: > 0}) {
+                for (int i = 0; i < _cloths.Length; i++) {
+                    _cloths[i].ClearTransformMotion();
+                }
+            }
+            _clearedInitialTransform = true;
+        }
     }
 
     protected override void EnforceObjectStructure() {
