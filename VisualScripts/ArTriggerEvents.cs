@@ -5,6 +5,9 @@ namespace Filta.VisualScripting {
     public class ArTriggerEvents : MonoBehaviour {
         private Simulator _simulator;
 
+        //in seconds
+        public const float MaximumDoubleTapTime = 0.25f;
+
         public EventHandler onMouthOpen = delegate { };
         public EventHandler onMouthClose = delegate { };
         public EventHandler<float> onMouthOpenValueChange = delegate { };
@@ -17,12 +20,17 @@ namespace Filta.VisualScripting {
         public EventHandler onLeftEyeClose = delegate { };
         public EventHandler<float> onLeftEyeValueChange = delegate { };
 
+        public EventHandler onScreenTap = delegate { };
+        public EventHandler onScreenDoubleTap = delegate { };
+
         private const float JawOpenFactor = 10f;
         private const float EyeBlinkFactor = 60f;
 
         private bool _isMouthOpen;
         private bool _isRightEyeOpen;
         private bool _isLeftEyeOpen;
+
+        private float _tapTime;
 
         private void Awake() {
             _simulator = GetComponent<Simulator>();
@@ -34,6 +42,17 @@ namespace Filta.VisualScripting {
 
         public void OnDestroy() {
             _simulator.updateBlendShapeWeightEvent -= OnUpdateBlendShapeWeightEvent;
+        }
+
+        void Update() {
+            _tapTime += Time.deltaTime;
+            if (Input.GetMouseButtonDown(0)) {
+                onScreenTap(this, null);
+                if (_tapTime < MaximumDoubleTapTime) {
+                    onScreenDoubleTap(this, null);
+                }
+                _tapTime = 0;
+            }
         }
 
         private void OnUpdateBlendShapeWeightEvent(object sender, Simulator.UpdateBlendShapeWeightEventArgs e) {
