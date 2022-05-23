@@ -241,6 +241,7 @@ public class Simulator : SimulatorBase {
             if (_dataSender == null) {
                 _dataSender = FindObjectOfType<DataSender>();
             } else {
+                _dataSender.SendSimulatorType((int)_simulatorType);
                 PlaybackFromRemote();
             }
         }

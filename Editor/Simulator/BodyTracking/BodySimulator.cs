@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Mirror;
 using Newtonsoft.Json;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -97,6 +98,8 @@ public class BodySimulator : SimulatorBase {
 
     private ARBodyRecording _bodyRecording;
     private long _recordingLength;
+    
+    private DataSender _dataSender;
 
     protected override void Awake() {
         base.Awake();
@@ -209,8 +212,23 @@ public class BodySimulator : SimulatorBase {
             return;
         }
 
-        long time = (long) (DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
-        Playback(time);
+        if (!EditorApplication.isPlaying) {
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            Playback(time);
+            return;
+        }
+
+        if (!NetworkClient.isConnected) {
+            long time = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+            Playback(time);
+        } else {
+            if (_dataSender == null) {
+                _dataSender = FindObjectOfType<DataSender>();
+            } else {
+                _dataSender.SendSimulatorType((int)_simulatorType);
+                //PlaybackFromRemote();
+            }
+        }
     }
 
     private long _pauseTime;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
-using UnityEditor;
 using UnityEngine;
 
 public class DataSender : NetworkBehaviour {
@@ -14,6 +13,20 @@ public class DataSender : NetworkBehaviour {
     private Vector3Int _screenResolution;
     
     private int _count;
+
+    private int _simType;
+    
+    public struct SimulatorTypeMessage : NetworkMessage {
+        public int type; //Face = 0, Body = 1
+    }
+
+    public void SendSimulatorType(int simType) {
+        if (_simType != simType) {
+            _simType = simType;
+            SimulatorTypeMessage message = new SimulatorTypeMessage {type = simType};
+            NetworkClient.Send(message, 0);
+        }
+    }
 
     [Server]
     public override void OnStartServer() {
@@ -48,6 +61,7 @@ public class DataSender : NetworkBehaviour {
     }
 
     public readonly struct FaceData : IEquatable<FaceData> {
+        public readonly bool shouldSync;
         public readonly List<ARKitBlendShapeCoefficient> blendshapeData;
         public readonly Vector3 facePosition;
         public readonly Vector3 faceRotation;
@@ -62,9 +76,10 @@ public class DataSender : NetworkBehaviour {
         public readonly int[] indices;
         public readonly Vector2[] uvs;
 
-        public FaceData(List<ARKitBlendShapeCoefficient> blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
+        public FaceData(bool sync, List<ARKitBlendShapeCoefficient> blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
             Vector3 leftEyePos, Vector3 leftEyeRot, Vector3 rightEyePos, Vector3 rightEyeRot, Vector3[] vert,
             Vector3[] norm, int[] ind, Vector2[] uv) {
+            shouldSync = sync;
             blendshapeData = blendshape;
             facePosition = pos;
             faceRotation = rot;
@@ -166,7 +181,7 @@ public class DataSender : NetworkBehaviour {
         }
 
         public bool Equals(FaceData other) {
-            return false;
+            return !shouldSync;
         }
 
         public override bool Equals(object obj) {
