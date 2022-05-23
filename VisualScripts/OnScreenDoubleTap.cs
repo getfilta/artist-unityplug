@@ -25,7 +25,7 @@ namespace Filta.VisualScripting {
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _arTriggerEvents.onScreenTap -= OnScreenDoubleTapped;
+            _arTriggerEvents.onScreenDoubleTap -= OnScreenDoubleTapped;
         }
         
     }
