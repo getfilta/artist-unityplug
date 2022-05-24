@@ -160,7 +160,7 @@ namespace Filta {
         }
 
         private void SetSimulator(SimulatorBase.SimulatorType type) {
-            if (_fusionSimulator == null || _fusionSimulator.activeType == type) {
+            if (_fusionSimulator == null || (_simulator != null && _fusionSimulator.activeType == type)) {
                 return;
             }
             _fusionSimulator.activeType = type;
