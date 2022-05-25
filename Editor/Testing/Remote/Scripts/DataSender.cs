@@ -64,10 +64,18 @@ public class DataSender : NetworkBehaviour {
     }
 
     public readonly struct BodyData : IEquatable<BodyData> {
+        public readonly Vector3 bodyPosition;
+        public readonly Vector3 bodyRotation;
+        public readonly Vector3 cameraPosition;
+        public readonly Vector3 cameraRotation;
         public readonly Joint[] joints;
         
-        public BodyData(Joint[] joints) {
+        public BodyData(Vector3 bodyPos, Vector3 bodyRot, Joint[] joints, Vector3 camPos, Vector3 camRot) {
             this.joints = joints;
+            bodyPosition = bodyPos;
+            bodyRotation = bodyRot;
+            cameraPosition = camPos;
+            cameraRotation = camRot;
         }
         public readonly struct Joint : IEquatable<Joint> {
             public readonly Vector3 _localPose;

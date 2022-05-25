@@ -438,12 +438,17 @@ public class BodySimulator : SimulatorBase {
         _neckTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Neck1]._anchorRotation;
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
+        
+        Camera.main.transform.position = Vector3.zero;
+        Camera.main.transform.rotation = Quaternion.identity;
     }
     
     void PositionTrackers(DataSender.BodyData bodyData) {
+        if (!IsSetUpProperly())
+            return;
         DataSender.BodyData.Joint[] joints = bodyData.joints;
-        _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
-        _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        _bodyTracker.position = bodyData.bodyPosition;
+        _bodyTracker.eulerAngles = bodyData.bodyRotation;
         
         _bodyAvatars.localPosition = Vector3.zero;
         _bodyAvatars.localRotation = Quaternion.identity;
@@ -481,6 +486,9 @@ public class BodySimulator : SimulatorBase {
         _neckTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Neck1]._anchorRotation;
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
+        
+        Camera.main.transform.position = bodyData.cameraPosition;
+        Camera.main.transform.eulerAngles = bodyData.cameraRotation;
     }
 
     #region Body Avatars
@@ -546,6 +554,8 @@ public class BodySimulator : SimulatorBase {
     }
     
     void UpdateBodyVisualiser(DataSender.BodyData bodyData) {
+        _bodyVisualiser.position = bodyData.bodyPosition;
+        _bodyVisualiser.eulerAngles = bodyData.bodyRotation;
         _visualiserAvatar.ApplyBodyPose(bodyData);
     }
     
