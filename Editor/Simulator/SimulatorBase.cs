@@ -1,6 +1,6 @@
 using System.IO;
 using UnityEngine;
-
+using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 
@@ -24,6 +24,9 @@ public abstract class SimulatorBase : MonoBehaviour {
     private HideFlags _customHideFlags;
     private Transform[] _objectsToHide;
     private bool _developerMode = false;
+    
+    [SerializeField]
+    protected RawImage _remoteFeed;
 
     public virtual bool IsSetUpProperly() {
         return false;
@@ -47,6 +50,9 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     protected virtual void OnEnable() {
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
+        if (!EditorApplication.isPlaying) {
+            _remoteFeed.gameObject.SetActive(false);
+        }
     }
 
     protected virtual void Update() {

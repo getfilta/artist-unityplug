@@ -9,6 +9,8 @@ using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine.UI;
+
 #endif
 
 public class BodySimulator : SimulatorBase {
@@ -100,6 +102,7 @@ public class BodySimulator : SimulatorBase {
     private long _recordingLength;
     
     private DataSender _dataSender;
+    private Canvas _canvas;
 
     protected override void Awake() {
         base.Awake();
@@ -147,7 +150,7 @@ public class BodySimulator : SimulatorBase {
                _rArmTracker != null && _lForearmTracker != null && _rForearmTracker != null && _lHandTracker != null &&
                _rHandTracker != null && _lUpLegTracker != null && _rUpLegTracker != null && _lLegTracker != null &&
                _rLegTracker != null && _lFootTracker != null && _rFootTracker != null && _spineTracker != null &&
-               _neckTracker != null && _headTracker != null;
+               _neckTracker != null && _headTracker != null && _remoteFeed != null;
     }
 
     protected override void EnforceObjectStructure() {
@@ -226,7 +229,7 @@ public class BodySimulator : SimulatorBase {
                 _dataSender = FindObjectOfType<DataSender>();
             } else {
                 _dataSender.SendSimulatorType((int)_simulatorType);
-                //PlaybackFromRemote();
+                PlaybackFromRemote();
             }
         }
     }
@@ -243,6 +246,12 @@ public class BodySimulator : SimulatorBase {
 
     void Replay() {
         _startTime = DateTime.Now;
+    }
+
+    void PlaybackFromRemote() {
+        PositionTrackers(_dataSender._bodyData);
+        UpdateBodyVisualiser(_dataSender._bodyData);
+        UpdateBodyAvatars(_dataSender._bodyData);
     }
 
     private void Playback(long currentTime) {
@@ -290,6 +299,10 @@ public class BodySimulator : SimulatorBase {
             return;
         }
         SetFlags(true);
+        if (_remoteFeed != null) {
+            _canvas = _remoteFeed.GetComponentInParent<Canvas>();
+            _canvas.worldCamera = Camera.main;
+        }
         if (_bodyVisualiser == null) {
             _bodyVisualiser = transform.GetChild(0);
         }
@@ -426,6 +439,49 @@ public class BodySimulator : SimulatorBase {
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
     }
+    
+    void PositionTrackers(DataSender.BodyData bodyData) {
+        DataSender.BodyData.Joint[] joints = bodyData.joints;
+        _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
+        _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        
+        _bodyAvatars.localPosition = Vector3.zero;
+        _bodyAvatars.localRotation = Quaternion.identity;
+        _lShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorPose;
+        _lShoulderTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorRotation;
+        _rShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.RightShoulder1]._anchorPose;
+        _rShoulderTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightShoulder1]._anchorRotation;
+        _lArmTracker.localPosition = joints[(int)Avatar.JointIndices.LeftArm]._anchorPose;
+        _lArmTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftArm]._anchorRotation;
+        _rArmTracker.localPosition = joints[(int)Avatar.JointIndices.RightArm]._anchorPose;
+        _rArmTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightArm]._anchorRotation;
+        _lForearmTracker.localPosition = joints[(int)Avatar.JointIndices.LeftForearm]._anchorPose;
+        _lForearmTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftForearm]._anchorRotation;
+        _rForearmTracker.localPosition = joints[(int)Avatar.JointIndices.RightForearm]._anchorPose;
+        _rForearmTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightForearm]._anchorRotation;
+        _lHandTracker.localPosition = joints[(int)Avatar.JointIndices.LeftHand]._anchorPose;
+        _lHandTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftHand]._anchorRotation;
+        _rHandTracker.localPosition = joints[(int)Avatar.JointIndices.RightHand]._anchorPose;
+        _rHandTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightHand]._anchorRotation;
+        _lUpLegTracker.localPosition = joints[(int)Avatar.JointIndices.LeftUpLeg]._anchorPose;
+        _lUpLegTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftUpLeg]._anchorRotation;
+        _rUpLegTracker.localPosition = joints[(int)Avatar.JointIndices.RightUpLeg]._anchorPose;
+        _rUpLegTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightUpLeg]._anchorRotation;
+        _lLegTracker.localPosition = joints[(int)Avatar.JointIndices.LeftLeg]._anchorPose;
+        _lLegTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftLeg]._anchorRotation;
+        _rLegTracker.localPosition = joints[(int)Avatar.JointIndices.RightLeg]._anchorPose;
+        _rLegTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightLeg]._anchorRotation;
+        _lFootTracker.localPosition = joints[(int)Avatar.JointIndices.LeftFoot]._anchorPose;
+        _lFootTracker.localEulerAngles = joints[(int)Avatar.JointIndices.LeftFoot]._anchorRotation;
+        _rFootTracker.localPosition = joints[(int)Avatar.JointIndices.RightFoot]._anchorPose;
+        _rFootTracker.localEulerAngles = joints[(int)Avatar.JointIndices.RightFoot]._anchorRotation;
+        _spineTracker.localPosition = joints[(int)Avatar.JointIndices.Spine1]._anchorPose;
+        _spineTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Spine1]._anchorRotation;
+        _neckTracker.localPosition = joints[(int)Avatar.JointIndices.Neck1]._anchorPose;
+        _neckTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Neck1]._anchorRotation;
+        _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
+        _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
+    }
 
     #region Body Avatars
 
@@ -488,8 +544,25 @@ public class BodySimulator : SimulatorBase {
     void UpdateBodyVisualiser(ARBodyData bodyData) {
         _visualiserAvatar.ApplyBodyPose(bodyData);
     }
+    
+    void UpdateBodyVisualiser(DataSender.BodyData bodyData) {
+        _visualiserAvatar.ApplyBodyPose(bodyData);
+    }
+    
 
     void UpdateBodyAvatars(ARBodyData bodyData) {
+        if (_avatars == null) {
+            return;
+        }
+        for (int i = 0; i < _avatars.Count; i++) {
+            Avatar avatar = _avatars[i];
+            for (int j = 0; j < avatar._boneMapping.Length; j++) {
+                avatar.ApplyBodyPose(bodyData);
+            }
+        }
+    }
+    
+    void UpdateBodyAvatars(DataSender.BodyData bodyData) {
         if (_avatars == null) {
             return;
         }
@@ -651,6 +724,18 @@ public class BodySimulator : SimulatorBase {
 
             for (int i = 0; i < NumSkeletonJoints; ++i) {
                 ARBodyData.Joint joint = joints[i];
+                var bone = _boneMapping[i];
+                if (bone != null) {
+                    Quaternion rot = Quaternion.Euler(joint._anchorRotation) * compensation[i];
+                    bone.transform.rotation = root.rotation * rot;
+                }
+            }
+        }
+
+        public void ApplyBodyPose(DataSender.BodyData body) {
+            DataSender.BodyData.Joint[] joints = body.joints;
+            for (int i = 0; i < NumSkeletonJoints; ++i) {
+                DataSender.BodyData.Joint joint = joints[i];
                 var bone = _boneMapping[i];
                 if (bone != null) {
                     Quaternion rot = Quaternion.Euler(joint._anchorRotation) * compensation[i];

@@ -9,6 +9,9 @@ public class DataSender : NetworkBehaviour {
     [SyncVar]
     public FaceData _data;
 
+    [SyncVar]
+    public BodyData _bodyData;
+
     [SyncVar(hook = nameof(OnGottenResolution))]
     private Vector3Int _screenResolution;
     
@@ -60,8 +63,50 @@ public class DataSender : NetworkBehaviour {
         _screenResolution = new Vector3Int(Display.main.systemWidth, Display.main.systemHeight);
     }
 
+    public readonly struct BodyData : IEquatable<BodyData> {
+        public readonly Joint[] joints;
+        
+        public BodyData(Joint[] joints) {
+            this.joints = joints;
+        }
+        public readonly struct Joint : IEquatable<Joint> {
+            public readonly Vector3 _localPose;
+            public readonly Vector3 _localRotation;
+            public readonly Vector3 _anchorPose;
+            public readonly Vector3 _anchorRotation;
+
+            public Joint(Vector3 lPose, Vector3 lRot, Vector3 aPose, Vector3 aRot) {
+                _localPose = lPose;
+                _localRotation = lRot;
+                _anchorPose = aPose;
+                _anchorRotation = aRot;
+            }
+            
+            public bool Equals(Joint other) {
+                return _localPose == other._localPose && _localRotation == other._localRotation;
+            }
+
+            public override bool Equals(object obj) => (obj is Joint other) && Equals(other);
+            
+            public override int GetHashCode() {
+                return 0;
+            }
+        }
+        
+        public bool Equals(BodyData other) {
+            return joints.Equals(other.joints);
+        }
+
+        public override bool Equals(object obj) {
+            return obj is BodyData other && Equals(other);
+        }
+
+        public override int GetHashCode() {
+            return 0;
+        }
+    }
+
     public readonly struct FaceData : IEquatable<FaceData> {
-        public readonly bool shouldSync;
         public readonly List<ARKitBlendShapeCoefficient> blendshapeData;
         public readonly Vector3 facePosition;
         public readonly Vector3 faceRotation;
@@ -76,10 +121,9 @@ public class DataSender : NetworkBehaviour {
         public readonly int[] indices;
         public readonly Vector2[] uvs;
 
-        public FaceData(bool sync, List<ARKitBlendShapeCoefficient> blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
+        public FaceData(List<ARKitBlendShapeCoefficient> blendshape, Vector3 pos, Vector3 rot, Vector3 cameraPos, Vector3 cameraRot,
             Vector3 leftEyePos, Vector3 leftEyeRot, Vector3 rightEyePos, Vector3 rightEyeRot, Vector3[] vert,
             Vector3[] norm, int[] ind, Vector2[] uv) {
-            shouldSync = sync;
             blendshapeData = blendshape;
             facePosition = pos;
             faceRotation = rot;
@@ -181,7 +225,7 @@ public class DataSender : NetworkBehaviour {
         }
 
         public bool Equals(FaceData other) {
-            return !shouldSync;
+            return facePosition == other.facePosition && faceRotation == other.faceRotation;
         }
 
         public override bool Equals(object obj) {
