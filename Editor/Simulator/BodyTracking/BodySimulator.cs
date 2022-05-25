@@ -444,9 +444,10 @@ public class BodySimulator : SimulatorBase {
     }
     
     void PositionTrackers(DataSender.BodyData bodyData) {
-        if (!IsSetUpProperly())
-            return;
         DataSender.BodyData.Joint[] joints = bodyData.joints;
+        if (joints == null || joints.Length < 1) {
+            return;
+        }
         _bodyTracker.position = bodyData.bodyPosition;
         _bodyTracker.eulerAngles = bodyData.bodyRotation;
         
@@ -744,6 +745,9 @@ public class BodySimulator : SimulatorBase {
 
         public void ApplyBodyPose(DataSender.BodyData body) {
             DataSender.BodyData.Joint[] joints = body.joints;
+            if (joints == null || joints.Length < 1) {
+                return;
+            }
             for (int i = 0; i < NumSkeletonJoints; ++i) {
                 DataSender.BodyData.Joint joint = joints[i];
                 var bone = _boneMapping[i];
