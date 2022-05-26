@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
-using UnityEditor;
 using UnityEngine;
 
 public class DataSender : NetworkBehaviour {
@@ -10,10 +9,27 @@ public class DataSender : NetworkBehaviour {
     [SyncVar]
     public FaceData _data;
 
+    [SyncVar]
+    public BodyData _bodyData;
+
     [SyncVar(hook = nameof(OnGottenResolution))]
     private Vector3Int _screenResolution;
     
     private int _count;
+
+    private int _simType;
+    
+    public struct SimulatorTypeMessage : NetworkMessage {
+        public int type; //Face = 0, Body = 1
+    }
+
+    public void SendSimulatorType(int simType) {
+        if (_simType != simType) {
+            _simType = simType;
+            SimulatorTypeMessage message = new SimulatorTypeMessage {type = simType};
+            NetworkClient.Send(message, 0);
+        }
+    }
 
     [Server]
     public override void OnStartServer() {
@@ -45,6 +61,57 @@ public class DataSender : NetworkBehaviour {
     [Command]
     private void RequestScreenResolution() {
         _screenResolution = new Vector3Int(Display.main.systemWidth, Display.main.systemHeight);
+    }
+
+    public readonly struct BodyData : IEquatable<BodyData> {
+        public readonly Vector3 bodyPosition;
+        public readonly Vector3 bodyRotation;
+        public readonly Vector3 cameraPosition;
+        public readonly Vector3 cameraRotation;
+        public readonly Joint[] joints;
+        
+        public BodyData(Vector3 bodyPos, Vector3 bodyRot, Joint[] joints, Vector3 camPos, Vector3 camRot) {
+            this.joints = joints;
+            bodyPosition = bodyPos;
+            bodyRotation = bodyRot;
+            cameraPosition = camPos;
+            cameraRotation = camRot;
+        }
+        public readonly struct Joint : IEquatable<Joint> {
+            public readonly Vector3 _localPose;
+            public readonly Vector3 _localRotation;
+            public readonly Vector3 _anchorPose;
+            public readonly Vector3 _anchorRotation;
+
+            public Joint(Vector3 lPose, Vector3 lRot, Vector3 aPose, Vector3 aRot) {
+                _localPose = lPose;
+                _localRotation = lRot;
+                _anchorPose = aPose;
+                _anchorRotation = aRot;
+            }
+            
+            public bool Equals(Joint other) {
+                return _localPose == other._localPose && _localRotation == other._localRotation;
+            }
+
+            public override bool Equals(object obj) => (obj is Joint other) && Equals(other);
+            
+            public override int GetHashCode() {
+                return 0;
+            }
+        }
+        
+        public bool Equals(BodyData other) {
+            return joints.Equals(other.joints);
+        }
+
+        public override bool Equals(object obj) {
+            return obj is BodyData other && Equals(other);
+        }
+
+        public override int GetHashCode() {
+            return 0;
+        }
     }
 
     public readonly struct FaceData : IEquatable<FaceData> {
@@ -166,7 +233,7 @@ public class DataSender : NetworkBehaviour {
         }
 
         public bool Equals(FaceData other) {
-            return false;
+            return facePosition == other.facePosition && faceRotation == other.faceRotation;
         }
 
         public override bool Equals(object obj) {

@@ -69,9 +69,6 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private RawImage _videoFeed;
 
-    [SerializeField]
-    private RawImage _remoteFeed;
-
     private long _prevTime;
     private int _previousFrame;
     private bool _skipFaceSimulator;
@@ -102,9 +99,7 @@ public class Simulator : SimulatorBase {
 
     protected override void OnEnable() {
         base.OnEnable();
-        if (!EditorApplication.isPlaying) {
-            _remoteFeed.gameObject.SetActive(false);
-        } else {
+        if (EditorApplication.isPlaying) {
             _cloths = _filterObject.GetComponentsInChildren<Cloth>();
         }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
@@ -241,6 +236,7 @@ public class Simulator : SimulatorBase {
             if (_dataSender == null) {
                 _dataSender = FindObjectOfType<DataSender>();
             } else {
+                _dataSender.SendSimulatorType((int)_simulatorType);
                 PlaybackFromRemote();
             }
         }
