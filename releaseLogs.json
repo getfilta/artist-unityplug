@@ -131,8 +131,16 @@
     "version": {
       "pluginAppVersion": 1,
       "pluginMajorVersion": 5,
-      "pluginMinorVersion": 17
+      "pluginMinorVersion": 18
     },
     "releaseNotes": "- feat: add filter size window for easy checking of filter size and big files.\n fix: small bugs"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 19
+    },
+    "releaseNotes": "- feat: add artist remote support for body tracking\n fix: bugs and issues"
   }
 ]
