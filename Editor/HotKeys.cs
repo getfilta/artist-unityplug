@@ -1,28 +1,26 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine;
 
 public class HotKeys : Editor {
     [MenuItem("Filta Hotkeys/Pause or Resume Simulator &e")]
     static void ToggleSimulatorPlaying() {
-        SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
-        if (simulator == null) {
+        FusionSimulator fusionSimulator = FindObjectOfType<FusionSimulator>();
+        if (fusionSimulator != null) {
+            TogglePlaying(fusionSimulator.GetActiveSimulator());
             return;
         }
+        SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
+        if (simulator != null) {
+            TogglePlaying(simulator);
+        }
+    }
 
-        if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
-            Simulator sim = simulator.gameObject.GetComponent<Simulator>();
-            if (sim.isPlaying) {
-                sim.PauseSimulator();
-            } else {
-                sim.ResumeSimulator();
-            }
-        } else if (simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
-            BodySimulator sim = simulator.gameObject.GetComponent<BodySimulator>();
-            if (sim.isPlaying) {
-                sim.PauseSimulator();
-            } else {
-                sim.ResumeSimulator();
-            }
+    static void TogglePlaying(SimulatorBase sim) {
+        if (sim.isPlaying) {
+            sim.PauseSimulator();
+        } else {
+            sim.ResumeSimulator();
         }
     }
 
@@ -40,13 +38,14 @@ public class HotKeys : Editor {
 
     [MenuItem("Filta Hotkeys/Reset Simulator &r")]
     static void ResetSimulatorPlaying() {
-        SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
-        if (simulator == null) {
+        FusionSimulator fusionSimulator = FindObjectOfType<FusionSimulator>();
+        if (fusionSimulator != null) {
+            fusionSimulator.GetActiveSimulator().ResetSimulator();
             return;
         }
-        if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
-            Simulator sim = simulator.gameObject.GetComponent<Simulator>();
-            sim.ResetSimulator();
+        SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
+        if (simulator != null) {
+            simulator.ResetSimulator();
         }
     }
 
