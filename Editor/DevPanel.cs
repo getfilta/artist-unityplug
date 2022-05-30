@@ -5,7 +5,6 @@ using UnityEngine;
 using System;
 using System.Threading.Tasks;
 using System.IO;
-using System.Linq;
 using Newtonsoft.Json;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
@@ -44,10 +43,13 @@ namespace Filta {
         private const int Limbo = 999;
         private const string TempSelectedArtKey = "temp";
         private const float RefreshTime = 15;
+        private const int DefaultGameViewWidth = 1170;
+        private const int DefaultGameViewHeight = 2532;
+        
         private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
-        
+
         private const string KnowledgeBaseLink =
             "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
         private const string PublishPageLink = "https://www.getfilta.com/mint";
@@ -68,6 +70,7 @@ namespace Filta {
         private static void LoadDefaultLayout() {
             string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
             LayoutUtility.LoadLayoutFromAsset(path);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, DefaultGameViewWidth, DefaultGameViewHeight, "DefaultFiltaView");
         }
 
         [MenuItem("Filta/Documentation, Tutorials, Examples and FAQ", false, 5)]
