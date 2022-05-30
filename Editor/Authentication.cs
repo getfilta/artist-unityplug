@@ -66,6 +66,7 @@ namespace Filta {
                 AuthState = AuthenticationState.LoggedOut;
                 PlayerPrefs.SetString(REFRESH_KEY, null);
                 PlayerPrefs.Save();
+                Backend.Instance.LogToServer(LoggingLevel.LOG, "Logout", "complete");
             }
         }
 
@@ -118,6 +119,8 @@ namespace Filta {
             AuthState = AuthenticationState.PendingAsk;
 
             try {
+                Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "start");
+
                 var response = await Backend.Instance.AskForRemoteLogin();
                 RemoteLoginPin = response.pin;
                 RemoteLoginUrl = response.url;
@@ -169,6 +172,7 @@ namespace Filta {
                                 PlayerPrefs.Save();
                             }
                             AuthState = AuthenticationState.LoggedIn;
+                            Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "success");
                             return LoginResult.Success;
                         } else {
                             Debug.LogError(refreshResponse);
@@ -190,6 +194,7 @@ namespace Filta {
             }
             // if we got this far, we failed.
             AuthState = AuthenticationState.LoggedOut;
+            Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "error");
             return LoginResult.Error;
 
         }
