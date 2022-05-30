@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,6 +28,12 @@ public abstract class SimulatorBase : MonoBehaviour {
     
     [SerializeField]
     protected RawImage _remoteFeed;
+    
+    [NonSerialized]
+    public bool isPlaying;
+    
+    protected long _pauseTime;
+    protected DateTime _startTime;
 
     public virtual bool IsSetUpProperly() {
         return false;
@@ -69,6 +76,24 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     public virtual void Enable() {
         
+    }
+
+    protected virtual void Playback(long currentTime) {
+        
+    }
+
+    public virtual void PauseSimulator() {
+        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
+        isPlaying = false;
+    }
+
+    public virtual void ResumeSimulator() {
+        isPlaying = true;
+    }
+
+    public virtual void ResetSimulator() {
+        _startTime = DateTime.Now;
+        _pauseTime = 0;
     }
 
     [ContextMenu("Toggle Visibility")]

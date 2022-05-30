@@ -58,9 +58,6 @@ public class Simulator : SimulatorBase {
     private Mesh bounds;
 
     [NonSerialized]
-    public bool isPlaying;
-
-    [NonSerialized]
     public bool showVertexNumbers;
 
     [NonSerialized]
@@ -73,8 +70,6 @@ public class Simulator : SimulatorBase {
     private int _previousFrame;
     private bool _skipFaceSimulator;
     private bool _skipFaceRecording;
-
-    private DateTime _startTime;
 
     private FaceData.FaceMesh _faceMesh;
 
@@ -250,10 +245,6 @@ public class Simulator : SimulatorBase {
         _tex = new Texture2D(_faceRecording.videoWidth, _faceRecording.videoHeight, TextureFormat.ARGB32, false);
     }
 
-    void Replay() {
-        _startTime = DateTime.Now;
-    }
-
     //added Y-offset because text labels are rendered below the actual point specified.
     //seems to be a Unity 2021.2 issue/change
     private float _offsetY = -45;
@@ -330,20 +321,17 @@ public class Simulator : SimulatorBase {
         _filterObject.localScale = Vector3.one;
     }
 
-    private long _pauseTime;
-
-    public void PauseSimulator() {
+    public override void PauseSimulator() {
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
     }
 
-    public void ResumeSimulator() {
+    public override void ResumeSimulator() {
         isPlaying = true;
     }
 
-    public void ResetSimulator() {
-        Replay();
-        _pauseTime = 0;
+    public override void ResetSimulator() {
+        base.ResetSimulator();
         Playback(0);
     }
 
@@ -354,13 +342,13 @@ public class Simulator : SimulatorBase {
         HandleVertexPairing(_dataSender._data.vertices.ToList());
     }
 
-    private void Playback(long currentTime) {
+    protected override void Playback(long currentTime) {
         if (_recordingLength <= 0) {
             return;
         }
 
         if (currentTime > _recordingLength) {
-            Replay();
+            _startTime = DateTime.Now;
             _pauseTime = 0;
             return;
         }

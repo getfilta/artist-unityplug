@@ -306,6 +306,7 @@ namespace Filta {
                 if (GUILayout.Button("Show T-Pose Visualiser")) {
                     _bodySimulator.ToggleVisualiser(true);
                 }
+                EditorGUILayout.BeginHorizontal();
                 if (_bodySimulator.isPlaying) {
                     if (GUILayout.Button("Pause")) {
                         _bodySimulator.PauseSimulator();
@@ -315,6 +316,10 @@ namespace Filta {
                         _bodySimulator.ResumeSimulator();
                     }
                 }
+                if (GUILayout.Button("Reset")) {
+                    _bodySimulator.ResetSimulator();
+                }
+                EditorGUILayout.EndHorizontal();
             } else {
                 if (GUILayout.Button("Show Simulated Visualiser")) {
                     _bodySimulator.ToggleVisualiser(false);

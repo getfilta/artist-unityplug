@@ -93,11 +93,6 @@ public class BodySimulator : SimulatorBase {
     private long _prevTime;
     private int _previousFrame;
 
-    private DateTime _startTime;
-
-    [NonSerialized]
-    public bool isPlaying;
-
     private ARBodyRecording _bodyRecording;
     private long _recordingLength;
     
@@ -142,6 +137,11 @@ public class BodySimulator : SimulatorBase {
         _filterObject.gameObject.SetActive(true);
         _bodyVisualiser.gameObject.SetActive(true);
         ResumeSimulator();
+    }
+    
+    public override void ResetSimulator() {
+        base.ResetSimulator();
+        Playback(0);
     }
 
     public override bool IsSetUpProperly() {
@@ -233,34 +233,20 @@ public class BodySimulator : SimulatorBase {
             }
         }
     }
-
-    private long _pauseTime;
-    public void PauseSimulator() {
-        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
-        isPlaying = false;
-    }
-
-    public void ResumeSimulator() {
-        isPlaying = true;
-    }
-
-    void Replay() {
-        _startTime = DateTime.Now;
-    }
-
+    
     void PlaybackFromRemote() {
         PositionTrackers(_dataSender._bodyData);
         UpdateBodyVisualiser(_dataSender._bodyData);
         UpdateBodyAvatars(_dataSender._bodyData);
     }
 
-    private void Playback(long currentTime) {
+    protected override void Playback(long currentTime) {
         if (_recordingLength <= 0) {
             return;
         }
 
         if (currentTime > _recordingLength) {
-            Replay();
+            _startTime = DateTime.Now;
             _pauseTime = 0;
             return;
         }
