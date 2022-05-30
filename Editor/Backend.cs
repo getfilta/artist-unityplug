@@ -158,6 +158,21 @@ namespace Filta {
             }
         }
 
+        public void LogToServer(LoggingLevel level, string title, string payload) {
+            var entry = new TelemetryEntry() {
+                title = title,
+                payload = payload,
+                level = level,
+                source = TelemetrySource.Plugin,
+                ts = 0
+            };
+            SendTelemetryRequest request = new() {
+                entries = new[] { entry }
+            };
+
+            _ = CallFunction<SendTelemetryRequest, SendTelemetryResponse>("sendTelemetry", request);
+        }
+
         private void ParseArtMetas(JObject json, ArtsAndBundleStatus collection) {
             var fields = json["fields"];
             if (fields == null) {
@@ -357,5 +372,37 @@ namespace Filta {
                 return (pluginAppVersion * 100) + (pluginMajorVersion * 10) + (pluginMinorVersion);
             }
         }
+    }
+
+    public enum LoggingLevel {
+        NONE = 0,
+        ERROR = 1,
+        WARN = 2,
+        LOG = 3,
+        DEBUG = 4,
+        VERBOSE = 5,
+    }
+
+    public static class TelemetrySource {
+        public const string Plugin = "plugin";
+    }
+
+    // Matches packages/shared/src/infra/telemetry.ts
+    [Serializable]
+    public class TelemetryEntry {
+        public string title;
+        public string payload;
+        public LoggingLevel level;
+        public string source; // see TelemetrySource constants
+        public long ts; // js timestamp
+    }
+
+    [Serializable]
+    public class SendTelemetryRequest {
+        public TelemetryEntry[] entries;
+    }
+
+    public class SendTelemetryResponse {
+        public string result;
     }
 }
