@@ -258,11 +258,13 @@ namespace Filta {
             }
             await req.SendWebRequest();
             if (req.responseCode != 200) {
+                Debug.LogError(req.error.ToString());
                 throw new Exception(req.error.ToString());
             }
 
             var jsonResult = JObject.Parse(req.downloadHandler.text);
             if (jsonResult["error"] != null) {
+                Debug.LogError(req.error.ToString());
                 throw new Exception(jsonResult["error"].ToString());
             }
 
@@ -281,6 +283,12 @@ namespace Filta {
                 statusKey = key
             };
             var response = await CallFunction<GetRemoteLoginAskStatusRequest, GetRemoteLoginAskStatusResponse>("getRemoteLoginAskStatus", request);
+            return response;
+        }
+
+        public async Task<GetPrivCollectionResponse> GetUserPrivCollection(string uid) {
+            GetPrivCollectionRequest request = new() { uid = uid };
+            var response = await CallFunction<GetPrivCollectionRequest, GetPrivCollectionResponse>("getPrivCollection", request, true);
             return response;
         }
     }
@@ -404,5 +412,13 @@ namespace Filta {
 
     public class SendTelemetryResponse {
         public string result;
+    }
+
+    public class GetPrivCollectionRequest {
+        public string uid;
+    }
+
+    public class GetPrivCollectionResponse {
+        public ArtMeta[] collection;
     }
 }
