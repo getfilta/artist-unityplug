@@ -286,8 +286,8 @@ namespace Filta {
             return response;
         }
 
-        public async Task<GetPrivCollectionResponse> GetUserPrivCollection(string uid) {
-            GetPrivCollectionRequest request = new() { uid = uid };
+        public async Task<GetPrivCollectionResponse> GetUserPrivCollection(string uid, string wallet) {
+            GetPrivCollectionRequest request = new() { uid = uid, wallet = wallet };
             var response = await CallFunction<GetPrivCollectionRequest, GetPrivCollectionResponse>("getPrivCollection", request, true);
             return response;
         }
@@ -416,6 +416,7 @@ namespace Filta {
 
     public class GetPrivCollectionRequest {
         public string uid;
+        public string wallet;
     }
 
     public class GetPrivCollectionResponse {

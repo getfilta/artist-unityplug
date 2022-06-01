@@ -45,7 +45,7 @@ namespace Filta {
         private const float RefreshTime = 15;
         private const int DefaultGameViewWidth = 1170;
         private const int DefaultGameViewHeight = 2532;
-        
+
         private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
@@ -126,7 +126,7 @@ namespace Filta {
         private int _simulatorIndex;
         private bool _resetOnRecord;
 
-        private readonly string[] _simulatorOptions = {"Face", "Body", "Face + Body"};
+        private readonly string[] _simulatorOptions = { "Face", "Body", "Face + Body" };
 
         public static string GetVersionNumber() {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
@@ -260,7 +260,7 @@ namespace Filta {
                 if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Face], EditorStyles.miniButtonLeft, GUILayout.ExpandHeight(true))) {
                     _tabIndex = (int)SimulatorBase.SimulatorType.Face;
                 }
-                
+
                 GUI.backgroundColor = _tabIndex == (int)SimulatorBase.SimulatorType.Body ? Color.green : _normalBackgroundColor;
                 GUI.enabled = _simulatorType != SimulatorBase.SimulatorType.Face;
                 if (GUILayout.Button(_simulatorOptions[(int)SimulatorBase.SimulatorType.Body], EditorStyles.miniButtonRight, GUILayout.ExpandHeight(true))) {
@@ -577,7 +577,7 @@ namespace Filta {
                         DrawUploader();
                         break;
                 }
-            } else if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut){
+            } else if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut) {
                 DrawSimulator();
             } else {
                 GUILayout.FlexibleSpace();
@@ -674,7 +674,7 @@ namespace Filta {
                 SetStatusMessage("Created new scene");
             }
         }
-        
+
         private async void GenerateAndUploadAssetBundle() {
             if (String.IsNullOrEmpty(selectedArtKey)) {
                 //selectedArtKey = SceneManager.GetActiveScene().name;
@@ -759,7 +759,7 @@ namespace Filta {
                 return;
             }
 
-            
+
             AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
