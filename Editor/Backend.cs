@@ -287,8 +287,21 @@ namespace Filta {
         }
 
         public async Task<GetPrivCollectionResponse> GetUserPrivCollection(string uid, string wallet) {
+            Debug.Log($"{uid},{wallet}");
             GetPrivCollectionRequest request = new() { uid = uid, wallet = wallet };
             var response = await CallFunction<GetPrivCollectionRequest, GetPrivCollectionResponse>("getPrivCollection", request, true);
+            return response;
+        }
+
+        public async Task<GetPrivCollectionUnityPackageResponse> GetUserPrivUnityPackage(string artId) {
+            GetPrivCollectionUnityPackageRequest request = new() { artId = artId };
+            var response = await CallFunction<GetPrivCollectionUnityPackageRequest, GetPrivCollectionUnityPackageResponse>("getPrivCollectionUnityPackage", request, true);
+            return response;
+        }
+
+        public async Task<GetAccessResponse> GetAccess() {
+            GetAccessRequest request = new() { };
+            var response = await CallFunction<GetAccessRequest, GetAccessResponse>("getAccess", request, true);
             return response;
         }
     }
@@ -421,5 +434,18 @@ namespace Filta {
 
     public class GetPrivCollectionResponse {
         public ArtMeta[] collection;
+    }
+    public class GetPrivCollectionUnityPackageRequest {
+        public string artId;
+    }
+
+    public class GetPrivCollectionUnityPackageResponse {
+        public string signedUrl;
+    }
+    public class GetAccessRequest {
+    }
+
+    public class GetAccessResponse {
+        public bool isAdmin;
     }
 }
