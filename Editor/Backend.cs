@@ -173,6 +173,14 @@ namespace Filta {
             _ = CallFunction<SendTelemetryRequest, SendTelemetryResponse>("sendTelemetry", request);
         }
 
+        public void LogAnalyticsEvent(string eventName, params AnalyticsEventParam[] eventParams) {
+            LogAnalyticsEventRequest request = new() {
+                eventName = eventName,
+                eventParams = eventParams
+            };
+            _ = CallFunction<LogAnalyticsEventRequest, LogAnalyticsEventResponse>("logAnalyticsEvent", request, true);
+        }
+
         private void ParseArtMetas(JObject json, ArtsAndBundleStatus collection) {
             var fields = json["fields"];
             if (fields == null) {
@@ -427,24 +435,36 @@ namespace Filta {
         public string result;
     }
 
+    [Serializable]
+    public class AnalyticsEventParam {
+        public string name;
+        public string value;
+    }
+    public class LogAnalyticsEventRequest {
+        public string eventName;
+        public AnalyticsEventParam[] eventParams;
+    }
+    public class LogAnalyticsEventResponse {
+        public string result;
+    }
+    
     public class GetPrivCollectionRequest {
         public string uid;
         public string wallet;
     }
-
     public class GetPrivCollectionResponse {
         public ArtMeta[] collection;
     }
+  
     public class GetPrivCollectionUnityPackageRequest {
         public string artId;
     }
-
     public class GetPrivCollectionUnityPackageResponse {
         public string signedUrl;
     }
+  
     public class GetAccessRequest {
     }
-
     public class GetAccessResponse {
         public bool isAdmin;
     }

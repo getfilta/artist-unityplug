@@ -173,23 +173,28 @@ namespace Filta {
                             }
                             AuthState = AuthenticationState.LoggedIn;
                             Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "success");
+                            Backend.Instance.LogAnalyticsEvent("login", new AnalyticsEventParam() { name = "method", value = "remote" });
                             return LoginResult.Success;
                         } else {
                             Debug.LogError(refreshResponse);
+                            Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "Failed to acquire refreshed security token");
                             Global.FireStatusChange(this, "Failed to acquire refreshed security token", true);
                         }
                     } else {
                         // important as status message tells user to check console
                         Debug.LogError(signinResponse);
+                        Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "Server provided invalid security token");
                         Global.FireStatusChange(this, "Server provided invalid security token", true);
                     }
                 } else {
                     // we could distinguish between denied and expired, but we don't
                     Debug.LogError("Request expired.");
+                    Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "This remote login request has expired");
                     Global.FireStatusChange(this, "This remote login request has expired", true);
                 }
             } catch (Exception e) {
                 Debug.LogError(e);
+                Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "Unknown Error:" + e.ToString());
                 Global.FireStatusChange(this, "Unknown Error. Check console for more information.", true);
             }
             // if we got this far, we failed.
