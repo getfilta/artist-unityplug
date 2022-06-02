@@ -30,6 +30,7 @@ namespace Filta {
         private const string customTokenLoginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=";
         private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
         private LoginResponse loginData;
+        public static bool IsAdmin;
         private static DateTime _expiryTime;
 
         public EventHandler AuthStateChanged = delegate { };

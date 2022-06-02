@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using System.Threading.Tasks;
 using System.IO;
+using Filta.Datatypes;
 using Newtonsoft.Json;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
@@ -17,7 +18,8 @@ namespace Filta {
         private bool _stayLoggedIn;
 
         private int _selectedTab = 0;
-        private string[] _toolbarTitles = { "Simulator", "Uploader", "Admin" };
+        private string[] _toolbarTitles = { "Simulator", "Uploader"};
+        private string[] _adminToolbarTitles = { "Simulator", "Uploader", "Admin" };
         private int _selectedSimulator;
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string variantTempSave = "Assets/Filter.prefab";
@@ -51,8 +53,6 @@ namespace Filta {
         private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
-
-        private bool _isAdmin;
 
         private const string KnowledgeBaseLink =
             "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
@@ -127,7 +127,7 @@ namespace Filta {
             Login();
             AutoRefreshArts();
             if (Authentication.Instance.IsLoggedIn) {
-                _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
+                _selectedTab = GUILayout.Toolbar(_selectedTab, Authentication.IsAdmin ? _adminToolbarTitles: _toolbarTitles );
                 switch (_selectedTab) {
                     case 0:
                         DrawSimulator();
@@ -626,17 +626,97 @@ namespace Filta {
 
         #region Admin
         
+        private string _artistUid;
+        private string _artistWallet;
+        private string _loadingText;
+
+        private ArtMeta[] _artMetas;
+        
         private void DrawAdminTools() {
+            if (!Authentication.IsAdmin) {
+                EditorGUILayout.LabelField("You are not an admin.");
+                return;
+            }
+            if (!String.IsNullOrEmpty(_loadingText)) {
+                EditorGUILayout.LabelField(_loadingText);
+                return;
+            }
+            EditorGUILayout.LabelField("Artist Uid");
+            _artistUid = GUILayout.TextField(_artistUid);
+            EditorGUILayout.LabelField("Artist Wallet Address");
+            _artistWallet = GUILayout.TextField(_artistWallet);
+            if (GUILayout.Button("Get Priv Collection")) {
+                GetUserPrivCollection();
+            }
+
+            if (_artMetas == null || _artMetas.Length == 0) {
+                return;
+            }
+            DrawUILine(Color.grey);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Private Collection");
+            foreach (ArtMeta item in _artMetas) {
+                bool clicked = GUILayout.Button(item.title);
+                if (clicked) {
+                    GetUnityPackageUrl(item);
+                }
+            }
+        }
+
+        private async void GetUnityPackageUrl(ArtMeta art) {
+            _loadingText = "Getting signed url...";
+            GetPrivCollectionUnityPackageResponse response;
+            try {
+                response = await Backend.Instance.GetUserPrivUnityPackage(art.artId);
+            }
+            catch (Exception e) {
+                _loadingText = null;
+                Debug.LogError($"Error getting signed url. {e.Message}");
+                throw new Exception(e.Message);
+            }
+            GetUnityPackage(response.signedUrl, art);
+        }
+
+        private async void GetUnityPackage(string url, ArtMeta art) {
+            _loadingText = "Downloading unity package...";
+            try {
+                byte[] data = await Backend.Instance.GetUnityPackage(url);
+                string path = $"{Application.dataPath}/{art.title}.unitypackage";
+                File.WriteAllBytes(path, data);
+                AssetDatabase.ImportPackage(path, true);
+            }
+            catch (Exception e) {
+                _loadingText = null;
+                Debug.LogError($"Error downloading package. {e.Message}");
+                throw new Exception(e.Message);
+            }
+            SetStatusMessage("Successfully loaded unitypackage");
+            _loadingText = null;
+        }
+
+        private async void GetUserPrivCollection() {
+            _loadingText = "Getting private collection...";
+            GetPrivCollectionResponse response;
+            try {
+                response = await Backend.Instance.GetUserPrivCollection(_artistUid, _artistWallet);
+            }
+            catch (Exception e) {
+                _loadingText = null;
+                Debug.LogError($"Error loading private collection. {e.Message}");
+                throw new Exception(e.Message);
+            }
             
+            _loadingText = null;
+            _artMetas = response.collection;
         }
         
         private async void GetAdminStatus() {
             try {
                 GetAccessResponse response = await Backend.Instance.GetAccess();
-                _isAdmin = response.isAdmin;
+                Authentication.IsAdmin = response.isAdmin;
             }
             catch (Exception e) {
-                _isAdmin = false;
+                Authentication.IsAdmin = false;
                 Debug.LogError("Failed to check admin status" + e.Message);
             }
         }

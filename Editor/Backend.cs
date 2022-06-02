@@ -307,6 +307,19 @@ namespace Filta {
             return response;
         }
 
+        public async Task<byte[]> GetUnityPackage(string url) {
+            try {
+                using UnityWebRequest request = UnityWebRequest.Get(url);
+                request.SetRequestHeader("Content-Type", "application/octet-stream");
+                await request.SendWebRequest();
+                return request.downloadHandler.data;
+            }
+            catch (Exception e) {
+                Debug.LogError($"Error downloading package. {e.Message}");
+                throw new Exception(e.Message);
+            }
+        }
+
         public async Task<GetAccessResponse> GetAccess() {
             GetAccessRequest request = new() { };
             var response = await CallFunction<GetAccessRequest, GetAccessResponse>("getAccess", request, true);
