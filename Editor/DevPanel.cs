@@ -12,6 +12,8 @@ using UnityEngine.SceneManagement;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
+        #region Variable Declarations
+
         private bool _stayLoggedIn;
 
         private int _selectedTab = 0;
@@ -56,6 +58,10 @@ namespace Filta {
             "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
         private const string PublishPageLink = "https://www.getfilta.com/mint";
 
+        #endregion
+        
+        #region Menus
+        
         [MenuItem("Filta/Artist Panel (Dockable)", false, 0)]
         static void InitDockable() {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), false, $"Filta: Artist Panel - {GetVersionNumber()}");
@@ -115,6 +121,8 @@ namespace Filta {
             return true;
         }
         
+        #endregion
+
         void OnGUI() {
             Login();
             AutoRefreshArts();
