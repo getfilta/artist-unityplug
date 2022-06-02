@@ -15,7 +15,7 @@ namespace Filta {
         private bool _stayLoggedIn;
 
         private int _selectedTab = 0;
-        private string[] _toolbarTitles = { "Simulator", "Uploader" };
+        private string[] _toolbarTitles = { "Simulator", "Uploader", "Admin" };
         private int _selectedSimulator;
         private const string packagePath = "Packages/com.getfilta.artist-unityplug";
         private const string variantTempSave = "Assets/Filter.prefab";
@@ -49,6 +49,8 @@ namespace Filta {
         private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
+
+        private bool _isAdmin;
 
         private const string KnowledgeBaseLink =
             "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
@@ -111,6 +113,33 @@ namespace Filta {
         private static bool ToggleTestEnvirValidate() {
             Menu.SetChecked(TestEnvirMenuName, Global.UseTestEnvironment);
             return true;
+        }
+        
+        void OnGUI() {
+            Login();
+            AutoRefreshArts();
+            if (Authentication.Instance.IsLoggedIn) {
+                _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
+                switch (_selectedTab) {
+                    case 0:
+                        DrawSimulator();
+                        break;
+                    case 1:
+                        DrawUploader();
+                        break;
+                    case 2:
+                        DrawAdminTools();
+                        break;
+                }
+            } else if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut) {
+                DrawSimulator();
+            } else {
+                GUILayout.FlexibleSpace();
+                HandleNewPluginVersion();
+            }
+            DrawUILine(Color.gray);
+
+            EditorGUILayout.LabelField(statusBar, s);
         }
 
         #region Simulator
@@ -215,6 +244,28 @@ namespace Filta {
                     }
                 }
             }
+        }
+        
+        private void DrawSimulator() {
+            simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
+            CreateNewScene();
+            if (_activeSimulator) {
+                DrawUILine(Color.gray);
+                HandleSimulator();
+                DrawUILine(Color.gray);
+            } else {
+                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
+                DrawUILine(Color.gray);
+            }
+            EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
+            float originalValue = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 215;
+            _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
+            EditorGUIUtility.labelWidth = originalValue;
+            DrawUILine(Color.gray);
+            GUILayout.FlexibleSpace();
+            HandleNewPluginVersion();
+            GUILayout.EndScrollView();
         }
 
         private void SetPluginInfo() {
@@ -564,52 +615,28 @@ namespace Filta {
         }
 
         #endregion
-        void OnGUI() {
-            Login();
-            AutoRefreshArts();
-            if (Authentication.Instance.IsLoggedIn) {
-                _selectedTab = GUILayout.Toolbar(_selectedTab, _toolbarTitles);
-                switch (_selectedTab) {
-                    case 0:
-                        DrawSimulator();
-                        break;
-                    case 1:
-                        DrawUploader();
-                        break;
-                }
-            } else if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut) {
-                DrawSimulator();
-            } else {
-                GUILayout.FlexibleSpace();
-                HandleNewPluginVersion();
-            }
-            DrawUILine(Color.gray);
 
-            EditorGUILayout.LabelField(statusBar, s);
+        #region Admin
+        
+        private void DrawAdminTools() {
+            
+        }
+        
+        private async void GetAdminStatus() {
+            try {
+                GetAccessResponse response = await Backend.Instance.GetAccess();
+                _isAdmin = response.isAdmin;
+            }
+            catch (Exception e) {
+                _isAdmin = false;
+                Debug.LogError("Failed to check admin status" + e.Message);
+            }
         }
 
-        private void DrawSimulator() {
-            simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
-            CreateNewScene();
-            if (_activeSimulator) {
-                DrawUILine(Color.gray);
-                HandleSimulator();
-                DrawUILine(Color.gray);
-            } else {
-                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                DrawUILine(Color.gray);
-            }
-            EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
-            float originalValue = EditorGUIUtility.labelWidth;
-            EditorGUIUtility.labelWidth = 215;
-            _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
-            EditorGUIUtility.labelWidth = originalValue;
-            DrawUILine(Color.gray);
-            GUILayout.FlexibleSpace();
-            HandleNewPluginVersion();
-            GUILayout.EndScrollView();
-        }
-
+        #endregion
+        
+        #region Uploader
+        
         private void DrawUploader() {
             uploaderScrollPosition = GUILayout.BeginScrollView(uploaderScrollPosition);
 
@@ -624,57 +651,7 @@ namespace Filta {
             DisplayQueue();
             GUILayout.EndScrollView();
         }
-
-        private void UpdatePanel() {
-            _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
-            SetStatusMessage("Updating plugin! Please wait a while");
-        }
-        public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
-            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
-            r.height = thickness;
-            r.y += padding / 2;
-            r.x -= 2;
-            r.width += 6;
-            EditorGUI.DrawRect(r, color);
-        }
-
-        private string _sceneName;
-        void CreateNewScene() {
-            EditorGUILayout.LabelField("Create new filter scene", EditorStyles.boldLabel);
-            _sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", _sceneName);
-            GUI.enabled = !String.IsNullOrWhiteSpace(_sceneName);
-            //EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Create Filter")) {
-                CreateScene();
-                _sceneName = "";
-                GUI.FocusControl(null);
-            }
-
-            GUI.enabled = true;
-
-        }
-
-        void CreateScene() {
-            string scenePath = $"{packagePath}/Core/templateScene.unity";
-            bool success;
-            if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
-                AssetDatabase.CreateFolder("Assets", "Filters");
-            }
-
-            success = AssetDatabase.CopyAsset(scenePath, $"Assets/Filters/{_sceneName}.unity");
-            if (!success) {
-                SetStatusMessage("Failed to create new filter scene file", true);
-                Debug.LogError("Failed to create new filter scene file");
-            } else {
-                if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
-                    EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-                }
-
-                EditorSceneManager.OpenScene($"Assets/Filters/{_sceneName}.unity", OpenSceneMode.Single);
-                SetStatusMessage("Created new scene");
-            }
-        }
-
+        
         private async void GenerateAndUploadAssetBundle() {
             if (String.IsNullOrEmpty(selectedArtKey)) {
                 //selectedArtKey = SceneManager.GetActiveScene().name;
@@ -797,7 +774,26 @@ namespace Filta {
             }
             AssetDatabase.DeleteAsset(variantTempSave);
         }
-
+        
+        
+        #endregion
+        
+        #region Util
+        
+        private void UpdatePanel() {
+            _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+            SetStatusMessage("Updating plugin! Please wait a while");
+        }
+        
+        public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+            r.height = thickness;
+            r.y += padding / 2;
+            r.x -= 2;
+            r.width += 6;
+            EditorGUI.DrawRect(r, color);
+        }
+        
         private void HandleNewPluginVersion() {
             if (_masterReleaseInfo == null || _localReleaseInfo == null) {
                 return;
@@ -839,18 +835,64 @@ namespace Filta {
             }
             EditorGUILayout.EndScrollView();
         }
+        
+        private static ReleaseInfo GetLocalReleaseInfo() {
+            string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
+            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
+        }
+        
+        private void SetStatusMessage(string message, bool isError = false) {
+            s.normal.textColor = isError ? Color.red : Color.white;
+            statusBar = message;
+        }
+        
+        #endregion
 
+        #region Filter/Scene Functionality
+
+        private string _sceneName;
+        void CreateNewScene() {
+            EditorGUILayout.LabelField("Create new filter scene", EditorStyles.boldLabel);
+            _sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", _sceneName);
+            GUI.enabled = !String.IsNullOrWhiteSpace(_sceneName);
+            //EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Create Filter")) {
+                CreateScene();
+                _sceneName = "";
+                GUI.FocusControl(null);
+            }
+
+            GUI.enabled = true;
+
+        }
+
+        void CreateScene() {
+            string scenePath = $"{packagePath}/Core/templateScene.unity";
+            bool success;
+            if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
+                AssetDatabase.CreateFolder("Assets", "Filters");
+            }
+
+            success = AssetDatabase.CopyAsset(scenePath, $"Assets/Filters/{_sceneName}.unity");
+            if (!success) {
+                SetStatusMessage("Failed to create new filter scene file", true);
+                Debug.LogError("Failed to create new filter scene file");
+            } else {
+                if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
+                    EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+                }
+
+                EditorSceneManager.OpenScene($"Assets/Filters/{_sceneName}.unity", OpenSceneMode.Single);
+                SetStatusMessage("Created new scene");
+            }
+        }
+        
         private async Task RefreshExternalDatasources() {
             await RefreshArtsAndBundleStatus();
             Backend.Instance.ListenToQueue();
             _masterReleaseInfo = await Backend.Instance.GetMasterReleaseInfo();
         }
-
-        private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
-            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
-        }
-
+        
         private bool CheckObjectsOutsideFilter() {
             Scene scene = SceneManager.GetActiveScene();
             List<GameObject> rootObjects = new(scene.rootCount);
@@ -886,99 +928,7 @@ namespace Filta {
 
             return false;
         }
-
-        public async Task<bool> EnsureUnexpiredLogin() {
-            if (Authentication.Instance.IsLoginExpired) {
-                Authentication.Instance.LogOut(false);
-                return await LoginAutomatic();
-            }
-            return true;
-        }
-
-        private async Task<bool> Login(bool stayLoggedIn) {
-            LoginResult result = await Authentication.Instance.Login(stayLoggedIn);
-            if (result == LoginResult.Success) {
-                try {
-                    await RefreshExternalDatasources();
-                } catch (Exception e) {
-                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
-                    Debug.LogError("Error downloading: " + e.Message);
-                }
-            }
-            return result == LoginResult.Success;
-        }
-
-        private async Task<bool> LoginAutomatic() {
-            LoginResult result = await Authentication.Instance.LoginAutomatic();
-            if (result == LoginResult.Success) {
-                try {
-                    await RefreshExternalDatasources();
-                } catch (Exception e) {
-                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
-                    Debug.LogError("Error downloading: " + e.Message);
-                }
-            } else {
-                SetStatusMessage("Login failed");
-                Debug.LogError($"Login failed with result: {result}");
-            }
-            return result == LoginResult.Success;
-        }
-
-        private void HandleAuthStateChange(object sender, EventArgs unused) {
-            // conveniently, setting status does a repaint. Otherwise we could
-            // do it here.
-            switch (Authentication.Instance.AuthState) {
-                case AuthenticationState.LoggedIn:
-                    SetStatusMessage("Logged in");
-                    break;
-                case AuthenticationState.LoggingIn:
-                    SetStatusMessage("Logging in...");
-                    break;
-                // case AuthenticationState.LoggedOut:
-                //     SetStatusMessage("Logged out");
-                //     break;
-                case AuthenticationState.PendingAsk:
-                    SetStatusMessage("Initiating remote login...");
-                    break;
-                case AuthenticationState.PendingAskApproval:
-                    SetStatusMessage("Waiting for remote approval...");
-                    break;
-                case AuthenticationState.PendingRefresh:
-                    SetStatusMessage("Refreshing login...");
-                    break;
-            }
-        }
-
-        private async void Login() {
-            if (Authentication.Instance.AuthState == AuthenticationState.LoggedIn
-                || Authentication.Instance.AuthState == AuthenticationState.LoggingIn
-                || Authentication.Instance.AuthState == AuthenticationState.PendingAsk
-                || Authentication.Instance.AuthState == AuthenticationState.PendingRefresh) {
-                return;
-            }
-
-            if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut) {
-                bool initRemoteLogin = GUILayout.Button("Request login");
-                _stayLoggedIn = EditorGUILayout.Toggle("Stay logged in", _stayLoggedIn);
-                if (!initRemoteLogin) {
-                    return;
-                }
-                selectedArtKey = "";
-                GUI.FocusControl(null);
-
-                await Login(_stayLoggedIn);
-            } else if (Authentication.Instance.AuthState == AuthenticationState.PendingAskApproval) {
-                EditorGUILayout.LabelField("Remote Login Code");
-                EditorGUILayout.LabelField(Authentication.Instance.RemoteLoginPin, EditorStyles.largeLabel);
-
-                if (GUILayout.Button("Go to remote login page")) {
-                    GUI.FocusControl(null);
-                    Application.OpenURL(Authentication.Instance.RemoteLoginUrl);
-                }
-            }
-
-        }
-
+        
         private async void AutoRefreshArts() {
             if (artsAndBundleStatus == null || artsAndBundleStatus.Bundles == null ||
                 artsAndBundleStatus.Bundles.Count == 0) {
@@ -1090,12 +1040,7 @@ namespace Filta {
 
             DeletePrivArt(selectedArtKey);
         }
-
-        private void SetStatusMessage(string message, bool isError = false) {
-            s.normal.textColor = isError ? Color.red : Color.white;
-            statusBar = message;
-        }
-
+        
         private bool CheckForUnreadableMeshes(GameObject filterParent) {
             bool result = false;
             string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: ";
@@ -1113,6 +1058,107 @@ namespace Filta {
 
             return result;
         }
+
+        #endregion
+
+        #region Auth
+        
+        public async Task<bool> EnsureUnexpiredLogin() {
+            if (Authentication.Instance.IsLoginExpired) {
+                Authentication.Instance.LogOut(false);
+                return await LoginAutomatic();
+            }
+            return true;
+        }
+        
+        private async Task<bool> Login(bool stayLoggedIn) {
+            LoginResult result = await Authentication.Instance.Login(stayLoggedIn);
+            if (result == LoginResult.Success) {
+                try {
+                    await RefreshExternalDatasources();
+                } catch (Exception e) {
+                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
+                    Debug.LogError("Error downloading: " + e.Message);
+                }
+                GetAdminStatus();
+            }
+            return result == LoginResult.Success;
+        }
+
+        private async Task<bool> LoginAutomatic() {
+            LoginResult result = await Authentication.Instance.LoginAutomatic();
+            if (result == LoginResult.Success) {
+                try {
+                    await RefreshExternalDatasources();
+                } catch (Exception e) {
+                    SetStatusMessage("Error downloading collection. Try again. Check console for more information.", true);
+                    Debug.LogError("Error downloading: " + e.Message);
+                }
+                GetAdminStatus();
+            } else {
+                SetStatusMessage("Login failed");
+                Debug.LogError($"Login failed with result: {result}");
+            }
+            return result == LoginResult.Success;
+        }
+
+        private void HandleAuthStateChange(object sender, EventArgs unused) {
+            // conveniently, setting status does a repaint. Otherwise we could
+            // do it here.
+            switch (Authentication.Instance.AuthState) {
+                case AuthenticationState.LoggedIn:
+                    SetStatusMessage("Logged in");
+                    break;
+                case AuthenticationState.LoggingIn:
+                    SetStatusMessage("Logging in...");
+                    break;
+                // case AuthenticationState.LoggedOut:
+                //     SetStatusMessage("Logged out");
+                //     break;
+                case AuthenticationState.PendingAsk:
+                    SetStatusMessage("Initiating remote login...");
+                    break;
+                case AuthenticationState.PendingAskApproval:
+                    SetStatusMessage("Waiting for remote approval...");
+                    break;
+                case AuthenticationState.PendingRefresh:
+                    SetStatusMessage("Refreshing login...");
+                    break;
+            }
+        }
+
+        private async void Login() {
+            if (Authentication.Instance.AuthState == AuthenticationState.LoggedIn
+                || Authentication.Instance.AuthState == AuthenticationState.LoggingIn
+                || Authentication.Instance.AuthState == AuthenticationState.PendingAsk
+                || Authentication.Instance.AuthState == AuthenticationState.PendingRefresh) {
+                return;
+            }
+
+            if (Authentication.Instance.AuthState == AuthenticationState.LoggedOut) {
+                bool initRemoteLogin = GUILayout.Button("Request login");
+                _stayLoggedIn = EditorGUILayout.Toggle("Stay logged in", _stayLoggedIn);
+                if (!initRemoteLogin) {
+                    return;
+                }
+                selectedArtKey = "";
+                GUI.FocusControl(null);
+
+                await Login(_stayLoggedIn);
+            } else if (Authentication.Instance.AuthState == AuthenticationState.PendingAskApproval) {
+                EditorGUILayout.LabelField("Remote Login Code");
+                EditorGUILayout.LabelField(Authentication.Instance.RemoteLoginPin, EditorStyles.largeLabel);
+
+                if (GUILayout.Button("Go to remote login page")) {
+                    GUI.FocusControl(null);
+                    Application.OpenURL(Authentication.Instance.RemoteLoginUrl);
+                }
+            }
+
+        }
+        
+        #endregion
+        
     }
 }
 #endif
