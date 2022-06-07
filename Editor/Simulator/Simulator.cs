@@ -95,7 +95,9 @@ public class Simulator : SimulatorBase {
     protected override void OnEnable() {
         base.OnEnable();
         if (EditorApplication.isPlaying) {
-            _cloths = _filterObject.GetComponentsInChildren<Cloth>();
+            if (_filterObject != null) {
+                _cloths = _filterObject.GetComponentsInChildren<Cloth>();
+            }
         }
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
