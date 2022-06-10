@@ -9,7 +9,8 @@ namespace Filta {
         Success,
         Error,
         NoRefreshToken,
-        ExpiredToken
+        ExpiredToken,
+        Cancelled,
     }
 
     public enum AuthenticationState {
@@ -18,7 +19,8 @@ namespace Filta {
         PendingAsk,
         PendingAskApproval,
         LoggingIn,
-        PendingRefresh
+        PendingRefresh,
+        Cancelling,
     }
 
     public class Authentication {
@@ -123,6 +125,11 @@ namespace Filta {
                 Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "start");
 
                 var response = await Backend.Instance.AskForRemoteLogin();
+                if (AuthState == AuthenticationState.Cancelling) {
+                    AuthState = AuthenticationState.LoggedOut;
+                    Global.FireStatusChange(this, "Cancelled log in");
+                    return LoginResult.Cancelled;
+                }
                 RemoteLoginPin = response.pin;
                 RemoteLoginUrl = response.url;
                 AuthState = AuthenticationState.PendingAskApproval;
@@ -136,6 +143,12 @@ namespace Filta {
                     if (statusResponse.status != "pending") {
                         break;
                     }
+                }
+
+                if (AuthState == AuthenticationState.Cancelling) {
+                    AuthState = AuthenticationState.LoggedOut;
+                    Global.FireStatusChange(this, "Cancelled log in");
+                    return LoginResult.Cancelled;
                 }
                 if (statusResponse != null && statusResponse.status == "granted") {
                     AuthState = AuthenticationState.LoggingIn;
@@ -203,6 +216,11 @@ namespace Filta {
             Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "error");
             return LoginResult.Error;
 
+        }
+
+        public void CancelLogin() {
+            AuthState = AuthenticationState.Cancelling;
+            Global.FireStatusChange(this,"Cancelling log in");
         }
     }
     [Serializable]

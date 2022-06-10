@@ -1218,10 +1218,7 @@ namespace Filta {
         }
 
         private async void Login() {
-            if (Authentication.Instance.AuthState == AuthenticationState.LoggedIn
-                || Authentication.Instance.AuthState == AuthenticationState.LoggingIn
-                || Authentication.Instance.AuthState == AuthenticationState.PendingAsk
-                || Authentication.Instance.AuthState == AuthenticationState.PendingRefresh) {
+            if (Authentication.Instance.AuthState == AuthenticationState.LoggedIn) {
                 return;
             }
 
@@ -1235,7 +1232,19 @@ namespace Filta {
                 GUI.FocusControl(null);
 
                 await Login(_stayLoggedIn);
-            } else if (Authentication.Instance.AuthState == AuthenticationState.PendingAskApproval) {
+                return;
+            }
+
+            if (Authentication.Instance.AuthState == AuthenticationState.Cancelling) {
+                EditorGUILayout.LabelField("Cancelling log in");
+                return;
+            }
+
+            if (GUILayout.Button("Cancel")) {
+                Authentication.Instance.CancelLogin();
+            }
+            
+            if (Authentication.Instance.AuthState == AuthenticationState.PendingAskApproval) {
                 EditorGUILayout.LabelField("Remote Login Code");
                 EditorGUILayout.LabelField(Authentication.Instance.RemoteLoginPin, EditorStyles.largeLabel);
 
