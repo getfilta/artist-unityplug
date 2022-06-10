@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Filta {
     public static class Util
@@ -34,6 +35,18 @@ namespace Filta {
             }
 
             return success;
+        }
+        
+
+        [InitializeOnLoadMethod]
+        public static void ChangeActiveInputHandling() {
+            SerializedObject projectSettings = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
+            SerializedProperty activeInputHandling = projectSettings.FindProperty("activeInputHandler");
+            if (activeInputHandling.intValue is 0 or 2) {
+                return;
+            }
+            activeInputHandling.intValue = 2;
+            projectSettings.ApplyModifiedProperties();
         }
     }
 }
