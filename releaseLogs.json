@@ -142,5 +142,13 @@
       "pluginMinorVersion": 19
     },
     "releaseNotes": "- feat: add artist remote support for body tracking\n fix: bugs and issues"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 20
+    },
+    "releaseNotes": "- feat: add new LitFakeReflection shader under the Filta shader menu\n fix: setting default layout properly sets game resolution"
   }
 ]
