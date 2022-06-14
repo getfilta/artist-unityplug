@@ -98,12 +98,12 @@ namespace Filta {
 
         [MenuItem(RunLocallyMenuName, false, 30)]
         private static void ToggleRunLocally() {
-            Backend.Instance.RunLocally = !Backend.Instance.RunLocally;
+            Backend.RunLocally = !Backend.RunLocally;
         }
 
         [MenuItem(RunLocallyMenuName, true, 30)]
         private static bool ToggleRunLocallyValidate() {
-            Menu.SetChecked(RunLocallyMenuName, Backend.Instance.RunLocally);
+            Menu.SetChecked(RunLocallyMenuName, Backend.RunLocally);
             return true;
         }
 
