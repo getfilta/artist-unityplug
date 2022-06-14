@@ -14,50 +14,74 @@ using UnityEngine.SceneManagement;
 namespace Filta {
     public class DevPanel : EditorWindow {
         #region Variable Declarations
-
-        private bool _stayLoggedIn;
-
-        private int _selectedTab = 0;
-        private string[] _toolbarTitles = { "Simulator", "Uploader"};
-        private string[] _adminToolbarTitles = { "Simulator", "Uploader", "Admin" };
-        private int _selectedSimulator;
-        private const string packagePath = "Packages/com.getfilta.artist-unityplug";
-        private const string variantTempSave = "Assets/Filter.prefab";
-        private readonly string[] packagePaths = { "Assets/pluginInfo.json", variantTempSave };
-        private string _statusBar = "";
-        private string statusBar { get { return _statusBar; } set { _statusBar = value; this.Repaint(); } }
-        private string selectedArtTitle = "";
-        private string selectedArtKey = "";
-        private Vector2 simulatorScrollPosition;
-        private Vector2 uploaderScrollPosition;
-
-        private ArtsAndBundleStatus artsAndBundleStatus = new();
-
-        private PluginInfo _pluginInfo;
-        private bool _watchingQueue;
-        private GUIStyle s;
-        private Color _normalBackgroundColor;
-
-        private List<ReleaseInfo> _masterReleaseInfo;
-        private ReleaseInfo _localReleaseInfo;
-
-        private AddRequest _addRequest;
-
+        
+        private const string PackagePath = "Packages/com.getfilta.artist-unityplug";
+        private const string VariantTempSave = "Assets/Filter.prefab";
+        private const string KnowledgeBaseLink =
+            "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
+        private const string PublishPageLink = "https://www.getfilta.com/mint";
+        private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
+        private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
+        
         private const int Uploading = -1;
         private const int Limbo = 999;
         private const string TempSelectedArtKey = "temp";
         private const float RefreshTime = 15;
         private const int DefaultGameViewWidth = 1170;
         private const int DefaultGameViewHeight = 2532;
+        
+        private readonly string[] _toolbarTitles = { "Simulator", "Uploader"};
+        private readonly string[] _adminToolbarTitles = { "Simulator", "Uploader", "Admin" };
+        private readonly string[] _packagePaths = { "Assets/pluginInfo.json", VariantTempSave };
+        private readonly string[] _simulatorOptions = { "Face", "Body", "Face + Body" };
 
+        private bool _stayLoggedIn;
+        private int _selectedTab = 0;
+        private int _selectedSimulator;
+        private string _statusBar = "";
+        private string _selectedArtTitle = "";
+        private string _selectedArtKey = "";
+        private Vector2 _simulatorScrollPosition;
+        private Vector2 _uploaderScrollPosition;
+        private ArtsAndBundleStatus _artsAndBundleStatus = new();
+        private PluginInfo _pluginInfo;
+        private bool _watchingQueue;
+        private GUIStyle _s;
+        private Color _normalBackgroundColor;
+        private List<ReleaseInfo> _masterReleaseInfo;
+        private ReleaseInfo _localReleaseInfo;
+        private AddRequest _addRequest;
         private bool _isRefreshing;
         private double _refreshTimer;
         private DateTime _lastGuiTime;
+        
+        private SimulatorBase.SimulatorType _simulatorType;
+        private FusionSimulator _fusionSimulator;
+        private SimulatorBase _simulator;
+        private Simulator _faceSimulator;
+        private BodySimulator _bodySimulator;
+        private bool _activeSimulator;
+        private int _vertexNumber;
+        private int _simulatorIndex;
+        private bool _resetOnRecord;
+        private int _tabIndex;
+        
+        private string _artistUid;
+        private string _artistWallet;
+        private string _loadingText;
+        private ArtMeta[] _artMetas;
+        
+        private string _sceneName;
+        private bool _showPrivCollection = true;
 
-        private const string KnowledgeBaseLink =
-            "https://filta.notion.site/Artist-Knowledge-Base-2-0-bea6981130894902aa1c70f0adaa4112";
-        private const string PublishPageLink = "https://www.getfilta.com/mint";
-
+        private string StatusBar {
+            get => _statusBar;
+            set {
+                _statusBar = value;
+                Repaint();
+            }
+        }
+        
         #endregion
         
         #region Menus
@@ -76,7 +100,7 @@ namespace Filta {
 
         [MenuItem("Filta/Load Default Editor Layout", false, 4)]
         private static void LoadDefaultLayout() {
-            string path = Path.GetFullPath($"{packagePath}/Core/FiltaLayout.wlt");
+            string path = Path.GetFullPath($"{PackagePath}/Core/FiltaLayout.wlt");
             LayoutUtility.LoadLayoutFromAsset(path);
             GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, DefaultGameViewWidth, DefaultGameViewHeight, "DefaultFiltaView");
         }
@@ -94,8 +118,6 @@ namespace Filta {
             GUI.FocusControl(null);
         }
 
-        private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
-
         [MenuItem(RunLocallyMenuName, false, 30)]
         private static void ToggleRunLocally() {
             Backend.RunLocally = !Backend.RunLocally;
@@ -106,8 +128,6 @@ namespace Filta {
             Menu.SetChecked(RunLocallyMenuName, Backend.RunLocally);
             return true;
         }
-
-        private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
 
         [MenuItem(TestEnvirMenuName, false, 30)]
         private static void ToggleTestEnvir() {
@@ -122,6 +142,39 @@ namespace Filta {
         }
         
         #endregion
+
+        private async void OnEnable() {
+            Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{PackagePath}/Editor/icon.png");
+            titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
+            _s = new GUIStyle();
+            _normalBackgroundColor = GUI.backgroundColor;
+            EditorApplication.playModeStateChanged += FindSimulator;
+            EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
+            Global.StatusChange += HandleStatusChange;
+            Backend.Instance.BundleQueue += OnBundleQueueUpdate;
+            Authentication.Instance.AuthStateChanged += HandleAuthStateChange;
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            _localReleaseInfo = GetLocalReleaseInfo();
+            SetPluginInfo();
+            if (!Authentication.Instance.IsLoggedIn) {
+                await LoginAutomatic();
+            } else {
+                if (Authentication.Instance.IsLoginExpired) {
+                    await EnsureUnexpiredLogin();
+                } else {
+                    await RefreshExternalDatasources();
+                }
+            }
+        }
+        
+        private void OnDisable() {
+            EditorApplication.playModeStateChanged -= FindSimulator;
+            EditorSceneManager.activeSceneChangedInEditMode -= HandleSceneChange;
+            Global.StatusChange -= HandleStatusChange;
+            Backend.Instance.BundleQueue -= OnBundleQueueUpdate;
+            Authentication.Instance.AuthStateChanged -= HandleAuthStateChange;
+            DisposeQueue();
+        }
 
         void OnGUI() {
             Login();
@@ -147,57 +200,10 @@ namespace Filta {
             }
             DrawUILine(Color.gray);
 
-            EditorGUILayout.LabelField(statusBar, s);
+            EditorGUILayout.LabelField(StatusBar, _s);
         }
 
         #region Simulator
-
-        private SimulatorBase.SimulatorType _simulatorType;
-        private FusionSimulator _fusionSimulator;
-        private SimulatorBase _simulator;
-        private Simulator _faceSimulator;
-        private BodySimulator _bodySimulator;
-        private bool _activeSimulator;
-        private int _vertexNumber;
-
-        private int _simulatorIndex;
-        private bool _resetOnRecord;
-
-        private readonly string[] _simulatorOptions = { "Face", "Body", "Face + Body" };
-
-        public static string GetVersionNumber() {
-            ReleaseInfo releaseInfo = GetLocalReleaseInfo();
-            return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
-        }
-
-        private async void OnEnable() {
-            Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{packagePath}/Editor/icon.png");
-            titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
-            s = new GUIStyle();
-            _normalBackgroundColor = GUI.backgroundColor;
-            EditorApplication.playModeStateChanged += FindSimulator;
-            EditorSceneManager.activeSceneChangedInEditMode += HandleSceneChange;
-            Global.StatusChange += HandleStatusChange;
-            Backend.Instance.BundleQueue += OnBundleQueueUpdate;
-            Authentication.Instance.AuthStateChanged += HandleAuthStateChange;
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
-            _localReleaseInfo = GetLocalReleaseInfo();
-            SetPluginInfo();
-            if (!Authentication.Instance.IsLoggedIn) {
-                await LoginAutomatic();
-            } else {
-                if (Authentication.Instance.IsLoginExpired) {
-                    await EnsureUnexpiredLogin();
-                } else {
-                    await RefreshExternalDatasources();
-                }
-            }
-        }
-
-        private void HandleSceneChange(Scene oldScene, Scene newScene) {
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
-            SetPluginInfo();
-        }
 
         private void SetSimulator(SimulatorBase.SimulatorType type) {
             if (_fusionSimulator == null || (_simulator != null && _fusionSimulator.activeType == type)) {
@@ -255,7 +261,7 @@ namespace Filta {
         }
         
         private void DrawSimulator() {
-            simulatorScrollPosition = GUILayout.BeginScrollView(simulatorScrollPosition);
+            _simulatorScrollPosition = GUILayout.BeginScrollView(_simulatorScrollPosition);
             CreateNewScene();
             if (_activeSimulator) {
                 DrawUILine(Color.gray);
@@ -295,21 +301,6 @@ namespace Filta {
             }
             _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = _resetOnRecord };
         }
-
-        private void OnDisable() {
-            EditorApplication.playModeStateChanged -= FindSimulator;
-            EditorSceneManager.activeSceneChangedInEditMode -= HandleSceneChange;
-            Global.StatusChange -= HandleStatusChange;
-            Backend.Instance.BundleQueue -= OnBundleQueueUpdate;
-            Authentication.Instance.AuthStateChanged -= HandleAuthStateChange;
-            DisposeQueue();
-        }
-
-        private void HandleStatusChange(object sender, StatusChangeEventArgs e) {
-            SetStatusMessage(e.Message, e.IsError);
-        }
-
-        private int _tabIndex;
 
         private void ShowSimulatorTabs() {
             GUILayout.BeginHorizontal();
@@ -384,15 +375,6 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
-        }
-
-        private void SetButtonColor(bool isRed) {
-            _normalBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = isRed ? Color.magenta : Color.green;
-        }
-
-        private void ResetButtonColor() {
-            GUI.backgroundColor = _normalBackgroundColor;
         }
 
         private void HandleFaceSimulator() {
@@ -534,22 +516,22 @@ namespace Filta {
             string simPath, filterPath;
             switch (newSimType) {
                 case SimulatorBase.SimulatorType.Face:
-                    simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
-                    filterPath = $"{packagePath}/Core/Filter.prefab";
+                    simPath = $"{PackagePath}/Editor/Simulator/Simulator.prefab";
+                    filterPath = $"{PackagePath}/Core/Filter.prefab";
                     break;
                 case SimulatorBase.SimulatorType.Body:
-                    simPath = $"{packagePath}/Editor/Simulator/BodyTracking/BodySimulator.prefab";
-                    filterPath = $"{packagePath}/Core/FilterBody.prefab";
+                    simPath = $"{PackagePath}/Editor/Simulator/BodyTracking/BodySimulator.prefab";
+                    filterPath = $"{PackagePath}/Core/FilterBody.prefab";
                     break;
                 case SimulatorBase.SimulatorType.Fusion:
-                    simPath = $"{packagePath}/Editor/Simulator/FusionSimulator.prefab";
+                    simPath = $"{PackagePath}/Editor/Simulator/FusionSimulator.prefab";
                     filterPath = oldSimType == SimulatorBase.SimulatorType.Face
-                        ? $"{packagePath}/Core/FilterBody.prefab"
-                        : $"{packagePath}/Core/Filter.prefab";
+                        ? $"{PackagePath}/Core/FilterBody.prefab"
+                        : $"{PackagePath}/Core/Filter.prefab";
                     break;
                 default:
-                    simPath = $"{packagePath}/Editor/Simulator/Simulator.prefab";
-                    filterPath = $"{packagePath}/Core/Filter.prefab";
+                    simPath = $"{PackagePath}/Editor/Simulator/Simulator.prefab";
+                    filterPath = $"{PackagePath}/Core/Filter.prefab";
                     break;
             }
 
@@ -583,14 +565,14 @@ namespace Filta {
         }
 
         private void DisplayQueue() {
-            if (artsAndBundleStatus.Bundles.Count <= 0)
+            if (_artsAndBundleStatus.Bundles.Count <= 0)
                 return;
             GUILayout.Label("Filters being processed", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Filter name");
             GUILayout.Label("Queue number");
             GUILayout.EndHorizontal();
-            foreach (KeyValuePair<string, Bundle> bundle in artsAndBundleStatus.Bundles) {
+            foreach (KeyValuePair<string, Bundle> bundle in _artsAndBundleStatus.Bundles) {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(bundle.Value.title);
                 if (bundle.Value.bundleQueuePosition == Uploading) {
@@ -625,13 +607,7 @@ namespace Filta {
         #endregion
 
         #region Admin
-        
-        private string _artistUid;
-        private string _artistWallet;
-        private string _loadingText;
 
-        private ArtMeta[] _artMetas;
-        
         private void DrawAdminTools() {
             if (!Authentication.IsAdmin) {
                 EditorGUILayout.LabelField("You are not an admin.");
@@ -726,10 +702,10 @@ namespace Filta {
         #region Uploader
         
         private void DrawUploader() {
-            uploaderScrollPosition = GUILayout.BeginScrollView(uploaderScrollPosition);
+            _uploaderScrollPosition = GUILayout.BeginScrollView(_uploaderScrollPosition);
 
             if (Authentication.Instance.IsLoggedIn) {
-                if (selectedArtKey != "") {
+                if (_selectedArtKey != "") {
                     SelectedArt();
                 } else {
                     PrivateCollection();
@@ -741,12 +717,11 @@ namespace Filta {
         }
         
         private async void GenerateAndUploadAssetBundle() {
-            if (String.IsNullOrEmpty(selectedArtKey)) {
-                //selectedArtKey = SceneManager.GetActiveScene().name;
+            if (String.IsNullOrEmpty(_selectedArtKey)) {
                 Debug.LogError("Error uploading! selectedArtKey is empty. Please report this bug");
                 return;
             }
-            string buttonTitle = selectedArtKey == TempSelectedArtKey ? "Upload new filter to Filta" : "Update your filta";
+            string buttonTitle = _selectedArtKey == TempSelectedArtKey ? "Upload new filter to Filta" : "Update your filta";
             bool assetBundleButton = GUILayout.Button(buttonTitle);
             if (!assetBundleButton) { return; }
             if (!await EnsureUnexpiredLogin()) {
@@ -757,10 +732,10 @@ namespace Filta {
                 return;
             }
 
-            if (selectedArtKey != TempSelectedArtKey && artsAndBundleStatus.Bundles.ContainsKey(selectedArtKey)) {
+            if (_selectedArtKey != TempSelectedArtKey && _artsAndBundleStatus.Bundles.ContainsKey(_selectedArtKey)) {
                 //Only allows uploading of filter if a version is NOT currently being bundled or if it is in Limbo
                 //Limbo is when the filter has been successfully uploaded to cloud storage, but something has stopped it from being processed by assetbundler
-                var bundle = artsAndBundleStatus.Bundles[selectedArtKey];
+                var bundle = _artsAndBundleStatus.Bundles[_selectedArtKey];
                 // or if it has been in the "uploading" state for more than 5 minutes 
                 bool isTooLongUploading = bundle.bundleQueuePosition == Uploading && Global.GetTimeSince(bundle.lastUpdated) > TimeSpan.FromMinutes(5);
                 if (bundle.bundleQueuePosition != Limbo && !isTooLongUploading) {
@@ -787,11 +762,10 @@ namespace Filta {
                     _bodySimulator.PauseSimulator();
                     _bodySimulator.RevertAvatarsToTPose();
                 }
-
-                //PrefabUtility.ApplyPrefabInstance(filterObject, InteractionMode.AutomatedAction);
-                bool success = Util.GenerateFilterPrefab(filterObject, variantTempSave);
+                
+                bool success = Util.GenerateFilterPrefab(filterObject, VariantTempSave);
                 if (success) {
-                    AssetImporter.GetAtPath(variantTempSave).assetBundleName =
+                    AssetImporter.GetAtPath(VariantTempSave).assetBundleName =
                         "filter";
                 } else {
                     EditorUtility.DisplayDialog("Error",
@@ -825,48 +799,48 @@ namespace Filta {
             }
 
 
-            AssetDatabase.ExportPackage(packagePaths, "asset.unitypackage",
+            AssetDatabase.ExportPackage(_packagePaths, "asset.unitypackage",
                 ExportPackageOptions.IncludeDependencies);
             string pathToPackage = Path.Combine(Path.GetDirectoryName(Application.dataPath), "asset.unitypackage");
             FileInfo fileInfo = new FileInfo(pathToPackage);
             if (fileInfo.Length > FilterSizeWindow.UploadLimit) {
-                string readout = FilterSizeWindow.CheckForFileSizes(packagePaths);
+                string readout = FilterSizeWindow.CheckForFileSizes(_packagePaths);
                 EditorUtility.DisplayDialog("Error",
                     $"Your Filter is {fileInfo.Length / 1000000f:#.##}MB. This is over the {FilterSizeWindow.UploadLimit / 1000000}MB limit.\n{readout}",
                     "Ok");
                 return;
             }
-            /*string assetBundleDirectory = "AssetBundles";
-            if (!Directory.Exists(assetBundleDirectory))
-            {
-                Directory.CreateDirectory(assetBundleDirectory);
-            }
-            var manifest = BuildPipeline.BuildAssetBundles(assetBundleDirectory,
-                                    BuildAssetBundleOptions.None,
-                                    BuildTarget.iOS);
-            assetBundlePath = $"{assetBundleDirectory}/filter";*/
 
             SetStatusMessage("Connecting... (2/5)");
             byte[] bytes = File.ReadAllBytes(pathToPackage);
             Hash128 hash = Hash128.Compute(bytes);
-            /*if (!BuildPipeline.GetHashForAssetBundle(assetBundlePath, out hash))
-            {
-                statusBar = "Asset bundle not found";
-                return;
-            }*/
-            string uploadResultKey = await Backend.Instance.Upload(selectedArtKey, selectedArtTitle, hash, bytes);
+            string uploadResultKey = await Backend.Instance.Upload(_selectedArtKey, _selectedArtTitle, hash, bytes);
             await RefreshArtsAndBundleStatus();
             if (uploadResultKey != null) {
-                selectedArtKey = uploadResultKey;
+                _selectedArtKey = uploadResultKey;
                 SetStatusMessage("Upload successful. Processing... (4/5)");
             }
-            AssetDatabase.DeleteAsset(variantTempSave);
+            AssetDatabase.DeleteAsset(VariantTempSave);
         }
         
         
         #endregion
         
         #region Util
+        
+        private void HandleSceneChange(Scene oldScene, Scene newScene) {
+            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            SetPluginInfo();
+        }
+        
+        private void HandleStatusChange(object sender, StatusChangeEventArgs e) {
+            SetStatusMessage(e.Message, e.IsError);
+        }
+        
+        private static string GetVersionNumber() {
+            ReleaseInfo releaseInfo = GetLocalReleaseInfo();
+            return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
+        }
         
         private void UpdatePanel() {
             _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
@@ -880,6 +854,15 @@ namespace Filta {
             r.x -= 2;
             r.width += 6;
             EditorGUI.DrawRect(r, color);
+        }
+        
+        private void SetButtonColor(bool isRed) {
+            _normalBackgroundColor = GUI.backgroundColor;
+            GUI.backgroundColor = isRed ? Color.magenta : Color.green;
+        }
+
+        private void ResetButtonColor() {
+            GUI.backgroundColor = _normalBackgroundColor;
         }
         
         private void HandleNewPluginVersion() {
@@ -925,20 +908,19 @@ namespace Filta {
         }
         
         private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{packagePath}/releaseLogs.json");
+            string data = File.ReadAllText($"{PackagePath}/releaseLogs.json");
             return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
         }
         
         private void SetStatusMessage(string message, bool isError = false) {
-            s.normal.textColor = isError ? Color.red : Color.white;
-            statusBar = message;
+            _s.normal.textColor = isError ? Color.red : Color.white;
+            StatusBar = message;
         }
         
         #endregion
 
         #region Filter/Scene Functionality
-
-        private string _sceneName;
+        
         void CreateNewScene() {
             EditorGUILayout.LabelField("Create new filter scene", EditorStyles.boldLabel);
             _sceneName = (string)EditorGUILayout.TextField("Filter scene filename:", _sceneName);
@@ -955,7 +937,7 @@ namespace Filta {
         }
 
         void CreateScene() {
-            string scenePath = $"{packagePath}/Core/templateScene.unity";
+            string scenePath = $"{PackagePath}/Core/templateScene.unity";
             bool success;
             if (!AssetDatabase.IsValidFolder("Assets/Filters")) {
                 AssetDatabase.CreateFolder("Assets", "Filters");
@@ -1018,8 +1000,8 @@ namespace Filta {
         }
         
         private async void AutoRefreshArts() {
-            if (artsAndBundleStatus == null || artsAndBundleStatus.Bundles == null ||
-                artsAndBundleStatus.Bundles.Count == 0) {
+            if (_artsAndBundleStatus == null || _artsAndBundleStatus.Bundles == null ||
+                _artsAndBundleStatus.Bundles.Count == 0) {
                 return;
             }
 
@@ -1047,42 +1029,41 @@ namespace Filta {
             if (!Authentication.Instance.IsLoggedIn) {
                 return;
             }
-            this.artsAndBundleStatus = new ArtsAndBundleStatus();
-            this.artsAndBundleStatus = await Backend.Instance.GetArtsAndBundleStatus();
-            this.Repaint();
+            _artsAndBundleStatus = new ArtsAndBundleStatus();
+            _artsAndBundleStatus = await Backend.Instance.GetArtsAndBundleStatus();
+            Repaint();
         }
-
-        private bool _showPrivCollection = true;
+        
         private void PrivateCollection() {
             if (!String.IsNullOrEmpty(SceneManager.GetActiveScene().name)) {
                 EditorGUILayout.LabelField("Choose the Filta upload to update:", EditorStyles.boldLabel);
                 bool newClicked = GUILayout.Button("CREATE NEW FILTA UPLOAD");
                 EditorGUILayout.Space();
                 if (newClicked) {
-                    selectedArtTitle = SceneManager.GetActiveScene().name;
-                    selectedArtKey = TempSelectedArtKey;
+                    _selectedArtTitle = SceneManager.GetActiveScene().name;
+                    _selectedArtKey = TempSelectedArtKey;
                 }
-                if (artsAndBundleStatus == null || artsAndBundleStatus.ArtMetas.Count < 1) { return; }
+                if (_artsAndBundleStatus == null || _artsAndBundleStatus.ArtMetas.Count < 1) { return; }
 
                 _showPrivCollection = EditorGUILayout.Foldout(_showPrivCollection, "Private Filta Collection");
                 if (!_showPrivCollection)
                     return;
-                foreach (var item in artsAndBundleStatus.ArtMetas) {
+                foreach (var item in _artsAndBundleStatus.ArtMetas) {
                     bool clicked = GUILayout.Button(item.Value.title);
                     if (clicked) {
-                        selectedArtTitle = item.Value.title;
-                        selectedArtKey = item.Key;
+                        _selectedArtTitle = item.Value.title;
+                        _selectedArtKey = item.Key;
                     }
                 }
             }
         }
 
         private void GoToPublishingPage() {
-            if (selectedArtKey == TempSelectedArtKey) {
+            if (_selectedArtKey == TempSelectedArtKey) {
                 return;
             }
             if (GUILayout.Button("Go to publishing page")) {
-                Application.OpenURL($"{PublishPageLink}?id={selectedArtKey}");
+                Application.OpenURL($"{PublishPageLink}?id={_selectedArtKey}");
             }
         }
 
@@ -1106,27 +1087,27 @@ namespace Filta {
                 }
                 SetStatusMessage($"Delete: {response}");
             } finally {
-                artsAndBundleStatus.ArtMetas.Remove(selectedArtKey);
-                selectedArtKey = "";
+                _artsAndBundleStatus.ArtMetas.Remove(_selectedArtKey);
+                _selectedArtKey = "";
             }
         }
 
         private void SelectedArt() {
             if (GUILayout.Button("Back")) {
-                selectedArtKey = "";
+                _selectedArtKey = "";
                 EditorGUI.FocusTextInControl(null);
                 return;
             }
 
             EditorGUILayout.Space();
-            selectedArtTitle = (string)EditorGUILayout.TextField("Title", selectedArtTitle);
+            _selectedArtTitle = (string)EditorGUILayout.TextField("Title", _selectedArtTitle);
             EditorGUILayout.Space();
             GenerateAndUploadAssetBundle();
             GoToPublishingPage();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 
-            DeletePrivArt(selectedArtKey);
+            DeletePrivArt(_selectedArtKey);
         }
         
         private bool CheckForUnreadableMeshes(GameObject filterParent) {
@@ -1228,7 +1209,7 @@ namespace Filta {
                 if (!initRemoteLogin) {
                     return;
                 }
-                selectedArtKey = "";
+                _selectedArtKey = "";
                 GUI.FocusControl(null);
 
                 await Login(_stayLoggedIn);
