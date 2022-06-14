@@ -13,37 +13,37 @@ using Newtonsoft.Json.Linq;
 namespace Filta {
     public class Backend {
 
-        public static Backend Instance { get; private set; }
+        public static Backend Instance { get;}
         static Backend() {
             Instance = new Backend();
         }
 
         public EventHandler BundleQueue = delegate { };
         private const string RunLocallySetting = "Filta_RunLocally";
-        public bool RunLocally {
-            get { return EditorPrefs.GetBool(RunLocallySetting, false); }
-            set { EditorPrefs.SetBool(RunLocallySetting, value); }
+        public static bool RunLocally {
+            get => EditorPrefs.GetBool(RunLocallySetting, false);
+            set => EditorPrefs.SetBool(RunLocallySetting, value);
         }
 
 
-        private string PRIV_COLLECTION_URL { get { return $"https://firestore.googleapis.com/v1/projects/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{Authentication.Instance.Uid}"; } }
-        private string TEST_FUNC_LOCATION { get { return $"http://localhost:5001/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/us-central1/"; } }
-        private string FUNC_LOCATION { get { return Global.UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/"; } }
-        private string RTDB_URLBASE { get { return Global.UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com"; } }
-        private string UPLOAD_URL { get { return RunLocally ? TEST_FUNC_LOCATION + "uploadArtSource" : FUNC_LOCATION + "uploadUnityPackage"; } }
-        private string DELETE_PRIV_ART_URL { get { return ConstructUrl("deletePrivArt"); } }
-        private string ConstructUrl(string functionName) {
-            return RunLocally ? TEST_FUNC_LOCATION + functionName : FUNC_LOCATION + functionName;
-        }
-        private const string releaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/releaseLogs.json";
+        private static string PrivCollectionURL => $"https://firestore.googleapis.com/v1/projects/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/databases/(default)/documents/priv_collection/{Authentication.Instance.Uid}";
+        private static string TestFuncLocation => $"http://localhost:5001/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/us-central1/";
+        private static string FuncLocation => Global.UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/";
+        private static string RtdbUrlbase => Global.UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com";
+        private static string UploadURL => RunLocally ? TestFuncLocation + "uploadArtSource" : FuncLocation + "uploadUnityPackage";
+        private static string DeletePrivArtURL => ConstructUrl("deletePrivArt");
 
+        private static string ConstructUrl(string functionName) {
+            return RunLocally ? TestFuncLocation + functionName : FuncLocation + functionName;
+        }
+        private const string ReleaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/releaseLogs.json";
 
         private EventSourceReader _evt = null;
         private string _currentBundle;
 
         public void ListenToQueue() {
             if (_evt == null) {
-                _evt = new EventSourceReader(new Uri($"{RTDB_URLBASE}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{Authentication.Instance.Uid}\"")).Start();
+                _evt = new EventSourceReader(new Uri($"{RtdbUrlbase}/bundle_queue.json?orderBy=\"artistId\"&equalTo=\"{Authentication.Instance.Uid}\"")).Start();
                 _evt.MessageReceived += (sender, e) => {
                     if (e.Event != "keep-alive") {
                         BundleQueue(this, EventArgs.Empty);
@@ -77,7 +77,7 @@ namespace Filta {
             postData.AddField("uid", Authentication.Instance.LoginToken);
             postData.AddField("hash", hash.ToString());
             postData.AddField("title", selectedArtTitle);
-            using UnityWebRequest www = UnityWebRequest.Post(UPLOAD_URL, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(UploadURL, postData);
             await www.SendWebRequest();
             Global.FireStatusChange(this, "Connected! Uploading... (3/5)");
             var response = www.downloadHandler.text;
@@ -86,14 +86,14 @@ namespace Filta {
                 Global.FireStatusChange(this, $"Error Uploading: {www.error}");
                 Debug.LogError($"{response}:{www.error}");
                 return null;
-            } else {
-                try {
-                    parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
-                } catch {
-                    Global.FireStatusChange(this, "Error! Check console for more information", true);
-                    Debug.LogError(response);
-                    return null;
-                }
+            }
+
+            try {
+                parsed = JsonUtility.FromJson<UploadBundleResponse>(response);
+            } catch {
+                Global.FireStatusChange(this, "Error! Check console for more information", true);
+                Debug.LogError(response);
+                return null;
             }
             using UnityWebRequest upload = UnityWebRequest.Put(parsed.url, bytes);
             await upload.SendWebRequest();
@@ -110,20 +110,20 @@ namespace Filta {
             WWWForm postData = new();
             postData.AddField("uid", Authentication.Instance.LoginToken);
             postData.AddField("artid", artId);
-            using UnityWebRequest www = UnityWebRequest.Post(DELETE_PRIV_ART_URL, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(DeletePrivArtURL, postData);
             await www.SendWebRequest();
             var response = www.downloadHandler.text;
             if (www.result == UnityWebRequest.Result.ProtocolError || www.result == UnityWebRequest.Result.ConnectionError) {
                 Debug.LogError(www.error + " " + www.downloadHandler.text);
                 return null;
-            } else {
-                return response;
             }
+
+            return response;
         }
 
         public async Task<List<ReleaseInfo>> GetMasterReleaseInfo() {
             try {
-                using UnityWebRequest req = UnityWebRequest.Get(releaseURL);
+                using UnityWebRequest req = UnityWebRequest.Get(ReleaseURL);
                 await req.SendWebRequest();
                 return JsonConvert.DeserializeObject<List<ReleaseInfo>>(req.downloadHandler.text);
             } catch (Exception e) {
@@ -134,7 +134,7 @@ namespace Filta {
 
 
         public async Task<ArtsAndBundleStatus> GetArtsAndBundleStatus() {
-            using UnityWebRequest req = UnityWebRequest.Get(PRIV_COLLECTION_URL);
+            using UnityWebRequest req = UnityWebRequest.Get(PrivCollectionURL);
             req.SetRequestHeader("authorization", $"Bearer {Authentication.Instance.LoginToken}");
             await req.SendWebRequest();
             if (req.responseCode == 404) {
@@ -151,11 +151,11 @@ namespace Filta {
                 ParseArtMetas(jsonResult, result);
                 GetActiveBundles(result);
                 return result;
-            } else {
-                Global.FireStatusChange(this, "Error Deleting. Check console for details.", true);
-                Debug.LogError("Request Result: " + req.result);
-                return new ArtsAndBundleStatus();
             }
+
+            Global.FireStatusChange(this, "Error Deleting. Check console for details.", true);
+            Debug.LogError("Request Result: " + req.result);
+            return new ArtsAndBundleStatus();
         }
 
         public void LogToServer(LoggingLevel level, string title, string payload) {
@@ -370,7 +370,7 @@ namespace Filta {
             asyncOp.completed += OnRequestCompleted;
         }
 
-        public bool IsCompleted { get { return asyncOp.isDone; } }
+        public bool IsCompleted => asyncOp.isDone;
 
         public void GetResult() { }
 

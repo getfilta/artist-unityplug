@@ -24,21 +24,21 @@ namespace Filta {
     }
 
     public class Authentication {
-        public static Authentication Instance { get; private set; }
+        public static Authentication Instance { get;}
         static Authentication() {
             Instance = new Authentication();
         }
-        private const string REFRESH_KEY = "RefreshToken";
-        private const string customTokenLoginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=";
-        private const string refreshURL = "https://securetoken.googleapis.com/v1/token?key=";
-        private LoginResponse loginData;
+        private const string RefreshKey = "RefreshToken";
+        private const string CustomTokenLoginURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=";
+        private const string RefreshURL = "https://securetoken.googleapis.com/v1/token?key=";
+        private LoginResponse _loginData;
         public static bool IsAdmin;
         private static DateTime _expiryTime;
 
         public EventHandler AuthStateChanged = delegate { };
         private AuthenticationState _authState = AuthenticationState.LoggedOut;
         public AuthenticationState AuthState {
-            get { return _authState; }
+            get => _authState;
             private set {
                 if (_authState != value) {
                     _authState = value;
@@ -47,34 +47,30 @@ namespace Filta {
             }
         }
 
-        public bool IsLoggedIn {
-            get {
-                return AuthState == AuthenticationState.LoggedIn;
-            }
-        }
+        public bool IsLoggedIn => AuthState == AuthenticationState.LoggedIn;
 
         public string RemoteLoginPin { get; private set; }
         public string RemoteLoginUrl { get; private set; }
 
-        public string LoginToken { get { return loginData.idToken; } }
-        public string Uid { get { return loginData.localId; } }
+        public string LoginToken => _loginData.idToken;
+        public string Uid => _loginData.localId;
 
-        public bool IsLoginExpired { get { return _expiryTime < DateTime.Now; } }
+        public bool IsLoginExpired => _expiryTime < DateTime.Now;
 
         public void LogOut(bool hardLogout = true) {
-            loginData = null;
+            _loginData = null;
             // hardLogout means the user told us to log out, as 
             // opposed to we just noticed the token expired, so refreshing
             if (hardLogout) {
                 AuthState = AuthenticationState.LoggedOut;
-                PlayerPrefs.SetString(REFRESH_KEY, null);
+                PlayerPrefs.SetString(RefreshKey, null);
                 PlayerPrefs.Save();
                 Backend.Instance.LogToServer(LoggingLevel.LOG, "Logout", "complete");
             }
         }
 
         public async Task<LoginResult> LoginAutomatic() {
-            string token = PlayerPrefs.GetString(REFRESH_KEY, null);
+            string token = PlayerPrefs.GetString(RefreshKey, null);
             if (String.IsNullOrEmpty(token)) {
                 return LoginResult.NoRefreshToken;
             }
@@ -83,7 +79,7 @@ namespace Filta {
             WWWForm postData = new();
             postData.AddField("grant_type", "refresh_token");
             postData.AddField("refresh_token", token);
-            using UnityWebRequest www = UnityWebRequest.Post(refreshURL + Global.FIREBASE_APIKEY, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(RefreshURL + Global.FirebaseApikey, postData);
             Global.FireStatusChange(this, "Logging you in...");
             await www.SendWebRequest();
             string response = www.downloadHandler.text;
@@ -91,7 +87,9 @@ namespace Filta {
                 AuthState = AuthenticationState.LoggedOut;
                 Global.FireStatusChange(this, "Error: Token has expired", true);
                 return LoginResult.ExpiredToken;
-            } else if (response.Contains("USER_NOT_FOUND")) {
+            }
+
+            if (response.Contains("USER_NOT_FOUND")) {
                 AuthState = AuthenticationState.LoggedOut;
                 Global.FireStatusChange(this, "Error: User was not found", true);
             } else if (response.Contains("INVALID_REFRESH_TOKEN")) {
@@ -99,15 +97,15 @@ namespace Filta {
                 Global.FireStatusChange(this, "Error: Invalid token provided", true);
             } else if (response.Contains("id_token")) {
                 RefreshResponse refreshData = JsonUtility.FromJson<RefreshResponse>(response);
-                loginData = new LoginResponse {
+                _loginData = new LoginResponse {
                     refreshToken = refreshData.refresh_token,
                     idToken = refreshData.id_token,
                     expiresIn = refreshData.expires_in,
                     localId = refreshData.user_id
                 };
                 Global.FireStatusChange(this, "Login successful!");
-                _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
-                PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
+                _expiryTime = DateTime.Now.AddSeconds(_loginData.expiresIn);
+                PlayerPrefs.SetString(RefreshKey, _loginData.refreshToken);
                 PlayerPrefs.Save();
                 AuthState = AuthenticationState.LoggedIn;
                 return LoginResult.Success;
@@ -156,7 +154,7 @@ namespace Filta {
                     WWWForm postData = new();
                     postData.AddField("token", statusResponse.token);
                     postData.AddField("returnSecureToken", "true");
-                    using UnityWebRequest www = UnityWebRequest.Post(customTokenLoginURL + Global.FIREBASE_APIKEY, postData);
+                    using UnityWebRequest www = UnityWebRequest.Post(CustomTokenLoginURL + Global.FirebaseApikey, postData);
                     await www.SendWebRequest();
                     string signinResponse = www.downloadHandler.text;
 
@@ -168,32 +166,32 @@ namespace Filta {
                         WWWForm refreshPostData = new();
                         refreshPostData.AddField("grant_type", "refresh_token");
                         refreshPostData.AddField("refresh_token", signinData.refreshToken);
-                        using UnityWebRequest refreshRequest = UnityWebRequest.Post(refreshURL + Global.FIREBASE_APIKEY, refreshPostData);
+                        using UnityWebRequest refreshRequest = UnityWebRequest.Post(RefreshURL + Global.FirebaseApikey, refreshPostData);
                         Global.FireStatusChange(this, "Verifying login...");
                         await refreshRequest.SendWebRequest();
                         string refreshResponse = refreshRequest.downloadHandler.text;
                         if (refreshResponse.Contains("id_token")) {
                             RefreshResponse refreshData = JsonUtility.FromJson<RefreshResponse>(refreshResponse);
-                            loginData = new LoginResponse {
+                            _loginData = new LoginResponse {
                                 refreshToken = refreshData.refresh_token,
                                 idToken = refreshData.id_token,
                                 expiresIn = refreshData.expires_in,
                                 localId = refreshData.user_id
                             };
-                            _expiryTime = DateTime.Now.AddSeconds(loginData.expiresIn);
+                            _expiryTime = DateTime.Now.AddSeconds(_loginData.expiresIn);
                             if (stayLoggedIn) {
-                                PlayerPrefs.SetString(REFRESH_KEY, loginData.refreshToken);
+                                PlayerPrefs.SetString(RefreshKey, _loginData.refreshToken);
                                 PlayerPrefs.Save();
                             }
                             AuthState = AuthenticationState.LoggedIn;
                             Backend.Instance.LogToServer(LoggingLevel.LOG, "Login", "success");
                             Backend.Instance.LogAnalyticsEvent("login", new AnalyticsEventParam() { name = "method", value = "remote" });
                             return LoginResult.Success;
-                        } else {
-                            Debug.LogError(refreshResponse);
-                            Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "Failed to acquire refreshed security token");
-                            Global.FireStatusChange(this, "Failed to acquire refreshed security token", true);
                         }
+
+                        Debug.LogError(refreshResponse);
+                        Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "Failed to acquire refreshed security token");
+                        Global.FireStatusChange(this, "Failed to acquire refreshed security token", true);
                     } else {
                         // important as status message tells user to check console
                         Debug.LogError(signinResponse);

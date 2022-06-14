@@ -5,10 +5,10 @@ namespace Filta {
     public static class Global {
         private const string TestEnvirSetting = "Filta_TestEnvir";
         public static bool UseTestEnvironment {
-            get { return EditorPrefs.GetBool(TestEnvirSetting, false); }
-            set { EditorPrefs.SetBool(TestEnvirSetting, value); }
+            get => EditorPrefs.GetBool(TestEnvirSetting, false);
+            set => EditorPrefs.SetBool(TestEnvirSetting, value);
         }
-        public static string FIREBASE_APIKEY { get { return UseTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0"; } }
+        public static string FirebaseApikey => UseTestEnvironment ? "AIzaSyDaOuavnA9n0xpodrSrTO2QwoZLVhBkdVA" : "AIzaSyAiefSo-GLf2yjEwbXhr-1MxMx0A6vXHO0";
 
         public static EventHandler<StatusChangeEventArgs> StatusChange = delegate { };
 
@@ -26,11 +26,11 @@ namespace Filta {
 
     public class StatusChangeEventArgs : EventArgs {
         public StatusChangeEventArgs(string message, bool isError) {
-            this.Message = message;
-            this.IsError = isError;
+            Message = message;
+            IsError = isError;
         }
-        public string Message { get; private set; }
-        public bool IsError { get; private set; }
+        public string Message { get; }
+        public bool IsError { get; }
     }
 
 
