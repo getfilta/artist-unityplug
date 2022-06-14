@@ -79,7 +79,7 @@ namespace Filta {
             WWWForm postData = new();
             postData.AddField("grant_type", "refresh_token");
             postData.AddField("refresh_token", token);
-            using UnityWebRequest www = UnityWebRequest.Post(RefreshURL + Global.FIREBASE_APIKEY, postData);
+            using UnityWebRequest www = UnityWebRequest.Post(RefreshURL + Global.FirebaseApikey, postData);
             Global.FireStatusChange(this, "Logging you in...");
             await www.SendWebRequest();
             string response = www.downloadHandler.text;
@@ -154,7 +154,7 @@ namespace Filta {
                     WWWForm postData = new();
                     postData.AddField("token", statusResponse.token);
                     postData.AddField("returnSecureToken", "true");
-                    using UnityWebRequest www = UnityWebRequest.Post(CustomTokenLoginURL + Global.FIREBASE_APIKEY, postData);
+                    using UnityWebRequest www = UnityWebRequest.Post(CustomTokenLoginURL + Global.FirebaseApikey, postData);
                     await www.SendWebRequest();
                     string signinResponse = www.downloadHandler.text;
 
@@ -166,7 +166,7 @@ namespace Filta {
                         WWWForm refreshPostData = new();
                         refreshPostData.AddField("grant_type", "refresh_token");
                         refreshPostData.AddField("refresh_token", signinData.refreshToken);
-                        using UnityWebRequest refreshRequest = UnityWebRequest.Post(RefreshURL + Global.FIREBASE_APIKEY, refreshPostData);
+                        using UnityWebRequest refreshRequest = UnityWebRequest.Post(RefreshURL + Global.FirebaseApikey, refreshPostData);
                         Global.FireStatusChange(this, "Verifying login...");
                         await refreshRequest.SendWebRequest();
                         string refreshResponse = refreshRequest.downloadHandler.text;
