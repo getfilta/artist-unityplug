@@ -503,6 +503,7 @@ public class Simulator : SimulatorBase {
     #region Face Mesh Control
 
     private List<MeshFilter> _faceMeshes;
+    private List<SkinnedMeshRenderer> _skinnedFaceMeshes;
 
     private int _faceCount;
 
@@ -515,6 +516,7 @@ public class Simulator : SimulatorBase {
         newFace.transform.localPosition = Vector3.zero;
         newFace.transform.localRotation = Quaternion.identity;
         newFace.GetComponent<MeshFilter>().sharedMesh = mesh;
+        newFace.AddComponent<SkinnedMeshRenderer>();
         GetFaceMeshFilters();
         SetMeshTopology();
         return newFace;
@@ -524,8 +526,13 @@ public class Simulator : SimulatorBase {
         if (_faceCount == _facesHolder.childCount) {
             return;
         }
-
+        
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _skinnedFaceMeshes = new List<SkinnedMeshRenderer>(_faceMeshes.Count);
+        for (int i = 0; i < _faceMeshes.Count; i++) {
+            _skinnedFaceMeshes.Add(_faceMeshes[i].GetComponent<SkinnedMeshRenderer>());
+        }
+
         _faceCount = _facesHolder.childCount;
     }
 
@@ -563,6 +570,9 @@ public class Simulator : SimulatorBase {
             if (uvs.Count > 0) {
                 mesh.SetUVs(0, uvs);
             }
+            
+            //Adding default blendshape to ensure skinned mesh renderer doesn't show warning notice.
+            mesh.AddBlendShapeFrame("Default", 0, vertices.ToArray(), null, null);
 
             var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
             if (meshFilter != null) {
@@ -573,6 +583,11 @@ public class Simulator : SimulatorBase {
                 if (_faceMeshes[i] != null) {
                     if (_faceMeshes[i].sharedMesh == null || String.IsNullOrEmpty(_faceMeshes[i].sharedMesh.name)) {
                         _faceMeshes[i].sharedMesh = mesh;
+                    }
+                }
+                if (_skinnedFaceMeshes[i] != null) {
+                    if (_faceMeshes[i].sharedMesh == null || String.IsNullOrEmpty(_faceMeshes[i].sharedMesh.name)) {
+                        _skinnedFaceMeshes[i].sharedMesh = mesh;
                     }
                 }
             }
