@@ -35,6 +35,8 @@ public abstract class SimulatorBase : MonoBehaviour {
     protected long _pauseTime;
     protected DateTime _startTime;
 
+    protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
+
     public virtual bool IsSetUpProperly() {
         return false;
     }
