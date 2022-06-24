@@ -79,9 +79,6 @@ public class Simulator : SimulatorBase {
     private Texture2D _tex;
     private Texture2D _stencilTex;
 
-    private RenderTexture _stencilRT;
-    private RenderTexture _cameraFeed;
-
     private Cloth[] _cloths;
     private bool _clearedInitialTransform;
 
