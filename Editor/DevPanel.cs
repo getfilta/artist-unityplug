@@ -1142,7 +1142,6 @@ namespace Filta {
         }
         
         private async Task<bool> Login(bool stayLoggedIn) {
-            Debug.Log("Hi from Login");
             Authentication.IsAdmin = false;
             LoginResult result = await Authentication.Instance.Login(stayLoggedIn);
             if (result == LoginResult.Success) {
