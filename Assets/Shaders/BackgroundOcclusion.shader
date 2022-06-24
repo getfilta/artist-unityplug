@@ -3,12 +3,11 @@ Shader "Filta/BackgroundOcclusion"
 {
     Properties
     {
-        _MainTex ("Camera Texture", 2D) = "white" {}
-        _ReplacementTex ("Replacement Texture", 2D) = "white" {}
-        _OcclusionDepth ("Occlusion Depth", 2D) = "white" {}
+        _MainTex ("Replacement Texture", 2D) = "white" {}
+        _CameraFeed ("Camera Feed", 2D) = "white" {}
         _OcclusionStencil ("Occlusion Stencil", 2D) = "white" {}
         _UVMultiplierLandScape ("UV MultiplerLandScape", Float) = 0.0
-        _UVMultiplierPortrait ("UV MultiplerPortrait", Float) = 0.0
+        _UVMultiplierPortrait ("UV MultiplerPortrait", Float) = 1.63 //ratio value
         _UVFlip ("Flip UV", Float) = 0.0
         _ONWIDE("Onwide", Int) = 0
     }
@@ -43,10 +42,10 @@ Shader "Filta/BackgroundOcclusion"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            sampler2D_float _OcclusionDepth;
             sampler2D _OcclusionStencil;
-            sampler2D _ReplacementTex;
-            sampler2D_float _CameraDepthTexture;
+            float4 _OcclusionStencil_ST;
+            sampler2D _CameraFeed;
+            float4 _CameraFeed_ST;
             float _UVMultiplierLandScape;
             float _UVMultiplierPortrait;
             float _UVFlip;
@@ -72,15 +71,12 @@ Shader "Filta/BackgroundOcclusion"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv);
-                fixed4 cameraFeedCol = tex2D(_ReplacementTex, i.uv1);
-                cameraFeedCol.a = 0;
-                float sceneDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv));
-                float4 stencilCol = tex2D(_OcclusionStencil, i.uv2);
-                float occlusionDepth = tex2D(_OcclusionDepth, i.uv2) * 0.625; //0.625 hack occlusion depth based on real world observation
-                float showOccluder = step(occlusionDepth, sceneDepth) * ((stencilCol.r - 1) * -1) ; // 1 if (depth >= ocluderDepth && stencil)
+                fixed4 cameraFeedCol = tex2D(_CameraFeed, i.uv * _CameraFeed_ST.xy + _CameraFeed_ST.zw);
+                fixed4 col = tex2D(_MainTex, i.uv1 * _MainTex_ST.xy + _MainTex_ST.zw);
+                float4 stencilCol = tex2D(_OcclusionStencil, i.uv2 * _OcclusionStencil_ST.xy + _OcclusionStencil_ST.zw);
+                float showOccluder = (stencilCol.r - 1) * -1 ;
 
-                return lerp(col, cameraFeedCol, showOccluder);
+                return lerp(cameraFeedCol, col, showOccluder);
             }
 
             ENDCG
