@@ -150,5 +150,13 @@
       "pluginMinorVersion": 20
     },
     "releaseNotes": "- feat: add new LitFakeReflection shader under the Filta shader menu\n fix: setting default layout properly sets game resolution"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 21
+    },
+    "releaseNotes": "- feat: change face meshes to be skinned mesh renderers to allow them be piped into vfx graph"
   }
 ]
