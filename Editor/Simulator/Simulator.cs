@@ -90,6 +90,10 @@ public class Simulator : SimulatorBase {
         TryAutomaticSetup();
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
+        _skinnedFaceMeshes = new List<SkinnedMeshRenderer>(_faceMeshes.Count);
+        for (int i = 0; i < _faceMeshes.Count; i++) {
+            _skinnedFaceMeshes.Add(_faceMeshes[i].GetComponent<SkinnedMeshRenderer>());
+        }
     }
 
     protected override void OnEnable() {
