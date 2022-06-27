@@ -77,6 +77,7 @@ public class Simulator : SimulatorBase {
     private readonly float _coefficientScale = 100f;
 
     private Texture2D _tex;
+    private Texture2D _stencilTex;
 
     private Cloth[] _cloths;
     private bool _clearedInitialTransform;
@@ -249,6 +250,10 @@ public class Simulator : SimulatorBase {
         _faceRecording = JsonConvert.DeserializeObject<FaceRecording>(faceData);
         _recordingLength = _faceRecording.faceDatas[^1].timestamp;
         _tex = new Texture2D(_faceRecording.videoWidth, _faceRecording.videoHeight, TextureFormat.ARGB32, false);
+        _stencilTex = new Texture2D(_faceRecording.stencilWidth, _faceRecording.stencilHeight, TextureFormat.RGBA32,
+            false);
+        _stencilRT = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/BodySegmentationStencil.renderTexture");
+        _cameraFeed = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/CameraFeed.renderTexture");
     }
 
     //added Y-offset because text labels are rendered below the actual point specified.
@@ -392,6 +397,17 @@ public class Simulator : SimulatorBase {
                 _tex.LoadImage(faceData.video);
                 _tex.Apply();
                 _videoFeed.texture = _tex;
+                if (_cameraFeed != null) {
+                    RenderTexture.active = _cameraFeed;
+                    Graphics.Blit(_tex, _cameraFeed);
+                }
+            }
+
+            if (_stencilRT != null) {
+                _stencilTex.LoadImage(faceData.humanSegStencil);
+                _stencilTex.Apply();
+                RenderTexture.active = _stencilRT;
+                Graphics.Blit(_stencilTex, _stencilRT);
             }
 
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
@@ -668,6 +684,7 @@ public class Simulator : SimulatorBase {
         public Trans rightEye;
         public Trans camera;
         public byte[] video;
+        public byte[] humanSegStencil;
 
         [Serializable]
         public struct FaceMesh {
@@ -762,6 +779,8 @@ public class Simulator : SimulatorBase {
         public List<FaceData> faceDatas;
         public int videoWidth;
         public int videoHeight;
+        public int stencilWidth;
+        public int stencilHeight;
     }
 
     [Serializable]

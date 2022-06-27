@@ -32,8 +32,15 @@ public abstract class SimulatorBase : MonoBehaviour {
     [NonSerialized]
     public bool isPlaying;
     
+    [NonSerialized]
+    public RenderTexture _stencilRT;
+    [NonSerialized]
+    public RenderTexture _cameraFeed;
+    
     protected long _pauseTime;
     protected DateTime _startTime;
+
+    protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
 
     public virtual bool IsSetUpProperly() {
         return false;

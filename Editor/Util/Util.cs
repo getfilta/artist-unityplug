@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -21,8 +22,12 @@ namespace Filta {
         }
         
         public static bool GenerateFilterPrefab(GameObject filterObject, string savePath) {
+            SimulatorBase simulator = Object.FindObjectOfType<SimulatorBase>();
             GameObject filterDuplicate = Object.Instantiate(filterObject);
             filterDuplicate.name = "Filter";
+            Variables variables = filterDuplicate.AddComponent<Variables>();
+            variables.declarations.Set("CameraFeed", simulator._cameraFeed);
+            variables.declarations.Set("BodySegmentation", simulator._stencilRT);
             PrefabUtility.SaveAsPrefabAsset(filterDuplicate, savePath, out bool success);
             Object.DestroyImmediate(filterDuplicate);
             FusionSimulator fusionSimulator = Object.FindObjectOfType<FusionSimulator>();
