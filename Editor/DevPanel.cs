@@ -821,7 +821,7 @@ namespace Filta {
                 SetStatusMessage("Upload successful. Processing... (4/5)");
             }
             AssetDatabase.DeleteAsset(VariantTempSave);
-            Backend.Instance.LogAnalyticsEvent("upload_filta");
+            Backend.Instance.LogAnalyticsEvent("upload_filta", new AnalyticsEventParam() { name = "art_id", value = _selectedArtKey } );
         }
         
         
