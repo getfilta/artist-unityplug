@@ -5,6 +5,7 @@ namespace Filta.Datatypes {
     public class ArtMeta {
         public string artId;
         public string artist;
+        public int version;
         public string creationTime;
         public string preview;
         public string publishTime;

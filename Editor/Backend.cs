@@ -205,6 +205,9 @@ namespace Filta {
                         case "creationTime":
                             value.creationTime = previewObject.Value<string>("integerValue");
                             break;
+                        case "version":
+                            value.version = previewObject.Value<int>("integerValue");
+                            break;
                         case "title":
                             value.title = previewObject.Value<string>("stringValue");
                             break;
@@ -243,11 +246,13 @@ namespace Filta {
                     });
                 } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "bundled") {
                     _currentBundle = null;
-                    Global.FireStatusChange(this, $"{artMeta.Value.title} successfully processed! (5/5)", false);
+                    Global.FireStatusChange(this, $"{artMeta.Value.title} v{artMeta.Value.version} successfully processed! (5/5)", false);
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Success;
+                    EditorUtility.DisplayDialog("Success!", $"{artMeta.Value.title} v{artMeta.Value.version} successfully processed!", "Ok");
                 } else if (artMeta.Value.artId == _currentBundle && artMeta.Value.bundleStatus == "error-bundling") {
                     _currentBundle = null;
                     Global.FireStatusChange(this, $"{artMeta.Value.title} : error processing :(", true);
+                    EditorUtility.DisplayDialog("Something Went Wrong!", $"{artMeta.Value.title} v{artMeta.Value.version} failed to process!", "Ok");
                     collection.RecentStatusUpdate = ArtsAndBundleStatus.StatusUpdate.Error;
                 }
             }
