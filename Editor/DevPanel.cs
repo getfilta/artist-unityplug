@@ -262,6 +262,7 @@ namespace Filta {
         
         private void DrawSimulator() {
             _simulatorScrollPosition = GUILayout.BeginScrollView(_simulatorScrollPosition);
+            HandleNewPluginVersion();
             CreateNewScene();
             if (_activeSimulator) {
                 DrawUILine(Color.gray);
@@ -278,7 +279,6 @@ namespace Filta {
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
-            HandleNewPluginVersion();
             GUILayout.EndScrollView();
         }
 
@@ -886,6 +886,8 @@ namespace Filta {
                 }
 
                 GUI.enabled = true;
+                DrawUILine(Color.grey);
+                EditorGUILayout.Space();
             }
         }
 
