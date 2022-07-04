@@ -22,6 +22,8 @@ public class VideoSender : MonoBehaviour {
     private Texture2D _tex;
     private Texture2D _remoteTex;
 
+    public static RenderTexture _cameraFeed;
+
 
     private void Awake() {
         _remoteManager = GetComponent<RemoteManager>();
@@ -79,5 +81,9 @@ public class VideoSender : MonoBehaviour {
 
         _remoteTex.LoadImage(videoMessage.data);
         rawImage.texture = _remoteTex;
+        if (_cameraFeed != null) {
+            RenderTexture.active = _cameraFeed;
+            Graphics.Blit(_remoteTex, _cameraFeed);
+        }
     }
 }

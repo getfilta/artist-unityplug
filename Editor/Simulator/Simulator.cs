@@ -254,6 +254,7 @@ public class Simulator : SimulatorBase {
             false);
         _stencilRT = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/BodySegmentationStencil.renderTexture");
         _cameraFeed = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/CameraFeed.renderTexture");
+        VideoSender._cameraFeed = _cameraFeed;
     }
 
     //added Y-offset because text labels are rendered below the actual point specified.
