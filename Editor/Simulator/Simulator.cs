@@ -26,6 +26,9 @@ public class Simulator : SimulatorBase {
     [FormerlySerializedAs("faceMeshVisualiser"), SerializeField]
     private GameObject _faceMeshVisualiser;
 
+    [SerializeField]
+    private GameObject _faceSampler;
+
     [FormerlySerializedAs("visualiserOffset"), SerializeField]
     private float _visualiserOffset;
 
@@ -62,6 +65,9 @@ public class Simulator : SimulatorBase {
 
     [NonSerialized]
     public bool showFaceMeshVisualiser;
+    
+    [NonSerialized]
+    public RenderTexture _faceTexture;
 
     [SerializeField]
     private RawImage _videoFeed;
@@ -81,6 +87,9 @@ public class Simulator : SimulatorBase {
 
     private Cloth[] _cloths;
     private bool _clearedInitialTransform;
+    private Material _screenSampler;
+    
+    private static readonly int Matrix = Shader.PropertyToID("_Matrix");
 
     protected override void Awake() {
         base.Awake();
@@ -142,6 +151,10 @@ public class Simulator : SimulatorBase {
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.GetChild(0).gameObject;
         }
+        
+        if (_faceSampler == null) {
+            _faceSampler = transform.GetChild(1).gameObject;
+        }
 
         if (_filterObject == null) {
             _filterObject = GameObject.Find("Filter").transform;
@@ -189,7 +202,7 @@ public class Simulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && _faceMeshVisualiser != null && _faceTracker != null &&
+        return _filterObject != null && _faceMeshVisualiser != null && _faceSampler != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
                _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
@@ -208,6 +221,7 @@ public class Simulator : SimulatorBase {
             return;
         }
 
+        UpdateSamplerMatrix();
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
         if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0) && !_skipFaceRecording) {
@@ -254,6 +268,7 @@ public class Simulator : SimulatorBase {
             false);
         _stencilRT = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/BodySegmentationStencil.renderTexture");
         _cameraFeed = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/CameraFeed.renderTexture");
+        _screenSampler = AssetDatabase.LoadAssetAtPath<Material>($"{PackagePath}/Core/materials/ScreenSpace.mat");
         VideoSender._cameraFeed = _cameraFeed;
     }
 
@@ -275,6 +290,17 @@ public class Simulator : SimulatorBase {
                 Handles.Label(_faceMesh.vertices[i], i.ToString(), handleStyle);
             }
         }
+    }
+
+    void UpdateSamplerMatrix() {
+        Camera cam = Camera.main;
+        if (_screenSampler == null || cam == null) {
+            return;
+        }
+
+        Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
+        Matrix4x4 matrix = vp * _faceSampler.transform.localToWorldMatrix;
+        _screenSampler.SetMatrix(Matrix, matrix);
     }
 
     void PositionTrackers(FaceData faceData) {
@@ -414,6 +440,10 @@ public class Simulator : SimulatorBase {
             _faceMeshVisualiser.transform.localPosition = faceData.face.localPosition;
             _faceMeshVisualiser.transform.localEulerAngles = faceData.face.localRotation;
             _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
+            
+            _faceSampler.transform.localPosition = faceData.face.localPosition;
+            _faceSampler.transform.localEulerAngles = faceData.face.localRotation;
+            
             SetMeshTopology();
             PositionTrackers(faceData);
             HandleVertexPairing();
@@ -595,9 +625,14 @@ public class Simulator : SimulatorBase {
             //Adding default blendshape to ensure skinned mesh renderer doesn't show warning notice.
             mesh.AddBlendShapeFrame("Default", 0, vertices.ToArray(), null, null);
 
-            var meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
+            MeshFilter meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
+            MeshFilter sampleMeshFilter = _faceSampler.GetComponent<MeshFilter>();
             if (meshFilter != null) {
                 meshFilter.sharedMesh = mesh;
+            }
+
+            if (sampleMeshFilter != null) {
+                sampleMeshFilter.sharedMesh = mesh;
             }
 
             for (int i = 0; i < _faceMeshes.Count; i++) {
