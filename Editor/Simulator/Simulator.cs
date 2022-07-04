@@ -87,10 +87,10 @@ public class Simulator : SimulatorBase {
 
     private Cloth[] _cloths;
     private bool _clearedInitialTransform;
-    private Material _screenSampler;
+    private Material _screenSamplerMat;
     
-    private static readonly int Matrix = Shader.PropertyToID("_Matrix");
-    private static readonly int Screen1 = Shader.PropertyToID("_Screen");
+    private static readonly int CameraMatrix = Shader.PropertyToID("_Matrix");
+    private static readonly int ScreenSize = Shader.PropertyToID("_Screen");
 
     protected override void Awake() {
         base.Awake();
@@ -209,6 +209,11 @@ public class Simulator : SimulatorBase {
                _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
     }
 
+    private bool HasRecordingData() {
+        return _faceRecording.faceDatas != null && _faceRecording.faceDatas.Count != 0 && _cameraFeed != null &&
+               _faceTexture != null && _stencilRT != null;
+    }
+
     //Update function is used here to ensure the simulator runs every frame in Edit mode. if not, an alternate method that avoids the use of Update would have been used.
     protected override void Update() {
         if (_skipFaceSimulator) {
@@ -225,7 +230,7 @@ public class Simulator : SimulatorBase {
         UpdateSamplerMatrix();
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
-        if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0 || _cameraFeed == null) && !_skipFaceRecording) {
+        if (!HasRecordingData() && !_skipFaceRecording) {
             try {
                 GetRecordingData();
             }
@@ -271,7 +276,7 @@ public class Simulator : SimulatorBase {
         _cameraFeed = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/CameraFeed.renderTexture");
         _faceTexture =
             AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/FaceTexture.renderTexture");
-        _screenSampler = AssetDatabase.LoadAssetAtPath<Material>($"{PackagePath}/Core/materials/ScreenSpace.mat");
+        _screenSamplerMat = AssetDatabase.LoadAssetAtPath<Material>($"{PackagePath}/Core/materials/ScreenSpace.mat");
         VideoSender._cameraFeed = _cameraFeed;
     }
 
@@ -297,7 +302,7 @@ public class Simulator : SimulatorBase {
 
     void UpdateSamplerMatrix() {
         Camera cam = Camera.main;
-        if (_screenSampler == null || cam == null) {
+        if (_screenSamplerMat == null || cam == null) {
             return;
         }
 
@@ -305,8 +310,8 @@ public class Simulator : SimulatorBase {
         Vector4 screenSize = new Vector4(gameView.x, gameView.y, 1 + 1 / gameView.x, 1 + 1 / gameView.y);
         Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
         Matrix4x4 matrix = vp * _faceSampler.transform.localToWorldMatrix;
-        _screenSampler.SetMatrix(Matrix, matrix);
-        _screenSampler.SetVector(Screen1, screenSize);
+        _screenSamplerMat.SetMatrix(CameraMatrix, matrix);
+        _screenSamplerMat.SetVector(ScreenSize, screenSize);
     }
 
     void PositionTrackers(FaceData faceData) {
