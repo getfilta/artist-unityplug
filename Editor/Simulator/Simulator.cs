@@ -225,7 +225,7 @@ public class Simulator : SimulatorBase {
         UpdateSamplerMatrix();
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
         EnforceObjectStructure();
-        if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0) && !_skipFaceRecording) {
+        if ((_faceRecording.faceDatas == null || _faceRecording.faceDatas.Count == 0 || _cameraFeed == null) && !_skipFaceRecording) {
             try {
                 GetRecordingData();
             }
@@ -269,6 +269,8 @@ public class Simulator : SimulatorBase {
             false);
         _stencilRT = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/BodySegmentationStencil.renderTexture");
         _cameraFeed = AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/CameraFeed.renderTexture");
+        _faceTexture =
+            AssetDatabase.LoadAssetAtPath<RenderTexture>($"{PackagePath}/Assets/Textures/FaceTexture.renderTexture");
         _screenSampler = AssetDatabase.LoadAssetAtPath<Material>($"{PackagePath}/Core/materials/ScreenSpace.mat");
         VideoSender._cameraFeed = _cameraFeed;
     }

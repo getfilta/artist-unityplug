@@ -29,7 +29,7 @@ namespace Filta {
             variables.declarations.Set("CameraFeed", simulator._cameraFeed);
             variables.declarations.Set("BodySegmentation", simulator._stencilRT);
             if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
-                Simulator sim = simulator.GetComponent<Simulator>();
+                Simulator sim = simulator.gameObject.GetComponent<Simulator>();
                 variables.declarations.Set("FaceTexture", sim._faceTexture);
             }
             PrefabUtility.SaveAsPrefabAsset(filterDuplicate, savePath, out bool success);
