@@ -90,6 +90,7 @@ public class Simulator : SimulatorBase {
     private Material _screenSampler;
     
     private static readonly int Matrix = Shader.PropertyToID("_Matrix");
+    private static readonly int Screen1 = Shader.PropertyToID("_Screen");
 
     protected override void Awake() {
         base.Awake();
@@ -298,9 +299,12 @@ public class Simulator : SimulatorBase {
             return;
         }
 
+        Vector2 gameView = GameViewUtils.GetMainGameViewSize();
+        Vector4 screenSize = new Vector4(gameView.x, gameView.y, 1 + 1 / gameView.x, 1 + 1 / gameView.y);
         Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
         Matrix4x4 matrix = vp * _faceSampler.transform.localToWorldMatrix;
         _screenSampler.SetMatrix(Matrix, matrix);
+        _screenSampler.SetVector(Screen1, screenSize);
     }
 
     void PositionTrackers(FaceData faceData) {

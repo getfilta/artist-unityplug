@@ -31,6 +31,8 @@ Shader "Filta/Internal/UnlitScreenspace"{
 			float _SizeY;
 			float _SizeZ;
 
+			float4 _Screen;
+
 			float4x4 _Matrix;
 
 
@@ -64,7 +66,7 @@ Shader "Filta/Internal/UnlitScreenspace"{
 			//the fragment shader
 			fixed4 frag(v2f i) : SV_TARGET{
                 float2 textureCoordinate = i.screenPosition.xy/ i.screenPosition.w;
-                float aspect = _ScreenParams.x / _ScreenParams.y;
+                float aspect = _Screen.x / _Screen.y;
 				float textureAspect = _MainTex_TexelSize.z/_MainTex_TexelSize.w;
 				float realAspect = aspect/textureAspect;
                 textureCoordinate.x = textureCoordinate.x * realAspect;
