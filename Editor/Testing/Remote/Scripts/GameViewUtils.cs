@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
+using UnityEngine;
+using Object = System.Object;
 
 public class GameViewUtils {
     static object gameViewSizesInstance;
@@ -77,6 +79,20 @@ public class GameViewUtils {
         }
         AddCustomSize(viewSizeType, sizeGroupType, width, height, text);
         SetSize(GetViewListSize(sizeGroupType).Length - 1);
+    }
+    
+    public static Vector2 GetMainGameViewSize()
+    {
+        Type T = Type.GetType("UnityEditor.GameView,UnityEditor");
+        if (T != null) {
+            MethodInfo getSizeOfMainGameView = T.GetMethod("GetSizeOfMainGameView",BindingFlags.NonPublic | BindingFlags.Static);
+            if (getSizeOfMainGameView is not null) {
+                Object res = getSizeOfMainGameView.Invoke(null,null);
+                return (Vector2)res;
+            }
+        }
+        Debug.LogError("Could not get main game view size");
+        return new Vector2(0, 0);
     }
 
     private static GameViewSizeGroupType GetGroupType() {
