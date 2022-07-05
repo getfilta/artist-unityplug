@@ -150,11 +150,11 @@ public class Simulator : SimulatorBase {
         }
         
         if (_faceMeshVisualiser == null) {
-            _faceMeshVisualiser = transform.GetChild(0).gameObject;
+            _faceMeshVisualiser = transform.Find("FaceVisualiser").gameObject;
         }
         
         if (_faceSampler == null) {
-            _faceSampler = transform.GetChild(1).gameObject;
+            _faceSampler = transform.Find("FaceSampler").gameObject;
         }
 
         if (_filterObject == null) {
@@ -356,6 +356,8 @@ public class Simulator : SimulatorBase {
     }
 
     protected override void EnforceObjectStructure() {
+        _faceMeshVisualiser.name = "FaceVisualiser";
+        _faceSampler.name = "FaceSampler";
         _faceTracker.name = "FaceTracker";
         _leftEyeTracker.name = "LeftEyeTracker";
         _rightEyeTracker.name = "RightEyeTracker";
