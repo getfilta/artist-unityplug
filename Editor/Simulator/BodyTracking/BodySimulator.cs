@@ -494,7 +494,11 @@ public class BodySimulator : SimulatorBase {
     private Transform GetModelTransform(GameObject model) {
         Transform result = null;
         //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
-        string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
+        //string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
+        string path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(model);
+        if (String.IsNullOrEmpty(path)) {
+            path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
+        }
         Object obj = AssetDatabase.LoadMainAssetAtPath(path);
         GameObject gO = obj as GameObject;
         result = gO.transform;
