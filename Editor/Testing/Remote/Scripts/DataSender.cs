@@ -41,6 +41,7 @@ public class DataSender : NetworkBehaviour {
     public override void OnStartLocalPlayer() {
         _remoteManager = FindObjectOfType<RemoteManager>();
         _remoteManager.videoSender.SetupClient();
+        RemoteInput.Instance.SetupClient();
         RequestScreenResolution();
     }
 
