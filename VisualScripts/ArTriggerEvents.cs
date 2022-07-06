@@ -46,7 +46,7 @@ namespace Filta.VisualScripting {
 
         void Update() {
             _tapTime += Time.deltaTime;
-            if (Input.GetMouseButtonDown(0)) {
+            if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)) {
                 onScreenTap(this, null);
                 if (_tapTime < MaximumDoubleTapTime) {
                     onScreenDoubleTap(this, null);
