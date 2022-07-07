@@ -158,5 +158,13 @@
       "pluginMinorVersion": 21
     },
     "releaseNotes": "- feat: change face meshes to be skinned mesh renderers to allow them be piped into vfx graph"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 1,
+      "pluginMajorVersion": 5,
+      "pluginMinorVersion": 22
+    },
+    "releaseNotes": "- feat: create camera feed texture\n- feat: create body segmentation texture\n- feat: create face texture \n- feat: create shaders that can be used for body replacement or background replacement.\n- feat: handle touch input from artist remote\n- other small fixes"
   }
 ]
