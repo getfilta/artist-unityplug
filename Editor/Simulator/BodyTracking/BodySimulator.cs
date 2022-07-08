@@ -90,6 +90,9 @@ public class BodySimulator : SimulatorBase {
     private bool _skipBodySimulator;
     private bool _skipBodyRecording;
 
+    [NonSerialized]
+    public bool showBodyVisualiser;
+
     private long _prevTime;
     private int _previousFrame;
 
@@ -115,6 +118,7 @@ public class BodySimulator : SimulatorBase {
         GetRecordingData();
         EditorApplication.hierarchyChanged += GetBodyAvatars;
         ToggleVisualiser(false);
+        showBodyVisualiser = true;
     }
     
     private void OnDisable() {
@@ -198,6 +202,7 @@ public class BodySimulator : SimulatorBase {
             _skipBodySimulator = true;
             return;
         }
+        _bodyVisualiser.gameObject.SetActive(showBodyVisualiser && !isPose);
 
         EnforceObjectStructure();
         if ((_bodyRecording._bodyData == null || _bodyRecording._bodyData.Count == 0) && !_skipBodyRecording) {
