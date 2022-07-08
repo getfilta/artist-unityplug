@@ -370,6 +370,11 @@ namespace Filta {
                     _bodySimulator.ResetSimulator();
                 }
                 EditorGUILayout.EndHorizontal();
+                string visualizerButtonTitle = _bodySimulator.showBodyVisualiser ? "Hide Visualiser" : "Show Visualiser";
+                SetButtonColor(_bodySimulator.showBodyVisualiser);
+                if (GUILayout.Button(visualizerButtonTitle)) {
+                    _bodySimulator.showBodyVisualiser = !_bodySimulator.showBodyVisualiser;
+                }
             } else {
                 if (GUILayout.Button("Show Simulated Visualiser")) {
                     _bodySimulator.ToggleVisualiser(false);
