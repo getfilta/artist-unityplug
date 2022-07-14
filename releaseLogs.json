@@ -166,5 +166,13 @@
       "pluginMinorVersion": 22
     },
     "releaseNotes": "- feat: create camera feed texture\n- feat: create body segmentation texture\n- feat: create face texture \n- feat: create shaders that can be used for body replacement or background replacement.\n- feat: handle touch input from artist remote\n- other small fixes"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 0,
+      "pluginMinorVersion": 0
+    },
+    "releaseNotes": "- feat: change name of faces object to faceMeshes to avoid ux issues."
   }
 ]

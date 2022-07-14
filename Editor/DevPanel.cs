@@ -299,7 +299,7 @@ namespace Filta {
                     filterType = PluginInfo.FilterType.Fusion;
                     break;
             }
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, filterType = filterType, resetOnRecord = _resetOnRecord };
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord };
         }
 
         private void ShowSimulatorTabs() {
@@ -897,7 +897,7 @@ namespace Filta {
                 EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(100));
             for (int i = _masterReleaseInfo.Count - 1; i >= 0; i--) {
                 ReleaseInfo masterInfo = _masterReleaseInfo[i];
-                ReleaseInfo.Version masterVersion = masterInfo.version;
+                Version masterVersion = masterInfo.version;
                 if (masterVersion.ToInt() <= _localReleaseInfo.version.ToInt()) {
                     break;
                 }

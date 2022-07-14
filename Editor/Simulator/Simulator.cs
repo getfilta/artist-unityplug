@@ -183,6 +183,10 @@ public class Simulator : SimulatorBase {
                 _facesHolder = _faceTracker.Find("Faces");
             }
 
+            if (_facesHolder == null) {
+                _facesHolder = _faceTracker.Find("FaceMeshes");
+            }
+
             if (_faceMaskHolder == null) {
                 _faceMaskHolder = _faceTracker.Find("FaceMasks");
             }
@@ -363,7 +367,7 @@ public class Simulator : SimulatorBase {
         _rightEyeTracker.name = "RightEyeTracker";
         _noseBridgeTracker.name = "NoseBridgeTracker";
         _faceMaskHolder.name = "FaceMasks";
-        _facesHolder.name = "Faces";
+        _facesHolder.name = "FaceMeshes";
         _vertices.name = "Vertices";
         gameObject.name = "Simulator";
         _filterObject.name = "Filter";
