@@ -162,8 +162,10 @@ public class Simulator : SimulatorBase {
         }
 
         if (_filterObject != null) {
-            if (_faceTracker == null)
+            if (_faceTracker == null) {
                 _faceTracker = _filterObject.Find("FaceTracker");
+            }
+            mainTracker = _faceTracker;
         }
 
         if (_faceTracker != null) {
@@ -203,7 +205,7 @@ public class Simulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && _faceMeshVisualiser != null && _faceSampler != null && _faceTracker != null &&
+        return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _faceSampler != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
                _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;

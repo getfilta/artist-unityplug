@@ -3,6 +3,18 @@ using UnityEditor;
 using UnityEngine;
 
 public class HotKeys : Editor {
+    [MenuItem("Filta Hotkeys/Focus Scene Camera &c")]
+    public static void FocusSceneViewCamera()
+    {
+        FusionSimulator fusionSimulator = FindObjectOfType<FusionSimulator>();
+        SimulatorBase sim = fusionSimulator != null
+            ? fusionSimulator.GetActiveSimulator()
+            : FindObjectOfType<SimulatorBase>();
+        Transform mainTracker = sim.mainTracker;
+        SceneView.lastActiveSceneView.LookAt(mainTracker.position, Quaternion.Euler(Vector3.forward), 0.1f);
+        SceneView.lastActiveSceneView.Repaint();
+    }
+    
     [MenuItem("Filta Hotkeys/Pause or Resume Simulator &e")]
     static void ToggleSimulatorPlaying() {
         FusionSimulator fusionSimulator = FindObjectOfType<FusionSimulator>();

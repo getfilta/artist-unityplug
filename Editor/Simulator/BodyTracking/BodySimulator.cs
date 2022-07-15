@@ -149,7 +149,7 @@ public class BodySimulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
+        return _filterObject != null && mainTracker != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
                _bodyAvatars != null && _lShoulderTracker != null && _rShoulderTracker != null && _lArmTracker != null &&
                _rArmTracker != null && _lForearmTracker != null && _rForearmTracker != null && _lHandTracker != null &&
                _rHandTracker != null && _lUpLegTracker != null && _rUpLegTracker != null && _lLegTracker != null &&
@@ -310,6 +310,7 @@ public class BodySimulator : SimulatorBase {
             if (_bodyTracker == null) {
                 _bodyTracker = _filterObject.Find("BodyTracker");
             }
+            mainTracker = _bodyTracker;
         }
 
         if (_bodyTracker != null) {
