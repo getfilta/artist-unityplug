@@ -103,6 +103,7 @@ namespace Filta {
             string path = Path.GetFullPath($"{PackagePath}/Core/FiltaLayout.wlt");
             LayoutUtility.LoadLayoutFromAsset(path);
             GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, DefaultGameViewWidth, DefaultGameViewHeight, "DefaultFiltaView");
+            HotKeys.FocusSceneViewCamera();
         }
 
         [MenuItem("Filta/Documentation, Tutorials, Examples and FAQ", false, 5)]

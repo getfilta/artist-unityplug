@@ -20,6 +20,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     protected string _filePath { get; set; }
 
     public Transform _filterObject;
+    public Transform mainTracker;
 
     [SerializeField]
     private HideFlags _customHideFlags;
