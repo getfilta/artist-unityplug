@@ -835,9 +835,12 @@ namespace Filta {
         
         #region Util
         
-        private void HandleSceneChange(Scene oldScene, Scene newScene) {
+        private async void HandleSceneChange(Scene oldScene, Scene newScene) {
             FindSimulator(PlayModeStateChange.EnteredEditMode);
             SetPluginInfo();
+            //Wait a second to ensure scene is set up properly.
+            await Task.Delay(1000);
+            HotKeys.FocusSceneViewCamera();
         }
         
         private void HandleStatusChange(object sender, StatusChangeEventArgs e) {
