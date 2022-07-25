@@ -403,6 +403,7 @@ namespace Filta {
     public struct PluginInfo {
         public enum FilterType { Face, Body, Fusion }
         public int version;
+        public Version pluginVersion;
         public FilterType filterType;
         public bool resetOnRecord;
     }
@@ -410,14 +411,16 @@ namespace Filta {
     public class ReleaseInfo {
         public Version version;
         public string releaseNotes;
-        public class Version {
-            public int pluginAppVersion;
-            public int pluginMajorVersion;
-            public int pluginMinorVersion;
+    }
+    
+    public class Version {
+        public int pluginAppVersion;
+        public int pluginMajorVersion;
+        public int pluginMinorVersion;
 
-            public int ToInt() {
-                return (pluginAppVersion * 100) + (pluginMajorVersion * 10) + (pluginMinorVersion);
-            }
+        public int ToInt() {
+            //since minor versions can exceed 10, increasing the weight of major version and app version.
+            return (pluginAppVersion * 1000) + (pluginMajorVersion * 100) + (pluginMinorVersion);
         }
     }
 
