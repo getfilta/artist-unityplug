@@ -24,7 +24,7 @@ namespace Filta {
     }
 
     public class Authentication {
-        public static Authentication Instance { get;}
+        public static Authentication Instance { get; }
         static Authentication() {
             Instance = new Authentication();
         }
@@ -201,7 +201,7 @@ namespace Filta {
                 } else {
                     // we could distinguish between denied and expired, but we don't
                     Debug.LogError("Request expired.");
-                    Backend.Instance.LogToServer(LoggingLevel.ERROR, "Login", "This remote login request has expired");
+                    Backend.Instance.LogToServer(LoggingLevel.WARN, "Login", "This remote login request has expired");
                     Global.FireStatusChange(this, "This remote login request has expired", true);
                 }
             } catch (Exception e) {
@@ -218,7 +218,7 @@ namespace Filta {
 
         public void CancelLogin() {
             AuthState = AuthenticationState.Cancelling;
-            Global.FireStatusChange(this,"Cancelling log in");
+            Global.FireStatusChange(this, "Cancelling log in");
         }
     }
     [Serializable]
