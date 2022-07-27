@@ -29,6 +29,9 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private GameObject _faceSampler;
 
+    private MeshFilter _meshFilter;
+    private MeshFilter _sampleMeshFilter;
+
     [FormerlySerializedAs("visualiserOffset"), SerializeField]
     private float _visualiserOffset;
 
@@ -152,9 +155,17 @@ public class Simulator : SimulatorBase {
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.Find("FaceVisualiser").gameObject;
         }
+
+        if (_faceMeshVisualiser != null) {
+            _meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
+        }
         
         if (_faceSampler == null) {
             _faceSampler = transform.Find("FaceSampler").gameObject;
+        }
+
+        if (_faceSampler != null) {
+            _sampleMeshFilter = _faceSampler.GetComponent<MeshFilter>();
         }
 
         if (_filterObject == null) {
@@ -209,7 +220,7 @@ public class Simulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _faceSampler != null && _faceTracker != null &&
+        return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _meshFilter != null && _faceSampler != null && _sampleMeshFilter != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
                _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
@@ -393,6 +404,12 @@ public class Simulator : SimulatorBase {
     }
 
     void PlaybackFromRemote() {
+        _faceMeshVisualiser.transform.localPosition = _dataSender._data.facePosition;
+        _faceMeshVisualiser.transform.localEulerAngles = _dataSender._data.faceRotation;
+        _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
+            
+        _faceSampler.transform.localPosition = _dataSender._data.facePosition;
+        _faceSampler.transform.localEulerAngles = _dataSender._data.faceRotation;
         PositionTrackers(_dataSender._data);
         SetMeshTopology(_dataSender._data);
         UpdateMasks(_dataSender._data);
@@ -644,14 +661,13 @@ public class Simulator : SimulatorBase {
             //Adding default blendshape to ensure skinned mesh renderer doesn't show warning notice.
             mesh.AddBlendShapeFrame("Default", 0, vertices.ToArray(), null, null);
 
-            MeshFilter meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
-            MeshFilter sampleMeshFilter = _faceSampler.GetComponent<MeshFilter>();
-            if (meshFilter != null) {
-                meshFilter.sharedMesh = mesh;
+            
+            if (_meshFilter != null) {
+                _meshFilter.sharedMesh = mesh;
             }
 
-            if (sampleMeshFilter != null) {
-                sampleMeshFilter.sharedMesh = mesh;
+            if (_sampleMeshFilter != null) {
+                _sampleMeshFilter.sharedMesh = mesh;
             }
 
             for (int i = 0; i < _faceMeshes.Count; i++) {
