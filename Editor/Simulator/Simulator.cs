@@ -127,15 +127,16 @@ public class Simulator : SimulatorBase {
     }
 
     public override void Disable() {
-        _filterObject.gameObject.SetActive(false);
-        _faceMeshVisualiser.SetActive(false);
+        base.Disable();
+        previousVisStatus = showFaceMeshVisualiser;
+        showFaceMeshVisualiser = false;
         PauseSimulator();
         _videoFeed.gameObject.SetActive(false);
     }
 
     public override void Enable() {
-        _filterObject.gameObject.SetActive(true);
-        _faceMeshVisualiser.SetActive(true);
+        base.Enable();
+        showFaceMeshVisualiser = previousVisStatus;
         ResumeSimulator();
         _videoFeed.gameObject.SetActive(true);
     }
@@ -149,9 +150,9 @@ public class Simulator : SimulatorBase {
         SetFlags(true);
         if (_videoFeed != null) {
             _canvas = _videoFeed.GetComponentInParent<Canvas>();
-            _canvas.worldCamera = Camera.main;
+            _canvas.worldCamera = mainCamera;
         }
-        
+
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.Find("FaceVisualiser").gameObject;
         }
@@ -318,14 +319,13 @@ public class Simulator : SimulatorBase {
     }
 
     void UpdateSamplerMatrix() {
-        Camera cam = Camera.main;
-        if (_screenSamplerMat == null || cam == null) {
+        if (_screenSamplerMat == null || mainCamera == null) {
             return;
         }
 
         Vector2 gameView = GameViewUtils.GetMainGameViewSize();
         Vector4 screenSize = new Vector4(gameView.x, gameView.y, 1 + 1 / gameView.x, 1 + 1 / gameView.y);
-        Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
+        Matrix4x4 vp = GL.GetGPUProjectionMatrix(mainCamera.projectionMatrix, true) * mainCamera.worldToCameraMatrix;
         Matrix4x4 matrix = vp * _faceSampler.transform.localToWorldMatrix;
         _screenSamplerMat.SetMatrix(CameraMatrix, matrix);
         _screenSamplerMat.SetVector(ScreenSize, screenSize);
@@ -342,8 +342,8 @@ public class Simulator : SimulatorBase {
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
-        Camera.main.transform.position = faceData.camera.position;
-        Camera.main.transform.eulerAngles = faceData.camera.rotation;
+        mainCamera.transform.position = faceData.camera.position;
+        mainCamera.transform.eulerAngles = faceData.camera.rotation;
     }
     
     void PositionTrackers(DataSender.FaceData faceData) {
@@ -357,8 +357,8 @@ public class Simulator : SimulatorBase {
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
-        Camera.main.transform.position = faceData.cameraPosition;
-        Camera.main.transform.eulerAngles = faceData.cameraRotation;
+        mainCamera.transform.position = faceData.cameraPosition;
+        mainCamera.transform.eulerAngles = faceData.cameraRotation;
         
         //Clear cloth transform motion when artist remote finds face.
         //Eventually artist remote might send events to better handle this.

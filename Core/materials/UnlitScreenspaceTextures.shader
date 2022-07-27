@@ -4,9 +4,9 @@ Shader "Filta/Internal/UnlitScreenspace"{
 	Properties{
 		_Color ("Tint", Color) = (0, 0, 0, 1)
 		_MainTex ("Texture", 2D) = "white" {}
-		_SizeX ("SizeX", float) = 1
+		_SizeX ("SizeX", float) = 0.46
 		_SizeY ("SizeY", float) = 1
-		_SizeZ ("SizeZ", float) = 1
+		_SizeZ ("SizeZ", float) = 1000
 	}
 
 	SubShader{
