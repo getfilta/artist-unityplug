@@ -991,8 +991,7 @@ namespace Filta {
                     sim = _simulator.gameObject;
                     filter = _simulator._filterObject.gameObject;
                 }
-                if (rootObjects[i] == sim || rootObjects[i] == filter ||
-                    rootObjects[i] == Camera.main.gameObject) {
+                if (rootObjects[i] == sim || rootObjects[i] == filter) {
                     continue;
                 }
                 extraObjects += $"\n{rootObjects[i].name}";

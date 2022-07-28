@@ -29,6 +29,9 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private GameObject _faceSampler;
 
+    private MeshFilter _meshFilter;
+    private MeshFilter _sampleMeshFilter;
+
     [FormerlySerializedAs("visualiserOffset"), SerializeField]
     private float _visualiserOffset;
 
@@ -124,15 +127,16 @@ public class Simulator : SimulatorBase {
     }
 
     public override void Disable() {
-        _filterObject.gameObject.SetActive(false);
-        _faceMeshVisualiser.SetActive(false);
+        base.Disable();
+        previousVisStatus = showFaceMeshVisualiser;
+        showFaceMeshVisualiser = false;
         PauseSimulator();
         _videoFeed.gameObject.SetActive(false);
     }
 
     public override void Enable() {
-        _filterObject.gameObject.SetActive(true);
-        _faceMeshVisualiser.SetActive(true);
+        base.Enable();
+        showFaceMeshVisualiser = previousVisStatus;
         ResumeSimulator();
         _videoFeed.gameObject.SetActive(true);
     }
@@ -146,15 +150,23 @@ public class Simulator : SimulatorBase {
         SetFlags(true);
         if (_videoFeed != null) {
             _canvas = _videoFeed.GetComponentInParent<Canvas>();
-            _canvas.worldCamera = Camera.main;
+            _canvas.worldCamera = mainCamera;
         }
-        
+
         if (_faceMeshVisualiser == null) {
             _faceMeshVisualiser = transform.Find("FaceVisualiser").gameObject;
+        }
+
+        if (_faceMeshVisualiser != null) {
+            _meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
         }
         
         if (_faceSampler == null) {
             _faceSampler = transform.Find("FaceSampler").gameObject;
+        }
+
+        if (_faceSampler != null) {
+            _sampleMeshFilter = _faceSampler.GetComponent<MeshFilter>();
         }
 
         if (_filterObject == null) {
@@ -209,7 +221,7 @@ public class Simulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _faceSampler != null && _faceTracker != null &&
+        return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _meshFilter != null && _faceSampler != null && _sampleMeshFilter != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
                _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
@@ -307,14 +319,13 @@ public class Simulator : SimulatorBase {
     }
 
     void UpdateSamplerMatrix() {
-        Camera cam = Camera.main;
-        if (_screenSamplerMat == null || cam == null) {
+        if (_screenSamplerMat == null || mainCamera == null) {
             return;
         }
 
         Vector2 gameView = GameViewUtils.GetMainGameViewSize();
         Vector4 screenSize = new Vector4(gameView.x, gameView.y, 1 + 1 / gameView.x, 1 + 1 / gameView.y);
-        Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
+        Matrix4x4 vp = GL.GetGPUProjectionMatrix(mainCamera.projectionMatrix, true) * mainCamera.worldToCameraMatrix;
         Matrix4x4 matrix = vp * _faceSampler.transform.localToWorldMatrix;
         _screenSamplerMat.SetMatrix(CameraMatrix, matrix);
         _screenSamplerMat.SetVector(ScreenSize, screenSize);
@@ -331,8 +342,8 @@ public class Simulator : SimulatorBase {
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.face.localRotation;
-        Camera.main.transform.position = faceData.camera.position;
-        Camera.main.transform.eulerAngles = faceData.camera.rotation;
+        mainCamera.transform.position = faceData.camera.position;
+        mainCamera.transform.eulerAngles = faceData.camera.rotation;
     }
     
     void PositionTrackers(DataSender.FaceData faceData) {
@@ -346,8 +357,8 @@ public class Simulator : SimulatorBase {
                                      (_rightEyeTracker.localPosition - _leftEyeTracker.localPosition) / 2;
         _noseBridgeTracker.localPosition = noseBridgePosition;
         _noseBridgeTracker.localEulerAngles = faceData.faceRotation;
-        Camera.main.transform.position = faceData.cameraPosition;
-        Camera.main.transform.eulerAngles = faceData.cameraRotation;
+        mainCamera.transform.position = faceData.cameraPosition;
+        mainCamera.transform.eulerAngles = faceData.cameraRotation;
         
         //Clear cloth transform motion when artist remote finds face.
         //Eventually artist remote might send events to better handle this.
@@ -393,6 +404,12 @@ public class Simulator : SimulatorBase {
     }
 
     void PlaybackFromRemote() {
+        _faceMeshVisualiser.transform.localPosition = _dataSender._data.facePosition;
+        _faceMeshVisualiser.transform.localEulerAngles = _dataSender._data.faceRotation;
+        _faceMeshVisualiser.transform.position -= _faceMeshVisualiser.transform.forward * _visualiserOffset;
+            
+        _faceSampler.transform.localPosition = _dataSender._data.facePosition;
+        _faceSampler.transform.localEulerAngles = _dataSender._data.faceRotation;
         PositionTrackers(_dataSender._data);
         SetMeshTopology(_dataSender._data);
         UpdateMasks(_dataSender._data);
@@ -644,14 +661,13 @@ public class Simulator : SimulatorBase {
             //Adding default blendshape to ensure skinned mesh renderer doesn't show warning notice.
             mesh.AddBlendShapeFrame("Default", 0, vertices.ToArray(), null, null);
 
-            MeshFilter meshFilter = _faceMeshVisualiser.GetComponent<MeshFilter>();
-            MeshFilter sampleMeshFilter = _faceSampler.GetComponent<MeshFilter>();
-            if (meshFilter != null) {
-                meshFilter.sharedMesh = mesh;
+            
+            if (_meshFilter != null) {
+                _meshFilter.sharedMesh = mesh;
             }
 
-            if (sampleMeshFilter != null) {
-                sampleMeshFilter.sharedMesh = mesh;
+            if (_sampleMeshFilter != null) {
+                _sampleMeshFilter.sharedMesh = mesh;
             }
 
             for (int i = 0; i < _faceMeshes.Count; i++) {

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine.SceneManagement;
 
 [ExecuteAlways]
 #endif
@@ -30,6 +32,9 @@ public abstract class SimulatorBase : MonoBehaviour {
     [SerializeField]
     protected RawImage _remoteFeed;
     
+    [SerializeField]
+    protected Camera mainCamera;
+    
     [NonSerialized]
     public bool isPlaying;
     
@@ -40,6 +45,8 @@ public abstract class SimulatorBase : MonoBehaviour {
     
     protected long _pauseTime;
     protected DateTime _startTime;
+    
+    protected bool previousVisStatus;
 
     protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
 
@@ -55,11 +62,30 @@ public abstract class SimulatorBase : MonoBehaviour {
         _objectsToHide = GetComponentsInChildren<Transform>(true);
     }
 
+    private void Start() {
+        RemoveLegacyCamera();
+    }
+
     private void OnRenderObject() {
         // Ensure continuous Update calls.
         if (!Application.isPlaying) {
             EditorApplication.QueuePlayerLoopUpdate();
             SceneView.RepaintAll();
+        }
+    }
+
+    //This is used to handle filters created with legacy plugin versions which
+    //had the camera outside of the simulator prefab.
+    private void RemoveLegacyCamera() {
+        Scene scene = SceneManager.GetActiveScene();
+        List<GameObject> rootObjects = new(scene.rootCount);
+        scene.GetRootGameObjects(rootObjects);
+        for (int i = 0; i < rootObjects.Count; i++) {
+            if (rootObjects[i].TryGetComponent(out Camera cam)) {
+                if (rootObjects[i].CompareTag("MainCamera")) {
+                    DestroyImmediate(rootObjects[i]);
+                }
+            }
         }
     }
 
@@ -79,11 +105,13 @@ public abstract class SimulatorBase : MonoBehaviour {
     }
 
     public virtual void Disable() {
-        
+        mainCamera.gameObject.SetActive(false);
+        _filterObject.gameObject.SetActive(false);
     }
 
     public virtual void Enable() {
-        
+        mainCamera.gameObject.SetActive(true);
+        _filterObject.gameObject.SetActive(true);
     }
 
     protected virtual void Playback(long currentTime) {

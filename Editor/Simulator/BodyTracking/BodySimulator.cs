@@ -132,14 +132,15 @@ public class BodySimulator : SimulatorBase {
     }
     
     public override void Disable() {
-        _filterObject.gameObject.SetActive(false);
-        _bodyVisualiser.gameObject.SetActive(false);
+        base.Disable();
+        previousVisStatus = showBodyVisualiser;
+        showBodyVisualiser = false;
         PauseSimulator();
     }
 
     public override void Enable() {
-        _filterObject.gameObject.SetActive(true);
-        _bodyVisualiser.gameObject.SetActive(true);
+        base.Enable();
+        showBodyVisualiser = previousVisStatus;
         ResumeSimulator();
     }
     
@@ -292,7 +293,7 @@ public class BodySimulator : SimulatorBase {
         SetFlags(true);
         if (_remoteFeed != null) {
             _canvas = _remoteFeed.GetComponentInParent<Canvas>();
-            _canvas.worldCamera = Camera.main;
+            _canvas.worldCamera = mainCamera;
         }
         if (_bodyVisualiser == null) {
             _bodyVisualiser = transform.GetChild(0);
@@ -431,8 +432,8 @@ public class BodySimulator : SimulatorBase {
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
         
-        Camera.main.transform.position = Vector3.zero;
-        Camera.main.transform.rotation = Quaternion.identity;
+        mainCamera.transform.position = Vector3.zero;
+        mainCamera.transform.rotation = Quaternion.identity;
     }
     
     void PositionTrackers(DataSender.BodyData bodyData) {
@@ -480,8 +481,8 @@ public class BodySimulator : SimulatorBase {
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
         
-        Camera.main.transform.position = bodyData.cameraPosition;
-        Camera.main.transform.eulerAngles = bodyData.cameraRotation;
+        mainCamera.transform.position = bodyData.cameraPosition;
+        mainCamera.transform.eulerAngles = bodyData.cameraRotation;
     }
 
     #region Body Avatars

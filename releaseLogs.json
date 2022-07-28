@@ -174,5 +174,13 @@
       "pluginMinorVersion": 0
     },
     "releaseNotes": "- feat: change name of faces object to faceMeshes to avoid ux issues."
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 0,
+      "pluginMinorVersion": 1
+    },
+    "releaseNotes": "- feat: improve face texture\n- make main camera a part of the simulator object"
   }
 ]
