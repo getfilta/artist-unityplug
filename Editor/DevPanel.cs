@@ -1126,6 +1126,9 @@ namespace Filta {
             string dialog = "All meshes used with SkinnedMeshRenderers must be marked as readable. Select the mesh(es) and set Read/Write to true in the Inspector. \n \n List of affected gameObjects: ";
             SkinnedMeshRenderer[] skinnedMeshRenderers = filterParent.GetComponentsInChildren<SkinnedMeshRenderer>();
             for (int i = 0; i < skinnedMeshRenderers.Length; i++) {
+                if (skinnedMeshRenderers[i] == null || skinnedMeshRenderers[i].sharedMesh == null) {
+                    continue;
+                }
                 if (!skinnedMeshRenderers[i].sharedMesh.isReadable) {
                     result = true;
                     dialog += $" {skinnedMeshRenderers[i].gameObject.name},";
