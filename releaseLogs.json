@@ -182,5 +182,13 @@
       "pluginMinorVersion": 1
     },
     "releaseNotes": "- feat: improve face texture\n- make main camera a part of the simulator object"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 0,
+      "pluginMinorVersion": 2
+    },
+    "releaseNotes": "- fix: video feed wrongly scaled on different game views.\n- fix: null reference error with smrs that have no mesh"
   }
 ]
