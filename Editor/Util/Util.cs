@@ -2,11 +2,13 @@
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace Filta {
     public static class Util
     {
+        private const string PackagePath = "Packages/com.getfilta.artist-unityplug";
         public static GameObject GetFilterObject() {
             GameObject filterObject;
             FusionSimulator fusionSimulator = Object.FindObjectOfType<FusionSimulator>();
@@ -56,6 +58,14 @@ namespace Filta {
             }
             activeInputHandling.intValue = 2;
             projectSettings.ApplyModifiedProperties();
+        }
+
+        [InitializeOnLoadMethod]
+        public static void SetRenderPipeline() {
+            RenderPipelineAsset pluginRP =
+                AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(
+                    $"{PackagePath}/Core/template/UniversalRenderPipelineAsset.asset");
+            GraphicsSettings.defaultRenderPipeline = pluginRP;
         }
     }
 }
