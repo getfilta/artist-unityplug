@@ -42,7 +42,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     public bool isPlaying;
 
     [NonSerialized]
-    public bool defaultLightOn;
+    public bool dynamicLightOn;
     
     [NonSerialized]
     public RenderTexture _stencilRT;
@@ -97,7 +97,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     }
 
     protected virtual void OnEnable() {
-        defaultLightOn = defaultLight.activeSelf;
+        dynamicLightOn = defaultLight.activeSelf;
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
         if (!EditorApplication.isPlaying) {
             _remoteFeed.gameObject.SetActive(false);
@@ -115,14 +115,14 @@ public abstract class SimulatorBase : MonoBehaviour {
     public virtual void Disable() {
         mainCamera.gameObject.SetActive(false);
         _filterObject.gameObject.SetActive(false);
-        previousLightStatus = defaultLightOn;
-        defaultLightOn = false;
+        previousLightStatus = dynamicLightOn;
+        dynamicLightOn = false;
     }
 
     public virtual void Enable() {
         mainCamera.gameObject.SetActive(true);
         _filterObject.gameObject.SetActive(true);
-        defaultLightOn = previousLightStatus;
+        dynamicLightOn = previousLightStatus;
     }
 
     protected virtual void Playback(long currentTime) {

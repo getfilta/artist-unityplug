@@ -204,7 +204,7 @@ public class BodySimulator : SimulatorBase {
             return;
         }
         _bodyVisualiser.gameObject.SetActive(showBodyVisualiser && !isPose);
-        defaultLight.SetActive(defaultLightOn);
+        defaultLight.SetActive(dynamicLightOn);
         EnforceObjectStructure();
         if ((_bodyRecording._bodyData == null || _bodyRecording._bodyData.Count == 0) && !_skipBodyRecording) {
             try {

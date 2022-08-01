@@ -247,7 +247,7 @@ public class Simulator : SimulatorBase {
 
         UpdateSamplerMatrix();
         _faceMeshVisualiser.SetActive(showFaceMeshVisualiser);
-        defaultLight.SetActive(defaultLightOn);
+        defaultLight.SetActive(dynamicLightOn);
         EnforceObjectStructure();
         if (!HasRecordingData() && !_skipFaceRecording) {
             try {

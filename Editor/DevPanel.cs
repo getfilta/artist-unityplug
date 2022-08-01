@@ -300,7 +300,7 @@ namespace Filta {
                     filterType = PluginInfo.FilterType.Fusion;
                     break;
             }
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord, defaultLightOn = _simulator.defaultLightOn};
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord, dynamicLightOn = _simulator.dynamicLightOn};
         }
 
         private void ShowSimulatorTabs() {
@@ -383,11 +383,11 @@ namespace Filta {
                 }
             }
             DrawUILine(Color.gray);
-            EditorGUILayout.LabelField("Lighting", EditorStyles.boldLabel);
-            string defaultLightTitle = _bodySimulator.defaultLightOn ? "Turn Off Default Light" : "Turn On Default Light";
-            SetButtonColor(_bodySimulator.defaultLightOn);
+            EditorGUILayout.LabelField("Dynamic Lighting", EditorStyles.boldLabel);
+            string defaultLightTitle = _bodySimulator.dynamicLightOn ? "Turn Off Dynamic Light" : "Turn On Dynamic Light";
+            SetButtonColor(_bodySimulator.dynamicLightOn);
             if (GUILayout.Button(defaultLightTitle)) {
-                _bodySimulator.defaultLightOn = !_bodySimulator.defaultLightOn;
+                _bodySimulator.dynamicLightOn = !_bodySimulator.dynamicLightOn;
                 EditorSceneManager.MarkAllScenesDirty();
             }
             ResetButtonColor();
@@ -444,11 +444,11 @@ namespace Filta {
                 Selection.activeGameObject = newFace;
             }
             DrawUILine(Color.gray);
-            EditorGUILayout.LabelField("Lighting", EditorStyles.boldLabel);
-            string defaultLightTitle = _faceSimulator.defaultLightOn ? "Turn Off Default Light" : "Turn On Default Light";
-            SetButtonColor(_faceSimulator.defaultLightOn);
+            EditorGUILayout.LabelField("Dynamic Lighting", EditorStyles.boldLabel);
+            string defaultLightTitle = _faceSimulator.dynamicLightOn ? "Turn Off Dynamic Light" : "Turn On Dynamic Light";
+            SetButtonColor(_faceSimulator.dynamicLightOn);
             if (GUILayout.Button(defaultLightTitle)) {
-                _faceSimulator.defaultLightOn = !_faceSimulator.defaultLightOn;
+                _faceSimulator.dynamicLightOn = !_faceSimulator.dynamicLightOn;
                 EditorSceneManager.MarkAllScenesDirty();
             }
             ResetButtonColor();

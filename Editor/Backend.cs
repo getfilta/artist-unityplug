@@ -406,7 +406,7 @@ namespace Filta {
         public Version pluginVersion;
         public FilterType filterType;
         public bool resetOnRecord;
-        public bool defaultLightOn;
+        public bool dynamicLightOn;
     }
 
     public class ReleaseInfo {
