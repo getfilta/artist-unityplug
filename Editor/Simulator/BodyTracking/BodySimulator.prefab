@@ -51,7 +51,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -440,6 +440,7 @@ MonoBehaviour:
   _customHideFlags: 9
   _remoteFeed: {fileID: 3860326985435015676}
   mainCamera: {fileID: 6709967429197249878}
+  defaultLight: {fileID: 3831128737349744715}
   _bodyVisualiser: {fileID: 1494972964667014327}
   _bodyReference: {fileID: 1730920378736478976}
   _bodyTracker: {fileID: 0}

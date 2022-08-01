@@ -300,7 +300,7 @@ namespace Filta {
                     filterType = PluginInfo.FilterType.Fusion;
                     break;
             }
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord };
+            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord, defaultLightOn = _simulator.defaultLightOn};
         }
 
         private void ShowSimulatorTabs() {
@@ -376,11 +376,21 @@ namespace Filta {
                 if (GUILayout.Button(visualizerButtonTitle)) {
                     _bodySimulator.showBodyVisualiser = !_bodySimulator.showBodyVisualiser;
                 }
+                ResetButtonColor();
             } else {
                 if (GUILayout.Button("Show Simulated Visualiser")) {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField("Lighting", EditorStyles.boldLabel);
+            string defaultLightTitle = _bodySimulator.defaultLightOn ? "Turn Off Default Light" : "Turn On Default Light";
+            SetButtonColor(_bodySimulator.defaultLightOn);
+            if (GUILayout.Button(defaultLightTitle)) {
+                _bodySimulator.defaultLightOn = !_bodySimulator.defaultLightOn;
+                EditorSceneManager.MarkAllScenesDirty();
+            }
+            ResetButtonColor();
         }
 
         private void HandleFaceSimulator() {
@@ -433,6 +443,15 @@ namespace Filta {
                 GameObject newFace = _faceSimulator.SpawnNewFaceMesh();
                 Selection.activeGameObject = newFace;
             }
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField("Lighting", EditorStyles.boldLabel);
+            string defaultLightTitle = _faceSimulator.defaultLightOn ? "Turn Off Default Light" : "Turn On Default Light";
+            SetButtonColor(_faceSimulator.defaultLightOn);
+            if (GUILayout.Button(defaultLightTitle)) {
+                _faceSimulator.defaultLightOn = !_faceSimulator.defaultLightOn;
+                EditorSceneManager.MarkAllScenesDirty();
+            }
+            ResetButtonColor();
         }
 
         void HandleFilterTypeSwitching() {
@@ -457,9 +476,11 @@ namespace Filta {
                         DestroyImmediate(_simulator._filterObject.gameObject);
                         DestroyImmediate(_simulator.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Face);
+                        EditorSceneManager.MarkAllScenesDirty();
                     } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
                         DestroyImmediate(_simulator.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Face);
+                        EditorSceneManager.MarkAllScenesDirty();
                     }
 
                     break;
@@ -477,9 +498,11 @@ namespace Filta {
                         DestroyImmediate(_simulator._filterObject.gameObject);
                         DestroyImmediate(_simulator.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Body);
+                        EditorSceneManager.MarkAllScenesDirty();
                     } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Fusion) {
                         DestroyImmediate(_simulator.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Fusion, SimulatorBase.SimulatorType.Body);
+                        EditorSceneManager.MarkAllScenesDirty();
                     }
 
                     break;
@@ -498,6 +521,7 @@ namespace Filta {
                         DestroyImmediate(_fusionSimulator.gameObject);
                         DestroyImmediate(_faceSimulator._filterObject.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Body, SimulatorBase.SimulatorType.Fusion);
+                        EditorSceneManager.MarkAllScenesDirty();
                     } else if (_simulatorIndex == (int)SimulatorBase.SimulatorType.Face) {
                         bool answer = EditorUtility.DisplayDialog("Warning",
                             $"You are switching from a face + body filter to just a face filter. Any body filter work done will be lost. \nDo you wish to proceed?",
@@ -510,6 +534,7 @@ namespace Filta {
                         DestroyImmediate(_fusionSimulator.gameObject);
                         DestroyImmediate(_bodySimulator._filterObject.gameObject);
                         SpawnNewFilterType(SimulatorBase.SimulatorType.Face, SimulatorBase.SimulatorType.Fusion);
+                        EditorSceneManager.MarkAllScenesDirty();
                     }
 
                     break;
