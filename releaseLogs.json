@@ -190,5 +190,13 @@
       "pluginMinorVersion": 2
     },
     "releaseNotes": "- fix: video feed wrongly scaled on different game views.\n- fix: null reference error with smrs that have no mesh"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 1,
+      "pluginMinorVersion": 0
+    },
+    "releaseNotes": "- feat: default dynamic lighting is now toggleable. feat: better in-editor shadow resolution"
   }
 ]

@@ -34,9 +34,15 @@ public abstract class SimulatorBase : MonoBehaviour {
     
     [SerializeField]
     protected Camera mainCamera;
+
+    [SerializeField]
+    protected GameObject defaultLight;
     
     [NonSerialized]
     public bool isPlaying;
+
+    [NonSerialized]
+    public bool dynamicLightOn;
     
     [NonSerialized]
     public RenderTexture _stencilRT;
@@ -47,6 +53,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     protected DateTime _startTime;
     
     protected bool previousVisStatus;
+    protected bool previousLightStatus;
 
     protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
 
@@ -90,6 +97,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     }
 
     protected virtual void OnEnable() {
+        dynamicLightOn = defaultLight.activeSelf;
         _filePath = Path.GetFullPath("Packages/com.getfilta.artist-unityplug");
         if (!EditorApplication.isPlaying) {
             _remoteFeed.gameObject.SetActive(false);
@@ -107,11 +115,14 @@ public abstract class SimulatorBase : MonoBehaviour {
     public virtual void Disable() {
         mainCamera.gameObject.SetActive(false);
         _filterObject.gameObject.SetActive(false);
+        previousLightStatus = dynamicLightOn;
+        dynamicLightOn = false;
     }
 
     public virtual void Enable() {
         mainCamera.gameObject.SetActive(true);
         _filterObject.gameObject.SetActive(true);
+        dynamicLightOn = previousLightStatus;
     }
 
     protected virtual void Playback(long currentTime) {
