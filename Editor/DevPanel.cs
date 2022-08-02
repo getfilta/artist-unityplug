@@ -64,6 +64,7 @@ namespace Filta {
         private int _vertexNumber;
         private int _simulatorIndex;
         private bool _resetOnRecord;
+        private bool _dynamicLightOn;
         private int _tabIndex;
         
         private string _artistUid;
@@ -277,6 +278,13 @@ namespace Filta {
             float originalValue = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 215;
             _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
+            _simulator.dynamicLightOn =
+                EditorGUILayout.Toggle("Environmental Lighting Estimation", _simulator.dynamicLightOn);
+            //Used to mark scene as dirty when toggle value is changed
+            if (_dynamicLightOn != _simulator.dynamicLightOn) {
+                EditorSceneManager.MarkAllScenesDirty();
+            }
+            _dynamicLightOn = _simulator.dynamicLightOn;
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
@@ -382,15 +390,6 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
-            DrawUILine(Color.gray);
-            EditorGUILayout.LabelField("Dynamic Lighting", EditorStyles.boldLabel);
-            string defaultLightTitle = _bodySimulator.dynamicLightOn ? "Turn Off Dynamic Light" : "Turn On Dynamic Light";
-            SetButtonColor(_bodySimulator.dynamicLightOn);
-            if (GUILayout.Button(defaultLightTitle)) {
-                _bodySimulator.dynamicLightOn = !_bodySimulator.dynamicLightOn;
-                EditorSceneManager.MarkAllScenesDirty();
-            }
-            ResetButtonColor();
         }
 
         private void HandleFaceSimulator() {
@@ -443,15 +442,6 @@ namespace Filta {
                 GameObject newFace = _faceSimulator.SpawnNewFaceMesh();
                 Selection.activeGameObject = newFace;
             }
-            DrawUILine(Color.gray);
-            EditorGUILayout.LabelField("Dynamic Lighting", EditorStyles.boldLabel);
-            string defaultLightTitle = _faceSimulator.dynamicLightOn ? "Turn Off Dynamic Light" : "Turn On Dynamic Light";
-            SetButtonColor(_faceSimulator.dynamicLightOn);
-            if (GUILayout.Button(defaultLightTitle)) {
-                _faceSimulator.dynamicLightOn = !_faceSimulator.dynamicLightOn;
-                EditorSceneManager.MarkAllScenesDirty();
-            }
-            ResetButtonColor();
         }
 
         void HandleFilterTypeSwitching() {
