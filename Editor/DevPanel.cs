@@ -22,6 +22,10 @@ namespace Filta {
         private const string PublishPageLink = "https://www.getfilta.com/mint";
         private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
         private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
+
+        private const string RegistryName = "Filta Artist Suite";
+        private const string RegistryUrl = "https://registry.npmjs.org";
+        private const string RegistryScope = "com.getfilta.artist-unityplug";
         
         private const int Uploading = -1;
         private const int Limbo = 999;
@@ -870,6 +874,38 @@ namespace Filta {
         private void UpdatePanel() {
             _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
             SetStatusMessage("Updating plugin! Please wait a while");
+        }
+
+        [MenuItem("Filta/Update to latest plugin")]
+        public static async void UpdateToLatest() {
+            Debug.Log("Begin update");
+            string version = await Backend.Instance.GetPluginLatestVersion();
+            Debug.Log(version);
+            UpdatePanel(version);
+            Debug.Log("Done.");
+        }
+
+        private static void UpdatePanel(string version) {
+            ScopedRegistry filtaRegistry = new ScopedRegistry {
+                name = RegistryName,
+                url = RegistryUrl,
+                scopes = new[] {
+                    RegistryScope
+                }
+            };
+            string manifestPath = Path.Combine(Application.dataPath, "..", "Packages/manifest.json");
+            string manifestJson = File.ReadAllText(manifestPath);
+            ManifestJson manifest = JsonConvert.DeserializeObject<ManifestJson>(manifestJson);
+            if (!manifest.scopedRegistries.Contains(filtaRegistry)) {
+                manifest.scopedRegistries.Add(filtaRegistry);
+            }
+
+            if (manifest.dependencies.ContainsKey(RegistryScope)) {
+                manifest.dependencies[RegistryScope] = version;
+            }
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
+            //SetStatusMessage("Updating plugin! Please wait a while");
+            UnityEditor.PackageManager.Client.Resolve();
         }
         
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {

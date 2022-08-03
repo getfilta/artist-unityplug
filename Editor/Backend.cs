@@ -37,6 +37,7 @@ namespace Filta {
             return RunLocally ? TestFuncLocation + functionName : FuncLocation + functionName;
         }
         private const string ReleaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/releaseLogs.json";
+        private const string RegistryURL = "https://registry.npmjs.org/com.getfilta.artist-unityplug";
 
         private EventSourceReader _evt = null;
         private string _currentBundle;
@@ -129,6 +130,30 @@ namespace Filta {
             } catch (Exception e) {
                 Debug.LogError(e.Message);
                 return new();
+            }
+        }
+
+        public async Task<string> GetPluginLatestVersion() {
+            try {
+                using UnityWebRequest req = UnityWebRequest.Get(RegistryURL);
+                await req.SendWebRequest();
+                JObject jsonResult = JObject.Parse(req.downloadHandler.text);
+                JToken? distTags = jsonResult["dist-tags"];
+                if (distTags == null) {
+                    Debug.LogError("Did not find dist tags");
+                    return null;
+                }
+
+                JToken? latest = distTags["latest"];
+                if (latest == null) {
+                    Debug.LogError("Did not find latest");
+                    return null;
+                }
+                return latest.Value<string>();
+            }
+            catch (Exception e) {
+                Debug.LogError(e.Message);
+                return null;
             }
         }
 
@@ -407,6 +432,18 @@ namespace Filta {
         public FilterType filterType;
         public bool resetOnRecord;
         public bool dynamicLightOn;
+    }
+    
+    public class ScopedRegistry {
+        public string name;
+        public string url;
+        public string[] scopes;
+    }
+ 
+    public class ManifestJson {
+        public Dictionary<string,string> dependencies = new Dictionary<string, string>();
+ 
+        public List<ScopedRegistry> scopedRegistries = new List<ScopedRegistry>();
     }
 
     public class ReleaseInfo {
