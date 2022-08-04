@@ -895,6 +895,8 @@ namespace Filta {
             File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
             UnityEditor.PackageManager.Client.Resolve();
             _isUpdating = false;
+            SetStatusMessage("Plugin Update Complete!");
+            GetLocalReleaseInfo();
         }
         
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
