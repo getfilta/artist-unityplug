@@ -918,7 +918,7 @@ namespace Filta {
         private bool _isUpdating;
         
         private void HandleNewPluginVersion() {
-            if (_masterReleaseInfo == null || _localReleaseInfo == null) {
+            if (_masterReleaseInfo == null || _masterReleaseInfo.Count == 0 || _localReleaseInfo == null) {
                 return;
             }
 
