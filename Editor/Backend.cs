@@ -143,7 +143,6 @@ namespace Filta {
                     ReleaseInfo info = release.ToObject<ReleaseInfo>();
                     releaseInfos.Add(info);
                 }
-                Debug.Log(JsonConvert.SerializeObject(releaseInfos));
                 return releaseInfos;
             } catch (Exception e) {
                 Debug.LogError(e.Message);
