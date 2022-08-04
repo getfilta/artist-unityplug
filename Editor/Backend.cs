@@ -127,12 +127,24 @@ namespace Filta {
                 using UnityWebRequest req = UnityWebRequest.Get(RegistryURL);
                 await req.SendWebRequest();
                 JObject jsonResult = JObject.Parse(req.downloadHandler.text);
-                JArray? releaseLogs = (JArray)jsonResult["releaseLogs"];
-                if (releaseLogs == null) {
-                    Debug.LogError("Could not find release logs");
+                JToken versions = jsonResult["versions"];
+                if (versions == null) {
+                    Debug.LogError("Could not find versions");
                     return null;
                 }
-                return releaseLogs.ToObject<List<ReleaseInfo>>();
+
+                List<ReleaseInfo> releaseInfos = new List<ReleaseInfo>();
+                foreach (JProperty prop in versions) {
+                    JToken version = prop.Value;
+                    JToken release = version["release"];
+                    if (release == null) {
+                        continue;
+                    }
+                    ReleaseInfo info = release.ToObject<ReleaseInfo>();
+                    releaseInfos.Add(info);
+                }
+                Debug.Log(JsonConvert.SerializeObject(releaseInfos));
+                return releaseInfos;
             } catch (Exception e) {
                 Debug.LogError(e.Message);
                 return null;

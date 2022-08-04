@@ -962,13 +962,13 @@ namespace Filta {
         private static ReleaseInfo GetLocalReleaseInfo() {
             string data = File.ReadAllText($"{PackagePath}/package.json");
             JObject jsonResult = JObject.Parse(data);
-            JArray? releaseLogs = (JArray)jsonResult["releaseLogs"];
+            JToken? releaseLogs = jsonResult["release"];
             if (releaseLogs == null) {
                 Debug.LogError("Could not find release logs");
                 return null;
             }
 
-            ReleaseInfo localInfo = releaseLogs.ToObject<List<ReleaseInfo>>()[^1];
+            ReleaseInfo localInfo = releaseLogs.ToObject<ReleaseInfo>();
             return localInfo;
         }
         
