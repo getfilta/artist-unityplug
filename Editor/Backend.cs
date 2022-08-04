@@ -124,39 +124,20 @@ namespace Filta {
 
         public async Task<List<ReleaseInfo>> GetMasterReleaseInfo() {
             try {
-                using UnityWebRequest req = UnityWebRequest.Get(ReleaseURL);
-                await req.SendWebRequest();
-                return JsonConvert.DeserializeObject<List<ReleaseInfo>>(req.downloadHandler.text);
-            } catch (Exception e) {
-                Debug.LogError(e.Message);
-                return new();
-            }
-        }
-
-        public async Task<string> GetPluginLatestVersion() {
-            try {
                 using UnityWebRequest req = UnityWebRequest.Get(RegistryURL);
                 await req.SendWebRequest();
                 JObject jsonResult = JObject.Parse(req.downloadHandler.text);
-                JToken? distTags = jsonResult["dist-tags"];
-                if (distTags == null) {
-                    Debug.LogError("Did not find dist tags");
+                JArray? releaseLogs = (JArray)jsonResult["releaseLogs"];
+                if (releaseLogs == null) {
+                    Debug.LogError("Could not find release logs");
                     return null;
                 }
-
-                JToken? latest = distTags["latest"];
-                if (latest == null) {
-                    Debug.LogError("Did not find latest");
-                    return null;
-                }
-                return latest.Value<string>();
-            }
-            catch (Exception e) {
+                return releaseLogs.ToObject<List<ReleaseInfo>>();
+            } catch (Exception e) {
                 Debug.LogError(e.Message);
                 return null;
             }
         }
-
 
         public async Task<ArtsAndBundleStatus> GetArtsAndBundleStatus() {
             using UnityWebRequest req = UnityWebRequest.Get(PrivCollectionURL);

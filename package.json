@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -9,5 +9,215 @@
     "type": "git",
     "url": "https://github.com/getfilta/artist-unityplug"
   },
-  "type": "tool"
+  "type": "tool",
+  "releaseLogs": [
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 2
+      },
+      "releaseNotes": "- Body tracking fixes \n- Occlusion fixes"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 3
+      },
+      "releaseNotes": "- fix: objects parented to the Faces object aren't automatically turned to face meshes."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 4
+      },
+      "releaseNotes": "- fix: vertex indices not in proper positions on windows platform\n- fix: pressing f on trackers zooms in properly\n- feat: add warning when artists leave objects out of Filter object"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 5
+      },
+      "releaseNotes": "- new artist panel UX/UI\n- minor quality of life fixes"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 6
+      },
+      "releaseNotes": "- feat: better release notes."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 7
+      },
+      "releaseNotes": "- fix: bug of not being able to upload when you have objects outside of Filter object\n- visual: move filter queue to uploader panel"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 8
+      },
+      "releaseNotes": "- fix: meshes with blendshapes are now handled properly\n- visual: new simulator video"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 9
+      },
+      "releaseNotes": "- feat: add loading default filter editor layout\n- visual: new simulator video with blink\n- add logo to artist panel"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 10
+      },
+      "releaseNotes": "- feat: add realtime testing of filter with separate ArRemote app\n feat: change login method to remote-login"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 11
+      },
+      "releaseNotes": "- feat: add filta event triggers to visual scripting. event triggers include events that are triggered by mouth, left eye and right eye movements."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 12
+      },
+      "releaseNotes": "- feat: upgraded realtime testing of filter. now has better quality and shows filter on both editor and app. fix: status bar correctly shows when filter is done processing"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 13
+      },
+      "releaseNotes": "- feat: add hotkeys. fix: many small bugs"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 14
+      },
+      "releaseNotes": "- feat: auto-refresh filter queue."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 15
+      },
+      "releaseNotes": "- fix: post processing not working on artist remote."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 16
+      },
+      "releaseNotes": "- feat: add switching between face and body filter and also add face + body filter"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 17
+      },
+      "releaseNotes": "- fix: small bugs"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 18
+      },
+      "releaseNotes": "- feat: add filter size window for easy checking of filter size and big files.\n fix: small bugs"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 19
+      },
+      "releaseNotes": "- feat: add artist remote support for body tracking\n fix: bugs and issues"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 20
+      },
+      "releaseNotes": "- feat: add new LitFakeReflection shader under the Filta shader menu\n fix: setting default layout properly sets game resolution"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 21
+      },
+      "releaseNotes": "- feat: change face meshes to be skinned mesh renderers to allow them be piped into vfx graph"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 1,
+        "pluginMajorVersion": 5,
+        "pluginMinorVersion": 22
+      },
+      "releaseNotes": "- feat: create camera feed texture\n- feat: create body segmentation texture\n- feat: create face texture \n- feat: create shaders that can be used for body replacement or background replacement.\n- feat: handle touch input from artist remote\n- other small fixes"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 2,
+        "pluginMajorVersion": 0,
+        "pluginMinorVersion": 0
+      },
+      "releaseNotes": "- feat: change name of faces object to faceMeshes to avoid ux issues."
+    },
+    {
+      "version": {
+        "pluginAppVersion": 2,
+        "pluginMajorVersion": 0,
+        "pluginMinorVersion": 1
+      },
+      "releaseNotes": "- feat: improve face texture\n- make main camera a part of the simulator object"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 2,
+        "pluginMajorVersion": 0,
+        "pluginMinorVersion": 2
+      },
+      "releaseNotes": "- fix: video feed wrongly scaled on different game views.\n- fix: null reference error with smrs that have no mesh"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 2,
+        "pluginMajorVersion": 1,
+        "pluginMinorVersion": 0
+      },
+      "releaseNotes": "- feat: default dynamic lighting is now toggleable. feat: better in-editor shadow resolution"
+    },
+    {
+      "version": {
+        "pluginAppVersion": 2,
+        "pluginMajorVersion": 1,
+        "pluginMinorVersion": 1
+      },
+      "releaseNotes": "- feat: switch plugin to npm instead of git"
+    }
+  ]
 }

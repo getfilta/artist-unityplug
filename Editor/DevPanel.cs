@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Filta.Datatypes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
@@ -870,22 +871,10 @@ namespace Filta {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
             return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
         }
-        
-        private void UpdatePanel() {
-            _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
+
+        private void UpdatePanel(string version) {
+            _isUpdating = true;
             SetStatusMessage("Updating plugin! Please wait a while");
-        }
-
-        [MenuItem("Filta/Update to latest plugin")]
-        public static async void UpdateToLatest() {
-            Debug.Log("Begin update");
-            string version = await Backend.Instance.GetPluginLatestVersion();
-            Debug.Log(version);
-            UpdatePanel(version);
-            Debug.Log("Done.");
-        }
-
-        private static void UpdatePanel(string version) {
             ScopedRegistry filtaRegistry = new ScopedRegistry {
                 name = RegistryName,
                 url = RegistryUrl,
@@ -904,8 +893,8 @@ namespace Filta {
                 manifest.dependencies[RegistryScope] = version;
             }
             File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
-            //SetStatusMessage("Updating plugin! Please wait a while");
             UnityEditor.PackageManager.Client.Resolve();
+            _isUpdating = false;
         }
         
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
@@ -925,6 +914,8 @@ namespace Filta {
         private void ResetButtonColor() {
             GUI.backgroundColor = _normalBackgroundColor;
         }
+
+        private bool _isUpdating;
         
         private void HandleNewPluginVersion() {
             if (_masterReleaseInfo == null || _localReleaseInfo == null) {
@@ -933,16 +924,14 @@ namespace Filta {
 
             if (_masterReleaseInfo[^1].version.ToInt() > _localReleaseInfo.version.ToInt()) {
                 DisplayReleaseNotes();
-                if (_addRequest != null && !_addRequest.IsCompleted) {
+                if (_isUpdating) {
                     GUI.enabled = false;
-                } else if (_addRequest != null && !_addRequest.IsCompleted) {
-                    SetStatusMessage("Successfully updated plugin");
-                    _addRequest = null;
-                } else {
-                    GUI.enabled = true;
                 }
+                Version version = _masterReleaseInfo[^1].version;
+                string versionString =
+                    $"{version.pluginAppVersion}.{version.pluginMajorVersion}.{version.pluginMinorVersion}";
                 if (GUILayout.Button("Get latest plugin version")) {
-                    UpdatePanel();
+                    UpdatePanel(versionString);
                 }
 
                 GUI.enabled = true;
@@ -971,8 +960,16 @@ namespace Filta {
         }
         
         private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{PackagePath}/releaseLogs.json");
-            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
+            string data = File.ReadAllText($"{PackagePath}/package.json");
+            JObject jsonResult = JObject.Parse(data);
+            JArray? releaseLogs = (JArray)jsonResult["releaseLogs"];
+            if (releaseLogs == null) {
+                Debug.LogError("Could not find release logs");
+                return null;
+            }
+
+            ReleaseInfo localInfo = releaseLogs.ToObject<List<ReleaseInfo>>()[^1];
+            return localInfo;
         }
         
         private void SetStatusMessage(string message, bool isError = false) {
