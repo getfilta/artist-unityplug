@@ -129,6 +129,7 @@ namespace Filta {
                 JObject jsonResult = JObject.Parse(req.downloadHandler.text);
                 JToken versions = jsonResult["versions"];
                 if (versions == null) {
+                    Global.FireStatusChange(this, "Could not find versions");
                     Debug.LogError("Could not find versions");
                     return null;
                 }
@@ -145,6 +146,7 @@ namespace Filta {
                 }
                 return releaseInfos;
             } catch (Exception e) {
+                Global.FireStatusChange(this, e.Message);
                 Debug.LogError(e.Message);
                 return null;
             }
