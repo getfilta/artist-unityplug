@@ -198,5 +198,21 @@
       "pluginMinorVersion": 0
     },
     "releaseNotes": "- feat: default dynamic lighting is now toggleable. feat: better in-editor shadow resolution"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 1,
+      "pluginMinorVersion": 2
+    },
+    "releaseNotes": "- feat: switch plugin to npm instead of git"
+  },
+  {
+    "version": {
+      "pluginAppVersion": 2,
+      "pluginMajorVersion": 1,
+      "pluginMinorVersion": 3
+    },
+    "releaseNotes": "- fix: default renderer missing sometimes"
   }
 ]

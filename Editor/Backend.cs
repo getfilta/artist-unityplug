@@ -37,6 +37,7 @@ namespace Filta {
             return RunLocally ? TestFuncLocation + functionName : FuncLocation + functionName;
         }
         private const string ReleaseURL = "https://raw.githubusercontent.com/getfilta/artist-unityplug/main/releaseLogs.json";
+        private const string RegistryURL = "https://registry.npmjs.org/com.getfilta.artist-unityplug";
 
         private EventSourceReader _evt = null;
         private string _currentBundle;
@@ -123,15 +124,33 @@ namespace Filta {
 
         public async Task<List<ReleaseInfo>> GetMasterReleaseInfo() {
             try {
-                using UnityWebRequest req = UnityWebRequest.Get(ReleaseURL);
+                using UnityWebRequest req = UnityWebRequest.Get(RegistryURL);
                 await req.SendWebRequest();
-                return JsonConvert.DeserializeObject<List<ReleaseInfo>>(req.downloadHandler.text);
+                JObject jsonResult = JObject.Parse(req.downloadHandler.text);
+                JToken versions = jsonResult["versions"];
+                if (versions == null) {
+                    Global.FireStatusChange(this, "Could not find versions");
+                    Debug.LogError("Could not find versions");
+                    return null;
+                }
+
+                List<ReleaseInfo> releaseInfos = new List<ReleaseInfo>();
+                foreach (JProperty prop in versions) {
+                    JToken version = prop.Value;
+                    JToken release = version["release"];
+                    if (release == null) {
+                        continue;
+                    }
+                    ReleaseInfo info = release.ToObject<ReleaseInfo>();
+                    releaseInfos.Add(info);
+                }
+                return releaseInfos;
             } catch (Exception e) {
+                Global.FireStatusChange(this, e.Message);
                 Debug.LogError(e.Message);
-                return new();
+                return null;
             }
         }
-
 
         public async Task<ArtsAndBundleStatus> GetArtsAndBundleStatus() {
             using UnityWebRequest req = UnityWebRequest.Get(PrivCollectionURL);
@@ -407,6 +426,18 @@ namespace Filta {
         public FilterType filterType;
         public bool resetOnRecord;
         public bool dynamicLightOn;
+    }
+    
+    public class ScopedRegistry {
+        public string name;
+        public string url;
+        public string[] scopes;
+    }
+ 
+    public class ManifestJson {
+        public Dictionary<string,string> dependencies = new Dictionary<string, string>();
+ 
+        public List<ScopedRegistry> scopedRegistries = new List<ScopedRegistry>();
     }
 
     public class ReleaseInfo {

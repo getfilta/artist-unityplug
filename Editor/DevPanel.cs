@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Filta.Datatypes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
@@ -22,6 +23,10 @@ namespace Filta {
         private const string PublishPageLink = "https://www.getfilta.com/mint";
         private const string RunLocallyMenuName = "Filta/(ADVANCED) Use local firebase host";
         private const string TestEnvirMenuName = "Filta/(ADVANCED) Use test environment (forces a logout)";
+
+        private const string RegistryName = "Filta Artist Suite";
+        private const string RegistryUrl = "https://registry.npmjs.org";
+        private const string RegistryScope = "com.getfilta.artist-unityplug";
         
         private const int Uploading = -1;
         private const int Limbo = 999;
@@ -48,8 +53,8 @@ namespace Filta {
         private bool _watchingQueue;
         private GUIStyle _s;
         private Color _normalBackgroundColor;
-        private List<ReleaseInfo> _masterReleaseInfo;
-        private ReleaseInfo _localReleaseInfo;
+        private static List<ReleaseInfo> _masterReleaseInfo;
+        private static ReleaseInfo _localReleaseInfo;
         private AddRequest _addRequest;
         private bool _isRefreshing;
         private double _refreshTimer;
@@ -118,6 +123,14 @@ namespace Filta {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.SetStatusMessage("Logged out");
             GUI.FocusControl(null);
+        }
+
+        [MenuItem("Filta/Force Update Plugin", false, 7)]
+        static void ForceUpdate() {
+            Version version = _masterReleaseInfo[^1].version;
+            string versionString =
+                $"{version.pluginAppVersion}.{version.pluginMajorVersion}.{version.pluginMinorVersion}";
+            UpdatePanel(versionString);
         }
 
         [MenuItem(RunLocallyMenuName, false, 30)]
@@ -866,10 +879,28 @@ namespace Filta {
             ReleaseInfo releaseInfo = GetLocalReleaseInfo();
             return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
         }
-        
-        private void UpdatePanel() {
-            _addRequest = UnityEditor.PackageManager.Client.Add("https://github.com/getfilta/artist-unityplug.git");
-            SetStatusMessage("Updating plugin! Please wait a while");
+
+        private static void UpdatePanel(string version) {
+            ScopedRegistry filtaRegistry = new ScopedRegistry {
+                name = RegistryName,
+                url = RegistryUrl,
+                scopes = new[] {
+                    RegistryScope
+                }
+            };
+            string manifestPath = Path.Combine(Application.dataPath, "..", "Packages/manifest.json");
+            string manifestJson = File.ReadAllText(manifestPath);
+            ManifestJson manifest = JsonConvert.DeserializeObject<ManifestJson>(manifestJson);
+            if (!manifest.scopedRegistries.Contains(filtaRegistry)) {
+                manifest.scopedRegistries.Add(filtaRegistry);
+            }
+
+            if (manifest.dependencies.ContainsKey(RegistryScope)) {
+                manifest.dependencies[RegistryScope] = version;
+            }
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
+            UnityEditor.PackageManager.Client.Resolve();
+            GetLocalReleaseInfo();
         }
         
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10) {
@@ -889,24 +920,28 @@ namespace Filta {
         private void ResetButtonColor() {
             GUI.backgroundColor = _normalBackgroundColor;
         }
+
+        private bool _isUpdating;
         
         private void HandleNewPluginVersion() {
-            if (_masterReleaseInfo == null || _localReleaseInfo == null) {
+            if (_masterReleaseInfo == null || _masterReleaseInfo.Count == 0 || _localReleaseInfo == null) {
                 return;
             }
 
             if (_masterReleaseInfo[^1].version.ToInt() > _localReleaseInfo.version.ToInt()) {
                 DisplayReleaseNotes();
-                if (_addRequest != null && !_addRequest.IsCompleted) {
+                if (_isUpdating) {
                     GUI.enabled = false;
-                } else if (_addRequest != null && !_addRequest.IsCompleted) {
-                    SetStatusMessage("Successfully updated plugin");
-                    _addRequest = null;
-                } else {
-                    GUI.enabled = true;
                 }
+                Version version = _masterReleaseInfo[^1].version;
+                string versionString =
+                    $"{version.pluginAppVersion}.{version.pluginMajorVersion}.{version.pluginMinorVersion}";
                 if (GUILayout.Button("Get latest plugin version")) {
-                    UpdatePanel();
+                    _isUpdating = true;
+                    SetStatusMessage("Updating plugin! Please wait a while");
+                    UpdatePanel(versionString);
+                    _isUpdating = false;
+                    SetStatusMessage("Plugin Update Complete!");
                 }
 
                 GUI.enabled = true;
@@ -935,8 +970,16 @@ namespace Filta {
         }
         
         private static ReleaseInfo GetLocalReleaseInfo() {
-            string data = File.ReadAllText($"{PackagePath}/releaseLogs.json");
-            return JsonConvert.DeserializeObject<List<ReleaseInfo>>(data)[^1];
+            string data = File.ReadAllText($"{PackagePath}/package.json");
+            JObject jsonResult = JObject.Parse(data);
+            JToken? releaseLogs = jsonResult["release"];
+            if (releaseLogs == null) {
+                Debug.LogError("Could not find release logs");
+                return null;
+            }
+
+            ReleaseInfo localInfo = releaseLogs.ToObject<ReleaseInfo>();
+            return localInfo;
         }
         
         private void SetStatusMessage(string message, bool isError = false) {
