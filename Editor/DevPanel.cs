@@ -125,7 +125,7 @@ namespace Filta {
             GUI.FocusControl(null);
         }
 
-        [MenuItem("Filta/Force Update To Latest Plugin", false, 7)]
+        [MenuItem("Filta/Force Update Plugin", false, 7)]
         static void ForceUpdate() {
             Version version = _masterReleaseInfo[^1].version;
             string versionString =
