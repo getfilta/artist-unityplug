@@ -53,8 +53,8 @@ namespace Filta {
         private bool _watchingQueue;
         private GUIStyle _s;
         private Color _normalBackgroundColor;
-        private List<ReleaseInfo> _masterReleaseInfo;
-        private ReleaseInfo _localReleaseInfo;
+        private static List<ReleaseInfo> _masterReleaseInfo;
+        private static ReleaseInfo _localReleaseInfo;
         private AddRequest _addRequest;
         private bool _isRefreshing;
         private double _refreshTimer;
@@ -123,6 +123,14 @@ namespace Filta {
             DevPanel window = (DevPanel)GetWindow(typeof(DevPanel), true, $"Filta: Artist Panel - {GetVersionNumber()}");
             window.SetStatusMessage("Logged out");
             GUI.FocusControl(null);
+        }
+
+        [MenuItem("Filta/Force Update To Latest Plugin", false, 7)]
+        static void ForceUpdate() {
+            Version version = _masterReleaseInfo[^1].version;
+            string versionString =
+                $"{version.pluginAppVersion}.{version.pluginMajorVersion}.{version.pluginMinorVersion}";
+            UpdatePanel(versionString);
         }
 
         [MenuItem(RunLocallyMenuName, false, 30)]
@@ -872,9 +880,7 @@ namespace Filta {
             return $"v{releaseInfo.version.pluginAppVersion}.{releaseInfo.version.pluginMajorVersion}.{releaseInfo.version.pluginMinorVersion}";
         }
 
-        private void UpdatePanel(string version) {
-            _isUpdating = true;
-            SetStatusMessage("Updating plugin! Please wait a while");
+        private static void UpdatePanel(string version) {
             ScopedRegistry filtaRegistry = new ScopedRegistry {
                 name = RegistryName,
                 url = RegistryUrl,
@@ -894,8 +900,6 @@ namespace Filta {
             }
             File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
             UnityEditor.PackageManager.Client.Resolve();
-            _isUpdating = false;
-            SetStatusMessage("Plugin Update Complete!");
             GetLocalReleaseInfo();
         }
         
@@ -933,7 +937,11 @@ namespace Filta {
                 string versionString =
                     $"{version.pluginAppVersion}.{version.pluginMajorVersion}.{version.pluginMinorVersion}";
                 if (GUILayout.Button("Get latest plugin version")) {
+                    _isUpdating = true;
+                    SetStatusMessage("Updating plugin! Please wait a while");
                     UpdatePanel(versionString);
+                    _isUpdating = false;
+                    SetStatusMessage("Plugin Update Complete!");
                 }
 
                 GUI.enabled = true;

@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 1,
-      "pluginMinorVersion": 2
+      "pluginMinorVersion": 3
     },
-    "releaseNotes": "- feat: switch plugin to npm instead of git"
+    "releaseNotes": "- fix: default renderer missing sometimes"
   }
 }
