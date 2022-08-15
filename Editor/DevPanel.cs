@@ -898,7 +898,7 @@ namespace Filta {
             string manifestPath = Path.Combine(Application.dataPath, "..", "Packages/manifest.json");
             string manifestJson = File.ReadAllText(manifestPath);
             ManifestJson manifest = JsonConvert.DeserializeObject<ManifestJson>(manifestJson);
-            if (!manifest.scopedRegistries.Contains(filtaRegistry)) {
+            if (manifest.scopedRegistries.FindIndex((registry => registry.url == RegistryUrl)) == -1) {
                 manifest.scopedRegistries.Add(filtaRegistry);
             }
 
