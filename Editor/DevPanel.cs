@@ -391,6 +391,9 @@ namespace Filta {
                 if (GUILayout.Button("Reset")) {
                     _bodySimulator.ResetSimulator();
                 }
+                if (GUILayout.Button("Reset")) {
+                    _bodySimulator.ResetSimulator();
+                }
                 EditorGUILayout.EndHorizontal();
                 string visualizerButtonTitle = _bodySimulator.showBodyVisualiser ? "Hide Visualiser" : "Show Visualiser";
                 SetButtonColor(_bodySimulator.showBodyVisualiser);
@@ -415,6 +418,10 @@ namespace Filta {
                 if (GUILayout.Button("Play")) {
                     _faceSimulator.ResumeSimulator();
                 }
+            }
+
+            if (GUILayout.Button("Stop")) {
+                _faceSimulator.StopSimulator();
             }
             if (GUILayout.Button("Reset")) {
                 _faceSimulator.ResetSimulator();

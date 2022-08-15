@@ -27,6 +27,19 @@ public class HotKeys : Editor {
             TogglePlaying(simulator);
         }
     }
+    
+    [MenuItem("Filta Hotkeys/Stop Simulator &s")]
+    static void StopSimulator() {
+        FusionSimulator fusionSimulator = FindObjectOfType<FusionSimulator>();
+        if (fusionSimulator != null) {
+            fusionSimulator.GetActiveSimulator().StopSimulator();
+            return;
+        }
+        SimulatorBase simulator = FindObjectOfType<SimulatorBase>();
+        if (simulator != null) {
+            simulator.StopSimulator();
+        }
+    }
 
     static void TogglePlaying(SimulatorBase sim) {
         if (sim.isPlaying) {
