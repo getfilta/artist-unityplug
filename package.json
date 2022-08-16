@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -13,9 +13,9 @@
   "release": {
     "version": {
       "pluginAppVersion": 2,
-      "pluginMajorVersion": 1,
-      "pluginMinorVersion": 4
+      "pluginMajorVersion": 2,
+      "pluginMinorVersion": 0
     },
-    "releaseNotes": "- feat: add stop simulator\n- feat: add transparent shadow receiver shader"
+    "releaseNotes": "- feat: make main camera visible and selectable"
   }
 }
