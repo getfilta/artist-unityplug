@@ -388,8 +388,8 @@ namespace Filta {
                         _bodySimulator.ResumeSimulator();
                     }
                 }
-                if (GUILayout.Button("Reset")) {
-                    _bodySimulator.ResetSimulator();
+                if (GUILayout.Button("Stop")) {
+                    _bodySimulator.StopSimulator();
                 }
                 if (GUILayout.Button("Reset")) {
                     _bodySimulator.ResetSimulator();
