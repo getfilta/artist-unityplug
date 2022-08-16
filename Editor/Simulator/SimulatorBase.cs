@@ -143,6 +143,11 @@ public abstract class SimulatorBase : MonoBehaviour {
         _pauseTime = 0;
     }
 
+    public virtual void StopSimulator() {
+        ResetSimulator();
+        PauseSimulator();
+    }
+
     [ContextMenu("Toggle Visibility")]
     protected void ContextMenu() {
         _developerMode = !_developerMode;

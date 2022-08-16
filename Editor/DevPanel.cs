@@ -388,6 +388,9 @@ namespace Filta {
                         _bodySimulator.ResumeSimulator();
                     }
                 }
+                if (GUILayout.Button("Stop")) {
+                    _bodySimulator.StopSimulator();
+                }
                 if (GUILayout.Button("Reset")) {
                     _bodySimulator.ResetSimulator();
                 }
@@ -415,6 +418,10 @@ namespace Filta {
                 if (GUILayout.Button("Play")) {
                     _faceSimulator.ResumeSimulator();
                 }
+            }
+
+            if (GUILayout.Button("Stop")) {
+                _faceSimulator.StopSimulator();
             }
             if (GUILayout.Button("Reset")) {
                 _faceSimulator.ResetSimulator();
@@ -891,7 +898,7 @@ namespace Filta {
             string manifestPath = Path.Combine(Application.dataPath, "..", "Packages/manifest.json");
             string manifestJson = File.ReadAllText(manifestPath);
             ManifestJson manifest = JsonConvert.DeserializeObject<ManifestJson>(manifestJson);
-            if (!manifest.scopedRegistries.Contains(filtaRegistry)) {
+            if (manifest.scopedRegistries.FindIndex((registry => registry.url == RegistryUrl)) == -1) {
                 manifest.scopedRegistries.Add(filtaRegistry);
             }
 
