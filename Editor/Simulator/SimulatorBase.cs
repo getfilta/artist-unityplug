@@ -166,6 +166,8 @@ public abstract class SimulatorBase : MonoBehaviour {
         for (int i = 1; i < _objectsToHide.Length; i++) {
             _objectsToHide[i].gameObject.hideFlags = _customHideFlags;
         }
+
+        mainCamera.gameObject.hideFlags = HideFlags.NotEditable;
     }
     #endif
 }
