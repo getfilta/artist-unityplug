@@ -38,6 +38,9 @@ public abstract class SimulatorBase : MonoBehaviour {
     [SerializeField]
     protected GameObject defaultLight;
     
+    [SerializeField]
+    protected RawImage _videoFeed;
+    
     [NonSerialized]
     public bool isPlaying;
 
@@ -54,6 +57,9 @@ public abstract class SimulatorBase : MonoBehaviour {
     
     protected bool previousVisStatus;
     protected bool previousLightStatus;
+    
+    protected Canvas _canvas;
+    protected Texture2D _tex;
 
     protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
 

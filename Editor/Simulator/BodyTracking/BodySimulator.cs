@@ -129,6 +129,7 @@ public class BodySimulator : SimulatorBase {
         string bodyData = Encoding.ASCII.GetString(data);
         _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
         _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
+        _tex = new Texture2D(_bodyRecording.videoWidth, _bodyRecording.videoHeight, TextureFormat.ARGB32, false);
     }
     
     public override void Disable() {
@@ -155,7 +156,7 @@ public class BodySimulator : SimulatorBase {
                _rArmTracker != null && _lForearmTracker != null && _rForearmTracker != null && _lHandTracker != null &&
                _rHandTracker != null && _lUpLegTracker != null && _rUpLegTracker != null && _lLegTracker != null &&
                _rLegTracker != null && _lFootTracker != null && _rFootTracker != null && _spineTracker != null &&
-               _neckTracker != null && _headTracker != null && _remoteFeed != null;
+               _neckTracker != null && _headTracker != null && _remoteFeed != null && _canvas != null && _canvas.worldCamera != null;
     }
 
     protected override void EnforceObjectStructure() {
@@ -277,6 +278,15 @@ public class BodySimulator : SimulatorBase {
             if (i == 0) {
                 break;
             }
+            if (_videoFeed != null) {
+                _tex.LoadImage(bodyData.video);
+                _tex.Apply();
+                _videoFeed.texture = _tex;
+                if (_cameraFeed != null) {
+                    RenderTexture.active = _cameraFeed;
+                    Graphics.Blit(_tex, _cameraFeed);
+                }
+            }
             UpdateBodyVisualiser(bodyData);
             PositionTrackers(bodyData);
             UpdateBodyAvatars(bodyData);
@@ -291,6 +301,10 @@ public class BodySimulator : SimulatorBase {
             return;
         }
         SetFlags(true);
+        if (_videoFeed != null) {
+            _canvas = _videoFeed.GetComponentInParent<Canvas>();
+            _canvas.worldCamera = mainCamera;
+        }
         if (_remoteFeed != null) {
             _canvas = _remoteFeed.GetComponentInParent<Canvas>();
             _canvas.worldCamera = mainCamera;
@@ -392,9 +406,13 @@ public class BodySimulator : SimulatorBase {
 
     void PositionTrackers(ARBodyData bodyData) {
         List<ARBodyData.Joint> joints = bodyData._joints;
-        _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
-        _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
-        
+        _bodyVisualiser.position = bodyData.bodyPos;
+        _bodyVisualiser.eulerAngles = bodyData.bodyRot;
+        //_bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
+        //_bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        _bodyTracker.position = bodyData.bodyPos;
+        _bodyTracker.eulerAngles = bodyData.bodyRot;
+
         _bodyAvatars.localPosition = Vector3.zero;
         _bodyAvatars.localRotation = Quaternion.identity;
         _lShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorPose;
@@ -432,8 +450,8 @@ public class BodySimulator : SimulatorBase {
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
         
-        mainCamera.transform.position = Vector3.zero;
-        mainCamera.transform.rotation = Quaternion.identity;
+        mainCamera.transform.position = bodyData.camera.position;
+        mainCamera.transform.eulerAngles = bodyData.camera.rotation;
     }
     
     void PositionTrackers(DataSender.BodyData bodyData) {
@@ -780,12 +798,18 @@ public class BodySimulator : SimulatorBase {
     [Serializable]
     public class ARBodyRecording {
         public List<ARBodyData> _bodyData;
+        public int videoWidth;
+        public int videoHeight;
     }
 
     [Serializable]
     public class ARBodyData {
+        public Joint.Vector3Json bodyPos;
+        public Joint.Vector3Json bodyRot;
         public List<Joint> _joints;
         public long _timestamp;
+        public byte[] video;
+        public Simulator.FaceData.Trans camera;
 
         [Serializable]
         public class Joint {
