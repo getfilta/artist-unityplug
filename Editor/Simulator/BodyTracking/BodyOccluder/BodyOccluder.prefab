@@ -145,7 +145,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1bbbe1a42f3344717b596536ba117988, type: 3}
       propertyPath: m_Name
-      value: nakedMan
+      value: defaultBody
       objectReference: {fileID: 0}
     - target: {fileID: 1352883016842002118, guid: 1bbbe1a42f3344717b596536ba117988, type: 3}
       propertyPath: m_Name
