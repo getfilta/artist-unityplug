@@ -406,6 +406,12 @@ namespace Filta {
                     _bodySimulator.ToggleVisualiser(false);
                 }
             }
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField("Create Body Occluder", EditorStyles.boldLabel);
+            if (GUILayout.Button("Create")) {
+                GameObject newOccluder = _bodySimulator.SpawnNewBodyOccluder();
+                Selection.activeGameObject = newOccluder;
+            }
         }
 
         private void HandleFaceSimulator() {
