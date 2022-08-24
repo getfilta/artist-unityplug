@@ -17,6 +17,10 @@ public class BodySimulator : SimulatorBase {
     #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Body;
 
+    private const string OccluderPath = "Packages/com.getfilta.artist-unityplug/Editor/Simulator/BodyTracking/BodyOccluder/BodyOccluder.prefab";
+    [SerializeField]
+    private Transform _visualisers;
+
     [SerializeField]
     private Transform _bodyVisualiser;
 
@@ -129,6 +133,7 @@ public class BodySimulator : SimulatorBase {
         string bodyData = Encoding.ASCII.GetString(data);
         _bodyRecording = JsonConvert.DeserializeObject<ARBodyRecording>(bodyData);
         _recordingLength = _bodyRecording._bodyData[_bodyRecording._bodyData.Count - 1]._timestamp;
+        _tex = new Texture2D(_bodyRecording.videoWidth, _bodyRecording.videoHeight, TextureFormat.ARGB32, false);
     }
     
     public override void Disable() {
@@ -150,12 +155,12 @@ public class BodySimulator : SimulatorBase {
     }
 
     public override bool IsSetUpProperly() {
-        return _filterObject != null && mainTracker != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
+        return _filterObject != null && mainTracker != null && _visualisers != null && _bodyVisualiser != null && _visualiserAvatar != null && _bodyReference != null && _referenceAvatar != null && _bodyTracker != null &&
                _bodyAvatars != null && _lShoulderTracker != null && _rShoulderTracker != null && _lArmTracker != null &&
                _rArmTracker != null && _lForearmTracker != null && _rForearmTracker != null && _lHandTracker != null &&
                _rHandTracker != null && _lUpLegTracker != null && _rUpLegTracker != null && _lLegTracker != null &&
                _rLegTracker != null && _lFootTracker != null && _rFootTracker != null && _spineTracker != null &&
-               _neckTracker != null && _headTracker != null && _remoteFeed != null;
+               _neckTracker != null && _headTracker != null && _remoteFeed != null && _canvas != null && _canvas.worldCamera != null;
     }
 
     protected override void EnforceObjectStructure() {
@@ -277,6 +282,15 @@ public class BodySimulator : SimulatorBase {
             if (i == 0) {
                 break;
             }
+            if (_videoFeed != null) {
+                _tex.LoadImage(bodyData.video);
+                _tex.Apply();
+                _videoFeed.texture = _tex;
+                if (_cameraFeed != null) {
+                    RenderTexture.active = _cameraFeed;
+                    Graphics.Blit(_tex, _cameraFeed);
+                }
+            }
             UpdateBodyVisualiser(bodyData);
             PositionTrackers(bodyData);
             UpdateBodyAvatars(bodyData);
@@ -291,16 +305,25 @@ public class BodySimulator : SimulatorBase {
             return;
         }
         SetFlags(true);
+        if (_videoFeed != null) {
+            _canvas = _videoFeed.GetComponentInParent<Canvas>();
+            _canvas.worldCamera = mainCamera;
+        }
         if (_remoteFeed != null) {
             _canvas = _remoteFeed.GetComponentInParent<Canvas>();
             _canvas.worldCamera = mainCamera;
         }
+
+        if (_visualisers == null) {
+            _visualisers = transform.Find("Visualisers");
+        }
+        
         if (_bodyVisualiser == null) {
-            _bodyVisualiser = transform.GetChild(0);
+            _bodyVisualiser = _visualisers.GetChild(0);
         }
 
         if (_bodyReference == null) {
-            _bodyReference = transform.GetChild(1);
+            _bodyReference = _visualisers.GetChild(1);
         }
 
         if (_filterObject == null) {
@@ -392,9 +415,17 @@ public class BodySimulator : SimulatorBase {
 
     void PositionTrackers(ARBodyData bodyData) {
         List<ARBodyData.Joint> joints = bodyData._joints;
-        _bodyTracker.position = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].position;
-        _bodyTracker.eulerAngles = _visualiserAvatar._boneMapping[(int)Avatar.JointIndices.Root].eulerAngles;
+        _visualisers.position = bodyData.bodyPos;
+        _visualisers.eulerAngles = bodyData.bodyRot;
+        _bodyVisualiser.localPosition = Vector3.zero;
+        _bodyVisualiser.localRotation = Quaternion.identity;
+        _bodyReference.localPosition = Vector3.zero;
+        _bodyReference.localRotation = Quaternion.identity;
+
         
+        _bodyTracker.position = bodyData.bodyPos;
+        _bodyTracker.eulerAngles = bodyData.bodyRot;
+
         _bodyAvatars.localPosition = Vector3.zero;
         _bodyAvatars.localRotation = Quaternion.identity;
         _lShoulderTracker.localPosition = joints[(int)Avatar.JointIndices.LeftShoulder1]._anchorPose;
@@ -432,8 +463,8 @@ public class BodySimulator : SimulatorBase {
         _headTracker.localPosition = joints[(int)Avatar.JointIndices.Head]._anchorPose;
         _headTracker.localEulerAngles = joints[(int)Avatar.JointIndices.Head]._anchorRotation;
         
-        mainCamera.transform.position = Vector3.zero;
-        mainCamera.transform.rotation = Quaternion.identity;
+        mainCamera.transform.position = bodyData.camera.position;
+        mainCamera.transform.eulerAngles = bodyData.camera.rotation;
     }
     
     void PositionTrackers(DataSender.BodyData bodyData) {
@@ -441,6 +472,9 @@ public class BodySimulator : SimulatorBase {
         if (joints == null || joints.Length < 1) {
             return;
         }
+        _visualisers.position = bodyData.bodyPosition;
+        _visualisers.eulerAngles = bodyData.bodyRotation;
+        
         _bodyTracker.position = bodyData.bodyPosition;
         _bodyTracker.eulerAngles = bodyData.bodyRotation;
         
@@ -489,6 +523,13 @@ public class BodySimulator : SimulatorBase {
 
     private List<Avatar> _avatars;
     private int _avatarCount;
+
+    public GameObject SpawnNewBodyOccluder() {
+        GameObject occluderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(OccluderPath);
+        object occluder = PrefabUtility.InstantiatePrefab(occluderPrefab, _bodyAvatars);
+        return occluder as GameObject;
+    }
+    
     void GetBodyAvatars() {
         if (_avatarCount == _bodyAvatars.childCount) {
             return;
@@ -780,12 +821,18 @@ public class BodySimulator : SimulatorBase {
     [Serializable]
     public class ARBodyRecording {
         public List<ARBodyData> _bodyData;
+        public int videoWidth;
+        public int videoHeight;
     }
 
     [Serializable]
     public class ARBodyData {
+        public Joint.Vector3Json bodyPos;
+        public Joint.Vector3Json bodyRot;
         public List<Joint> _joints;
         public long _timestamp;
+        public byte[] video;
+        public Simulator.FaceData.Trans camera;
 
         [Serializable]
         public class Joint {

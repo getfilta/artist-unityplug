@@ -58,8 +58,6 @@ public class Simulator : SimulatorBase {
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
 
-    private Canvas _canvas;
-
     [SerializeField]
     private Mesh bounds;
 
@@ -72,9 +70,6 @@ public class Simulator : SimulatorBase {
     [NonSerialized]
     public RenderTexture _faceTexture;
 
-    [SerializeField]
-    private RawImage _videoFeed;
-
     private long _prevTime;
     private int _previousFrame;
     private bool _skipFaceSimulator;
@@ -84,8 +79,7 @@ public class Simulator : SimulatorBase {
 
     private DataSender _dataSender;
     private readonly float _coefficientScale = 100f;
-
-    private Texture2D _tex;
+    
     private Texture2D _stencilTex;
 
     private Cloth[] _cloths;
