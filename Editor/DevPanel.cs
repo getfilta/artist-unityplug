@@ -48,6 +48,7 @@ namespace Filta {
         private string _selectedArtKey = "";
         private Vector2 _simulatorScrollPosition;
         private Vector2 _uploaderScrollPosition;
+        private Vector2 _adminScrollPosition;
         private ArtsAndBundleStatus _artsAndBundleStatus = new();
         private PluginInfo _pluginInfo;
         private bool _watchingQueue;
@@ -678,12 +679,14 @@ namespace Filta {
             DrawUILine(Color.grey);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Private Collection");
+            _adminScrollPosition = GUILayout.BeginScrollView(_adminScrollPosition);
             foreach (ArtMeta item in _artMetas) {
-                bool clicked = GUILayout.Button(item.title);
+                bool clicked = GUILayout.Button($"{item.title} v{item.version}");
                 if (clicked) {
                     GetUnityPackageUrl(item);
                 }
             }
+            GUILayout.EndScrollView();
         }
 
         private async void GetUnityPackageUrl(ArtMeta art) {
