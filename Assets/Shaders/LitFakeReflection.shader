@@ -2,7 +2,7 @@ Shader "Filta/LitFakeReflection"
     {
         Properties
         {
-        [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 0.0
+            [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 0.0
             _BaseTexture("BaseTexture", 2D) = "white" {}
             [HDR]_BaseColor("BaseColor", Color) = (1, 1, 1, 1)
             _Metallic("Metallic", Range(0, 1)) = 0
@@ -104,8 +104,7 @@ Shader "Filta/LitFakeReflection"
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
                 #pragma shader_feature_local_fragment _ _SPECULAR_SETUP
                 #pragma shader_feature_local _ _RECEIVE_SHADOWS_OFF
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -211,7 +210,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -366,6 +364,11 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
+                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
+                {
+                    Out = A * B;
+                }
+                
                 void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
                 {
                     Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
@@ -374,11 +377,6 @@ Shader "Filta/LitFakeReflection"
                 void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
                 {
                     Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
-                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
-                {
-                    Out = A * B;
                 }
                 
                 void Unity_FresnelEffect_float(float3 Normal, float3 ViewDir, float Power, out float Out)
@@ -410,24 +408,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -467,6 +449,22 @@ Shader "Filta/LitFakeReflection"
                     float _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_A_7 = _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0.a;
                     float4 _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2;
                     Unity_Multiply_float4_float4(_Property_6a1adda745294d059fffadfaa863638c_Out_0, _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0, _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2);
+                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
+                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+                    #else
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
+                    #endif
+                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
+                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
+                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
+                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
+                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     float4 _Property_a45d582cfcc6470bbc159ec46aee4232_Out_0 = IsGammaSpace() ? LinearToSRGB(_Emission_Color) : _Emission_Color;
                     UnityTexture2D _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0 = UnityBuildTexture2DStruct(_Emission_Map);
                     float4 _SampleTexture2D_f0549c0e3d564362ba9b7426c74f3d98_RGBA_0 = SAMPLE_TEXTURE2D(_Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.tex, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.samplerstate, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.GetTransformedUV(IN.uv0.xy));
@@ -503,7 +501,7 @@ Shader "Filta/LitFakeReflection"
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_A_4 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[3];
                     float _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0 = _AlphaClipThreshold;
                     surface.BaseColor = (_Multiply_b57de817a55745fd8c03aba79eba566e_Out_2.xyz);
-                    surface.NormalTS = IN.TangentSpaceNormal;
+                    surface.NormalTS = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
                     surface.Emission = (_Add_ed388982523a4feeb56764cbb134f284_Out_2.xyz);
                     surface.Metallic = _Property_dd2d4b2f1ffe45f28bd020d7ee60ba8e_Out_0;
                     surface.Specular = IsGammaSpace() ? float3(0.5, 0.5, 0.5) : SRGBToLinear(float3(0.5, 0.5, 0.5));
@@ -529,7 +527,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -640,8 +637,7 @@ Shader "Filta/LitFakeReflection"
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
                 #pragma shader_feature_local_fragment _ _SPECULAR_SETUP
                 #pragma shader_feature_local _ _RECEIVE_SHADOWS_OFF
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -747,7 +743,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -902,6 +897,11 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
+                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
+                {
+                    Out = A * B;
+                }
+                
                 void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
                 {
                     Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
@@ -910,11 +910,6 @@ Shader "Filta/LitFakeReflection"
                 void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
                 {
                     Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
-                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
-                {
-                    Out = A * B;
                 }
                 
                 void Unity_FresnelEffect_float(float3 Normal, float3 ViewDir, float Power, out float Out)
@@ -946,24 +941,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -1003,6 +982,22 @@ Shader "Filta/LitFakeReflection"
                     float _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_A_7 = _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0.a;
                     float4 _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2;
                     Unity_Multiply_float4_float4(_Property_6a1adda745294d059fffadfaa863638c_Out_0, _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0, _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2);
+                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
+                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+                    #else
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
+                    #endif
+                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
+                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
+                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
+                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
+                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     float4 _Property_a45d582cfcc6470bbc159ec46aee4232_Out_0 = IsGammaSpace() ? LinearToSRGB(_Emission_Color) : _Emission_Color;
                     UnityTexture2D _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0 = UnityBuildTexture2DStruct(_Emission_Map);
                     float4 _SampleTexture2D_f0549c0e3d564362ba9b7426c74f3d98_RGBA_0 = SAMPLE_TEXTURE2D(_Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.tex, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.samplerstate, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.GetTransformedUV(IN.uv0.xy));
@@ -1039,7 +1034,7 @@ Shader "Filta/LitFakeReflection"
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_A_4 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[3];
                     float _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0 = _AlphaClipThreshold;
                     surface.BaseColor = (_Multiply_b57de817a55745fd8c03aba79eba566e_Out_2.xyz);
-                    surface.NormalTS = IN.TangentSpaceNormal;
+                    surface.NormalTS = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
                     surface.Emission = (_Add_ed388982523a4feeb56764cbb134f284_Out_2.xyz);
                     surface.Metallic = _Property_dd2d4b2f1ffe45f28bd020d7ee60ba8e_Out_0;
                     surface.Specular = IsGammaSpace() ? float3(0.5, 0.5, 0.5) : SRGBToLinear(float3(0.5, 0.5, 0.5));
@@ -1065,7 +1060,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -1158,8 +1152,7 @@ Shader "Filta/LitFakeReflection"
             // Keywords
             #pragma multi_compile _ _CASTING_PUNCTUAL_LIGHT_SHADOW
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -1232,7 +1225,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -1347,16 +1339,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -1376,24 +1358,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -1451,7 +1417,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -1534,7 +1499,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -1605,7 +1570,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -1717,16 +1681,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -1746,24 +1700,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -1821,7 +1759,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -1903,7 +1840,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -1973,6 +1910,8 @@ Shader "Filta/LitFakeReflection"
                 };
                 struct SurfaceDescriptionInputs
                 {
+                     float3 ObjectSpaceNormal;
+                     float3 WorldSpaceNormal;
                      float3 TangentSpaceNormal;
                      float4 uv0;
                 };
@@ -1981,7 +1920,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -2128,24 +2066,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -2170,6 +2092,22 @@ Shader "Filta/LitFakeReflection"
                 SurfaceDescription SurfaceDescriptionFunction(SurfaceDescriptionInputs IN)
                 {
                     SurfaceDescription surface = (SurfaceDescription)0;
+                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
+                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+                    #else
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
+                    #endif
+                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
+                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
+                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
+                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
+                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     float4 _Property_6a1adda745294d059fffadfaa863638c_Out_0 = IsGammaSpace() ? LinearToSRGB(_BaseColor) : _BaseColor;
                     UnityTexture2D _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0 = UnityBuildTexture2DStruct(_BaseTexture);
                     float4 _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0 = SAMPLE_TEXTURE2D(_Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.tex, _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.samplerstate, _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.GetTransformedUV(IN.uv0.xy));
@@ -2184,7 +2122,7 @@ Shader "Filta/LitFakeReflection"
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_B_3 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[2];
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_A_4 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[3];
                     float _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0 = _AlphaClipThreshold;
-                    surface.NormalTS = IN.TangentSpaceNormal;
+                    surface.NormalTS = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
                     surface.Alpha = _Split_e3ef57d67fc5429498762ceb5acabc91_A_4;
                     surface.AlphaClipThreshold = _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0;
                     return surface;
@@ -2205,7 +2143,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -2223,8 +2160,13 @@ Shader "Filta/LitFakeReflection"
                 
                     
                 
+                    // must use interpolated tangent, bitangent and normal before they are normalized in the pixel shader.
+                    float3 unnormalizedNormalWS = input.normalWS;
+                    const float renormFactor = 1.0 / length(unnormalizedNormalWS);
                 
                 
+                    output.WorldSpaceNormal = renormFactor * input.normalWS.xyz;      // we want a unit length Normal Vector node in shader graph
+                    output.ObjectSpaceNormal = normalize(mul(output.WorldSpaceNormal, (float3x3) UNITY_MATRIX_M));           // transposed multiplication by inverse matrix to handle normal scale
                     output.TangentSpaceNormal = float3(0.0f, 0.0f, 1.0f);
                 
                 
@@ -2285,7 +2227,7 @@ Shader "Filta/LitFakeReflection"
             // Keywords
             #pragma shader_feature _ EDITOR_VISUALIZATION
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -2374,7 +2316,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -2498,16 +2439,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -2542,24 +2473,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -2648,7 +2563,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -2733,7 +2647,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -2806,7 +2720,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -2918,16 +2831,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -2947,24 +2850,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -3022,7 +2909,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -3100,7 +2986,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -3173,7 +3059,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -3285,16 +3170,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -3314,24 +3189,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -3389,7 +3248,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -3470,7 +3328,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -3541,7 +3399,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -3653,16 +3510,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -3682,24 +3529,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -3759,7 +3590,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -3876,7 +3706,7 @@ Shader "Filta/LitFakeReflection"
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
                 #pragma shader_feature_local_fragment _ _SPECULAR_SETUP
                 #pragma shader_feature_local _ _RECEIVE_SHADOWS_OFF
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -3982,7 +3812,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -4137,6 +3966,11 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
+                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
+                {
+                    Out = A * B;
+                }
+                
                 void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
                 {
                     Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
@@ -4145,11 +3979,6 @@ Shader "Filta/LitFakeReflection"
                 void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
                 {
                     Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
-                void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
-                {
-                    Out = A * B;
                 }
                 
                 void Unity_FresnelEffect_float(float3 Normal, float3 ViewDir, float Power, out float Out)
@@ -4181,24 +4010,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -4238,6 +4051,22 @@ Shader "Filta/LitFakeReflection"
                     float _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_A_7 = _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0.a;
                     float4 _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2;
                     Unity_Multiply_float4_float4(_Property_6a1adda745294d059fffadfaa863638c_Out_0, _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0, _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2);
+                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
+                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+                    #else
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
+                    #endif
+                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
+                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
+                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
+                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
+                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     float4 _Property_a45d582cfcc6470bbc159ec46aee4232_Out_0 = IsGammaSpace() ? LinearToSRGB(_Emission_Color) : _Emission_Color;
                     UnityTexture2D _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0 = UnityBuildTexture2DStruct(_Emission_Map);
                     float4 _SampleTexture2D_f0549c0e3d564362ba9b7426c74f3d98_RGBA_0 = SAMPLE_TEXTURE2D(_Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.tex, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.samplerstate, _Property_1b3eb446b9e54fb3bb5fceb38de040ae_Out_0.GetTransformedUV(IN.uv0.xy));
@@ -4274,7 +4103,7 @@ Shader "Filta/LitFakeReflection"
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_A_4 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[3];
                     float _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0 = _AlphaClipThreshold;
                     surface.BaseColor = (_Multiply_b57de817a55745fd8c03aba79eba566e_Out_2.xyz);
-                    surface.NormalTS = IN.TangentSpaceNormal;
+                    surface.NormalTS = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
                     surface.Emission = (_Add_ed388982523a4feeb56764cbb134f284_Out_2.xyz);
                     surface.Metallic = _Property_dd2d4b2f1ffe45f28bd020d7ee60ba8e_Out_0;
                     surface.Specular = IsGammaSpace() ? float3(0.5, 0.5, 0.5) : SRGBToLinear(float3(0.5, 0.5, 0.5));
@@ -4300,7 +4129,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -4391,7 +4219,7 @@ Shader "Filta/LitFakeReflection"
             // Keywords
             #pragma multi_compile _ _CASTING_PUNCTUAL_LIGHT_SHADOW
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -4464,7 +4292,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -4579,16 +4406,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -4608,24 +4425,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -4683,7 +4484,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -4765,7 +4565,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -4836,7 +4636,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -4948,16 +4747,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -4977,24 +4766,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -5052,7 +4825,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -5133,7 +4905,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -5203,6 +4975,8 @@ Shader "Filta/LitFakeReflection"
                 };
                 struct SurfaceDescriptionInputs
                 {
+                     float3 ObjectSpaceNormal;
+                     float3 WorldSpaceNormal;
                      float3 TangentSpaceNormal;
                      float4 uv0;
                 };
@@ -5211,7 +4985,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -5358,24 +5131,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -5400,6 +5157,22 @@ Shader "Filta/LitFakeReflection"
                 SurfaceDescription SurfaceDescriptionFunction(SurfaceDescriptionInputs IN)
                 {
                     SurfaceDescription surface = (SurfaceDescription)0;
+                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
+                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+                    #else
+                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
+                    #endif
+                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
+                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
+                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
+                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
+                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
+                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     float4 _Property_6a1adda745294d059fffadfaa863638c_Out_0 = IsGammaSpace() ? LinearToSRGB(_BaseColor) : _BaseColor;
                     UnityTexture2D _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0 = UnityBuildTexture2DStruct(_BaseTexture);
                     float4 _SampleTexture2D_d831fcca0a814660807b2e939539e4f8_RGBA_0 = SAMPLE_TEXTURE2D(_Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.tex, _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.samplerstate, _Property_4e579567d25a40f99cc05baf1b086c1f_Out_0.GetTransformedUV(IN.uv0.xy));
@@ -5414,7 +5187,7 @@ Shader "Filta/LitFakeReflection"
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_B_3 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[2];
                     float _Split_e3ef57d67fc5429498762ceb5acabc91_A_4 = _Multiply_b57de817a55745fd8c03aba79eba566e_Out_2[3];
                     float _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0 = _AlphaClipThreshold;
-                    surface.NormalTS = IN.TangentSpaceNormal;
+                    surface.NormalTS = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
                     surface.Alpha = _Split_e3ef57d67fc5429498762ceb5acabc91_A_4;
                     surface.AlphaClipThreshold = _Property_4fc2498a850c41a8a7526f9d97e2552c_Out_0;
                     return surface;
@@ -5435,7 +5208,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -5453,8 +5225,13 @@ Shader "Filta/LitFakeReflection"
                 
                     
                 
+                    // must use interpolated tangent, bitangent and normal before they are normalized in the pixel shader.
+                    float3 unnormalizedNormalWS = input.normalWS;
+                    const float renormFactor = 1.0 / length(unnormalizedNormalWS);
                 
                 
+                    output.WorldSpaceNormal = renormFactor * input.normalWS.xyz;      // we want a unit length Normal Vector node in shader graph
+                    output.ObjectSpaceNormal = normalize(mul(output.WorldSpaceNormal, (float3x3) UNITY_MATRIX_M));           // transposed multiplication by inverse matrix to handle normal scale
                     output.TangentSpaceNormal = float3(0.0f, 0.0f, 1.0f);
                 
                 
@@ -5515,7 +5292,7 @@ Shader "Filta/LitFakeReflection"
             // Keywords
             #pragma shader_feature _ EDITOR_VISUALIZATION
                 #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+                #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -5604,7 +5381,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -5728,16 +5504,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -5772,24 +5538,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -5878,7 +5628,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -5964,7 +5713,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -6037,7 +5786,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -6149,16 +5897,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -6178,24 +5916,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -6253,7 +5975,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -6332,7 +6053,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -6405,7 +6126,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -6517,16 +6237,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -6546,24 +6256,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -6621,7 +6315,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
@@ -6703,7 +6396,7 @@ Shader "Filta/LitFakeReflection"
             
             // Keywords
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-                            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
             // GraphKeywords: <None>
             
             // Defines
@@ -6774,7 +6467,6 @@ Shader "Filta/LitFakeReflection"
                      float3 ObjectSpaceNormal;
                      float3 ObjectSpaceTangent;
                      float3 ObjectSpacePosition;
-                     float4 uv0;
                 };
                 struct PackedVaryings
                 {
@@ -6886,16 +6578,6 @@ Shader "Filta/LitFakeReflection"
             
             // Graph Functions
             
-                void Unity_NormalStrength_float(float3 In, float Strength, out float3 Out)
-                {
-                    Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
-                }
-                
-                void Unity_NormalBlend_float(float3 A, float3 B, out float3 Out)
-                {
-                    Out = SafeNormalize(float3(A.rg + B.rg, A.b * B.b));
-                }
-                
                 void Unity_Multiply_float4_float4(float4 A, float4 B, out float4 Out)
                 {
                     Out = A * B;
@@ -6915,24 +6597,8 @@ Shader "Filta/LitFakeReflection"
                 VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
                 {
                     VertexDescription description = (VertexDescription)0;
-                    UnityTexture2D _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0 = UnityBuildTexture2DStruct(_Normal_Map);
-                    #if defined(SHADER_API_GLES) && (SHADER_TARGET < 30)
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = float4(0.0f, 0.0f, 0.0f, 1.0f);
-                    #else
-                      float4 _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0 = SAMPLE_TEXTURE2D_LOD(_Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.tex, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.samplerstate, _Property_04f8fce8d6ce4e929224e39afe1b60e5_Out_0.GetTransformedUV(IN.uv0.xy), 0);
-                    #endif
-                    _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.rgb = UnpackNormal(_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0);
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_R_5 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.r;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_G_6 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.g;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_B_7 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.b;
-                    float _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_A_8 = _SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.a;
-                    float _Property_8b766139f69a45838f9c3225f987b805_Out_0 = _NormalStrength;
-                    float3 _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2;
-                    Unity_NormalStrength_float((_SampleTexture2DLOD_02314d228273486ab4318d393afa10ef_RGBA_0.xyz), _Property_8b766139f69a45838f9c3225f987b805_Out_0, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2);
-                    float3 _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
-                    Unity_NormalBlend_float(IN.ObjectSpaceNormal, _NormalStrength_35f15cab4e5b40bfb98ab5c553b148f2_Out_2, _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2);
                     description.Position = IN.ObjectSpacePosition;
-                    description.Normal = _NormalBlend_53d463b3a3d149b2b8781e24e525f79d_Out_2;
+                    description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
                     return description;
                 }
@@ -6992,7 +6658,6 @@ Shader "Filta/LitFakeReflection"
                     output.ObjectSpaceNormal =                          input.normalOS;
                     output.ObjectSpaceTangent =                         input.tangentOS.xyz;
                     output.ObjectSpacePosition =                        input.positionOS;
-                    output.uv0 =                                        input.uv0;
                 
                     return output;
                 }
