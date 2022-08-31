@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 2,
-      "pluginMinorVersion": 1
+      "pluginMinorVersion": 2
     },
-    "releaseNotes": "- feat: add video for body simulator.\n- feat: add create body occluder button in artist panel"
+    "releaseNotes": "- fix: normals of fake reflection shader."
   }
 }
