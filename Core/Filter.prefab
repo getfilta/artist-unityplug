@@ -280,7 +280,7 @@ GameObject:
   - component: {fileID: 1507604817244997749}
   - component: {fileID: 773723967862845241}
   m_Layer: 0
-  m_Name: FaceMasks
+  m_Name: FaceBlendshapes
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
