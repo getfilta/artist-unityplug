@@ -13,9 +13,9 @@
   "release": {
     "version": {
       "pluginAppVersion": 2,
-      "pluginMajorVersion": 2,
-      "pluginMinorVersion": 2
+      "pluginMajorVersion": 3,
+      "pluginMinorVersion": 0
     },
-    "releaseNotes": "- fix: normals of fake reflection shader."
+    "releaseNotes": "- feat: change object name from FaceMasks to FaceBlendshapes.\n- fix: issue of face texture not working when Variables component is on Filta object"
   }
 }
