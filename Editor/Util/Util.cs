@@ -30,9 +30,16 @@ namespace Filta {
             Variables variables = filterDuplicate.AddComponent<Variables>();
             variables.declarations.Set("CameraFeed", simulator._cameraFeed);
             variables.declarations.Set("BodySegmentation", simulator._stencilRT);
+            int componentCount = filterDuplicate.GetComponents<Component>().Length;
             if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
                 Simulator sim = simulator.gameObject.GetComponent<Simulator>();
                 variables.declarations.Set("FaceTexture", sim._faceTexture);
+            }
+            for (int i = 0; i < componentCount; i++) {
+                bool top = UnityEditorInternal.ComponentUtility.MoveComponentUp(variables);
+                if (!top) {
+                    break;
+                }
             }
             PrefabUtility.SaveAsPrefabAsset(filterDuplicate, savePath, out bool success);
             Object.DestroyImmediate(filterDuplicate);
