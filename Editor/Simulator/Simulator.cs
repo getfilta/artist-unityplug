@@ -15,6 +15,9 @@ using UnityEditor;
 
 public class Simulator : SimulatorBase {
     public EventHandler<UpdateBlendShapeWeightEventArgs> updateBlendShapeWeightEvent = delegate { };
+    public EventHandler<FaceData.Trans> onFaceUpdate;
+    public EventHandler onFaceAdd;
+    public EventHandler onFaceRemove;
 
 #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Face;
@@ -88,6 +91,8 @@ public class Simulator : SimulatorBase {
     
     private static readonly int CameraMatrix = Shader.PropertyToID("_Matrix");
     private static readonly int ScreenSize = Shader.PropertyToID("_Screen");
+
+    private bool _restarted;
 
     protected override void Awake() {
         base.Awake();
@@ -331,6 +336,7 @@ public class Simulator : SimulatorBase {
     }
 
     void PositionTrackers(FaceData faceData) {
+        onFaceUpdate?.Invoke(this, faceData.face);
         _faceTracker.localPosition = faceData.face.localPosition;
         _faceTracker.localEulerAngles = faceData.face.localRotation;
         _leftEyeTracker.localPosition = faceData.leftEye.localPosition;
@@ -346,6 +352,8 @@ public class Simulator : SimulatorBase {
     }
     
     void PositionTrackers(DataSender.FaceData faceData) {
+        onFaceUpdate?.Invoke(this,
+            new FaceData.Trans {localPosition = faceData.facePosition, localRotation = faceData.faceRotation});
         _faceTracker.localPosition = faceData.facePosition;
         _faceTracker.localEulerAngles = faceData.faceRotation;
         _leftEyeTracker.localPosition = faceData.leftEyePosition;
@@ -420,7 +428,14 @@ public class Simulator : SimulatorBase {
             return;
         }
 
+        if (_restarted) {
+            _restarted = false;
+            onFaceAdd?.Invoke(this, null);
+        }
+
         if (currentTime > _recordingLength) {
+            _restarted = true;
+            onFaceRemove?.Invoke(this, null);
             _startTime = DateTime.Now;
             _pauseTime = 0;
             return;
