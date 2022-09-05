@@ -4,11 +4,11 @@ using Object = UnityEngine.Object;
 
 namespace Filta.VisualScripting {
     [UnitCategory("Events/Filta")]
-    public class OnRightEyeOpenValueChange : ManualEventUnit<Unit> {
-        protected override string hookName => "RightEyeOpen";
+    public class OnLeftEyeCloseValueChange : ManualEventUnit<Unit> {
+        protected override string hookName => "LeftEyeClose";
 
         [DoNotSerialize]
-        private ValueOutput _rightEyeOpenValue;
+        private ValueOutput _leftEyeCloseValue;
 
         GraphReference _graph;
         private ArTriggerEvents _arTriggerEvents;
@@ -16,7 +16,7 @@ namespace Filta.VisualScripting {
         private float _val;
         protected override void Definition() {
             base.Definition();
-            _rightEyeOpenValue = ValueOutput("Right Eye Open Value", _ => _val);
+            _leftEyeCloseValue = ValueOutput("Left Eye Close Value", _ => _val);
         }
 
         public override void StartListening(GraphStack stack)
@@ -24,10 +24,10 @@ namespace Filta.VisualScripting {
             base.StartListening(stack);
             _graph = stack.AsReference();
             _arTriggerEvents = Object.FindObjectOfType<ArTriggerEvents>();
-            _arTriggerEvents.onRightEyeValueChange += OnRightEyeOpenValueChanged;
+            _arTriggerEvents.onLeftEyeValueChange += OnLeftEyeCloseValueChanged;
         }
 
-        private void OnRightEyeOpenValueChanged(object sender, float val) {
+        private void OnLeftEyeCloseValueChanged(object sender, float val) {
             _val = val;
             Trigger(_graph, this);
         }
@@ -35,7 +35,7 @@ namespace Filta.VisualScripting {
         public override void StopListening(GraphStack stack)
         {
             base.StopListening(stack);
-            _arTriggerEvents.onRightEyeValueChange -= OnRightEyeOpenValueChanged;
+            _arTriggerEvents.onLeftEyeValueChange -= OnLeftEyeCloseValueChanged;
         }
         
     }
