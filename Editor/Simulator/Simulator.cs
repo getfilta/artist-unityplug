@@ -428,7 +428,7 @@ public class Simulator : SimulatorBase {
             return;
         }
 
-        if (_restarted) {
+        if (_restarted && currentTime > 500f) {
             _restarted = false;
             onFaceAdd?.Invoke(this, null);
         }
