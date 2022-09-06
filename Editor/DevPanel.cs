@@ -287,6 +287,7 @@ namespace Filta {
             } else {
                 EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
                 DrawUILine(Color.gray);
+                return;
             }
             EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
             float originalValue = EditorGUIUtility.labelWidth;
