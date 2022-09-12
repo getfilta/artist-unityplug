@@ -16,6 +16,6 @@
       "pluginMajorVersion": 3,
       "pluginMinorVersion": 0
     },
-    "releaseNotes": "- feat: change object name from FaceMasks to FaceBlendshapes.\n- fix: issue of face texture not working when Variables component is on Filta object\n- feat: add onFaceAdd, onFaceRemove and onFaceUpdate nodes.\n- fix: rename OnEyeOpenValueChange nodes to OnEyeCloseValueChange"
+    "releaseNotes": "- feat: change object name from FaceMasks to FaceBlendshapes.\n- fix: issue of face texture not working when Variables component is on Filta object\n- feat: add onFaceAdd, onFaceRemove and onFaceUpdate nodes.\n- fix: rename OnEyeOpenValueChange nodes to OnEyeCloseValueChange\n- fix: body simulator video still showing when you switch to face only"
   }
 }

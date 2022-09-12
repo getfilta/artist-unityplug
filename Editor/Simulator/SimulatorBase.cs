@@ -123,12 +123,14 @@ public abstract class SimulatorBase : MonoBehaviour {
         _filterObject.gameObject.SetActive(false);
         previousLightStatus = dynamicLightOn;
         dynamicLightOn = false;
+        _videoFeed.gameObject.SetActive(false);
     }
 
     public virtual void Enable() {
         mainCamera.gameObject.SetActive(true);
         _filterObject.gameObject.SetActive(true);
         dynamicLightOn = previousLightStatus;
+        _videoFeed.gameObject.SetActive(true);
     }
 
     protected virtual void Playback(long currentTime) {
