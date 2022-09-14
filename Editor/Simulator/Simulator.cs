@@ -130,14 +130,12 @@ public class Simulator : SimulatorBase {
         previousVisStatus = showFaceMeshVisualiser;
         showFaceMeshVisualiser = false;
         PauseSimulator();
-        _videoFeed.gameObject.SetActive(false);
     }
 
     public override void Enable() {
         base.Enable();
         showFaceMeshVisualiser = previousVisStatus;
         ResumeSimulator();
-        _videoFeed.gameObject.SetActive(true);
     }
 
     public override void TryAutomaticSetup() {
