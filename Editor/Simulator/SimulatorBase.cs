@@ -63,6 +63,9 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     protected const string PackagePath = "Packages/com.getfilta.artist-unityplug";
 
+    [SerializeField]
+    protected SimulatorData simulatorData;
+
     public virtual bool IsSetUpProperly() {
         return false;
     }

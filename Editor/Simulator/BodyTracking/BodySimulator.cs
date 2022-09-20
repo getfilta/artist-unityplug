@@ -539,7 +539,7 @@ public class BodySimulator : SimulatorBase {
     }
 
     //Finds mesh used by skinned renderer and uses this to obtain the model file
-    private Transform GetModelTransform(GameObject model) {
+    private Transform GetModelTransform(GameObject model, out string p) {
         Transform result = null;
         //This means that if other skinned mesh renderers exist, the main one must be top of the hierarchy.
         //string path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
@@ -547,15 +547,36 @@ public class BodySimulator : SimulatorBase {
         if (String.IsNullOrEmpty(path)) {
             path = AssetDatabase.GetAssetPath(model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh);
         }
+        p = path;
+        result = GetModelTransform(path);
+        return result;
+    }
+
+    private Transform GetModelTransform(string path) {
+        Transform result = null;
         Object obj = AssetDatabase.LoadMainAssetAtPath(path);
         GameObject gO = obj as GameObject;
         result = gO.transform;
         return result;
     }
 
-    private void RevertToOriginalPose(GameObject model) {
+    private string RevertToOriginalPose(GameObject model) {
         SetFlags(true);
-        Transform root = GetModelTransform(model);
+        Transform root = GetModelTransform(model, out string path);
+        Avatar rootAvatar = new Avatar(root);
+        Avatar modelAvatar = new Avatar(model.transform);
+        for (int i = 0; i < modelAvatar._boneMapping.Length; i++) {
+            if (modelAvatar._boneMapping[i] != null && rootAvatar._boneMapping[i] != null) {
+                modelAvatar._boneMapping[i].localRotation = rootAvatar._boneMapping[i].localRotation;
+            }
+        }
+        SetFlags();
+        return path;
+    }
+
+    private void RevertToOriginalPose(GameObject model, string path) {
+        SetFlags(true);
+        Transform root = GetModelTransform(path);
         Avatar rootAvatar = new Avatar(root);
         Avatar modelAvatar = new Avatar(model.transform);
         for (int i = 0; i < modelAvatar._boneMapping.Length; i++) {
@@ -576,13 +597,27 @@ public class BodySimulator : SimulatorBase {
     }
 
     void InitializeBodyAvatars() {
+        if (simulatorData == null) {
+            return;
+        }
         _avatars = new List<Avatar>();
         _referenceAvatar = new Avatar(_bodyReference);
         _visualiserAvatar = new Avatar(_bodyVisualiser);
         _visualiserAvatar.Compensate(_visualiserAvatar._boneMapping);
+        if (!EditorApplication.isPlayingOrWillChangePlaymode) {
+            simulatorData.avatarRootPaths = new List<string>();
+        }
         for (int i = 0; i < _bodyAvatars.childCount; i++) {
             Avatar avatar = new Avatar(_bodyAvatars.GetChild(i));
-            RevertToOriginalPose(avatar.root.gameObject);
+            if (!EditorApplication.isPlayingOrWillChangePlaymode) {
+                string path = RevertToOriginalPose(avatar.root.gameObject);
+                simulatorData.avatarRootPaths.Add(path);
+            } else {
+                if (simulatorData.avatarRootPaths != null && simulatorData.avatarRootPaths.Count > i) {
+                    RevertToOriginalPose(avatar.root.gameObject, simulatorData.avatarRootPaths[i]);
+                }
+            }
+            
             avatar.Compensate(_referenceAvatar._boneMapping);
             _avatars.Add(avatar);
         }
