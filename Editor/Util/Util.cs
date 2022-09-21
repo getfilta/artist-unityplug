@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +10,10 @@ namespace Filta {
     public static class Util
     {
         private const string PackagePath = "Packages/com.getfilta.artist-unityplug";
+        private const string FaceTexturePath = "Packages/com.getfilta.artist-unityplug/Assets/Textures/FaceTexture.renderTexture";
+        private const string CameraFeedPath = "Packages/com.getfilta.artist-unityplug/Assets/Textures/CameraFeed.renderTexture";
+        private const string BodySegPath = "Packages/com.getfilta.artist-unityplug/Assets/Textures/BodySegmentationStencil.renderTexture";
+        private const string MockPath = "Assets/TextureCheckerFilter.prefab";
         public static GameObject GetFilterObject() {
             GameObject filterObject;
             FusionSimulator fusionSimulator = Object.FindObjectOfType<FusionSimulator>();
@@ -22,25 +27,12 @@ namespace Filta {
             }
             return filterObject;
         }
-        
+
         public static bool GenerateFilterPrefab(GameObject filterObject, string savePath) {
             SimulatorBase simulator = Object.FindObjectOfType<SimulatorBase>();
             GameObject filterDuplicate = Object.Instantiate(filterObject);
             filterDuplicate.name = "Filter";
-            Variables variables = filterDuplicate.AddComponent<Variables>();
-            variables.declarations.Set("CameraFeed", simulator._cameraFeed);
-            variables.declarations.Set("BodySegmentation", simulator._stencilRT);
-            int componentCount = filterDuplicate.GetComponents<Component>().Length;
-            if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
-                Simulator sim = simulator.gameObject.GetComponent<Simulator>();
-                variables.declarations.Set("FaceTexture", sim._faceTexture);
-            }
-            for (int i = 0; i < componentCount; i++) {
-                bool top = UnityEditorInternal.ComponentUtility.MoveComponentUp(variables);
-                if (!top) {
-                    break;
-                }
-            }
+            HandleTextures(filterDuplicate, simulator);
             PrefabUtility.SaveAsPrefabAsset(filterDuplicate, savePath, out bool success);
             Object.DestroyImmediate(filterDuplicate);
             FusionSimulator fusionSimulator = Object.FindObjectOfType<FusionSimulator>();
@@ -53,6 +45,35 @@ namespace Filta {
             }
 
             return success;
+        }
+
+        private static void HandleTextures(GameObject filter, SimulatorBase simulator) {
+            Variables variables = filter.AddComponent<Variables>();
+            int componentCount = filter.GetComponents<Component>().Length;
+            PrefabUtility.SaveAsPrefabAsset(filter, MockPath, out bool success);
+            string[] paths = AssetDatabase.GetDependencies(MockPath, true);
+            if (paths.Contains(FaceTexturePath)) {
+                if (simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
+                    Simulator sim = simulator.gameObject.GetComponent<Simulator>();
+                    variables.declarations.Set("FaceTexture", sim._faceTexture);
+                    variables.declarations.Set("CameraFeed", simulator._cameraFeed);
+                    variables.declarations.Set("BodySegmentation", simulator._stencilRT);
+                }
+            } else {
+                if (paths.Contains(CameraFeedPath)) {
+                    variables.declarations.Set("CameraFeed", simulator._cameraFeed);
+                }
+                if (paths.Contains(BodySegPath)) {
+                    variables.declarations.Set("BodySegmentation", simulator._stencilRT);
+                }
+            }
+            for (int i = 0; i < componentCount; i++) {
+                bool top = UnityEditorInternal.ComponentUtility.MoveComponentUp(variables);
+                if (!top) {
+                    break;
+                }
+            }
+            AssetDatabase.DeleteAsset(MockPath);
         }
         
 
