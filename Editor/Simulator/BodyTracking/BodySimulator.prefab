@@ -548,6 +548,7 @@ MonoBehaviour:
   mainCamera: {fileID: 6709967429197249878}
   defaultLight: {fileID: 3831128737349744715}
   _videoFeed: {fileID: 8535943671436044879}
+  simulatorData: {fileID: 11400000, guid: 14f147acd13dd475cbe49e614c55330f, type: 2}
   _visualisers: {fileID: 4643498059026719459}
   _bodyVisualiser: {fileID: 1494972964667014327}
   _bodyReference: {fileID: 1730920378736478976}

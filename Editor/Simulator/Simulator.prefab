@@ -638,6 +638,8 @@ MonoBehaviour:
   _remoteFeed: {fileID: 7382256431116267783}
   mainCamera: {fileID: 3777437209611732919}
   defaultLight: {fileID: 4417709660473707537}
+  _videoFeed: {fileID: 4417709659914063239}
+  simulatorData: {fileID: 11400000, guid: 14f147acd13dd475cbe49e614c55330f, type: 2}
   _faceMeshVisualiser: {fileID: 7865246587290439175}
   _faceSampler: {fileID: 1969032685521354159}
   _visualiserOffset: 0
@@ -649,7 +651,6 @@ MonoBehaviour:
   _facesHolder: {fileID: 0}
   _vertices: {fileID: 0}
   bounds: {fileID: 1017558197362468757, guid: fee4799afba254cce9969a3b9320a043, type: 3}
-  _videoFeed: {fileID: 4417709659914063239}
 --- !u!114 &3231588854487278633
 MonoBehaviour:
   m_ObjectHideFlags: 0
