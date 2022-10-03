@@ -151,6 +151,7 @@ public class Simulator : SimulatorBase {
 
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {
+            beauty.Initialize();
             SetFlags();
             return;
         }
@@ -231,6 +232,7 @@ public class Simulator : SimulatorBase {
             if (rightEyelashHolder == null) {
                 rightEyelashHolder = _faceTracker.Find("RightEyelashHolder");
             }
+            beauty.Initialize();
         }
 
         SetFlags();

@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.VisualScripting;
-
 #if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+using UnityEditor;
 [ExecuteAlways]
 #endif
 public class Beauty : MonoBehaviour {
@@ -72,6 +73,28 @@ public class Beauty : MonoBehaviour {
     [SerializeField]
     private Simulator simulator;
 
+    private bool _initialized;
+
+    public void Initialize() {
+        Transform left = simulator.leftEyelashHolder.Find(LeftEyelashName);
+        Transform right = simulator.rightEyelashHolder.Find(RightEyelashName);
+        if (left != null) {
+            _leftEyelash = left.gameObject;
+            _leftVariables = _leftEyelash.GetComponent<Variables>();
+            _leftMeshFilter = _leftEyelash.GetComponent<MeshFilter>();
+            leftEyelashActive = true;
+        }
+
+        if (right != null) {
+            _rightEyelash = right.gameObject;
+            _rightVariables = _rightEyelash.GetComponent<Variables>();
+            _rightMeshFilter = _rightEyelash.GetComponent<MeshFilter>();
+            rightEyelashActive = true;
+        }
+
+        _initialized = true;
+    }
+
     public void HandlePlayback(Vector3[] leftVertices, Vector3[] rightVertices) {
         leftEyeVertices = leftVertices;
         rightEyeVertices = rightVertices;
@@ -79,6 +102,9 @@ public class Beauty : MonoBehaviour {
     }
     
     public void HandlePlayback() {
+        if (!_initialized) {
+            return;
+        }
         if (simulator == null) {
             simulator = GetComponent<Simulator>();
         }
@@ -102,42 +128,47 @@ public class Beauty : MonoBehaviour {
 
     private void HandleEyelashToggling() {
         if (leftEyelashActive && _leftEyelash == null) {
-            Transform left = simulator.leftEyelashHolder.Find(LeftEyelashName);
-            if (left == null) {
-                GenerateEyelash(Eye.Left);
-            } else {
-                _leftEyelash = left.gameObject;
-            }
+            GenerateEyelashObject(Eye.Left);
         } else if (!leftEyelashActive && _leftEyelash != null) {
             DestroyImmediate(_leftEyelash);
             _leftEyelash = null;
+#if UNITY_EDITOR
+            EditorSceneManager.MarkAllScenesDirty();
+#endif
         }
 
         if (rightEyelashActive && _rightEyelash == null) {
-            Transform right = simulator.rightEyelashHolder.Find(RightEyelashName);
-            if (right == null) {
-                GenerateEyelash(Eye.Right);
-            } else {
-                _rightEyelash = right.gameObject;
-            }
+            GenerateEyelashObject(Eye.Right);
         } else if (!rightEyelashActive && _rightEyelash != null) {
             DestroyImmediate(_rightEyelash);
             _rightEyelash = null;
+#if UNITY_EDITOR
+            EditorSceneManager.MarkAllScenesDirty();
+#endif
         }
     }
 
-    private void GenerateEyelash(Eye eye) {
+    private void GenerateEyelashObject(Eye eye) {
         if (eye == Eye.Left) {
             _leftEyelash = Instantiate(eyelashPrefab, simulator.leftEyelashHolder);
+#if UNITY_EDITOR
+            Selection.activeGameObject = _leftEyelash;
+#endif
             _leftEyelash.name = LeftEyelashName;
             _leftVariables = _leftEyelash.GetComponent<Variables>();
             _leftMeshFilter = _leftEyelash.GetComponent<MeshFilter>();
         } else {
             _rightEyelash = Instantiate(eyelashPrefab, simulator.rightEyelashHolder);
+#if UNITY_EDITOR
+            Selection.activeGameObject = _rightEyelash;
+#endif
             _rightEyelash.name = RightEyelashName;
             _rightVariables = _rightEyelash.GetComponent<Variables>();
             _rightMeshFilter = _rightEyelash.GetComponent<MeshFilter>();
         }
+#if UNITY_EDITOR
+        EditorSceneManager.MarkAllScenesDirty();
+#endif
     }
 
     private void GenerateMesh(Eye eye) {
@@ -145,11 +176,11 @@ public class Beauty : MonoBehaviour {
         Vector3[] verts;
         MeshFilter filter;
         if (eye == Eye.Left) {
-            curve = _leftCurve;
+            curve = LeftCurve;
             verts = leftEyeVertices;
             filter = _leftMeshFilter;
         } else {
-            curve = _rightCurve;
+            curve = RightCurve;
             verts = rightEyeVertices;
             filter = _rightMeshFilter;
         }
