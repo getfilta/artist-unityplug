@@ -35,8 +35,8 @@ namespace Filta {
         private const int DefaultGameViewWidth = 1170;
         private const int DefaultGameViewHeight = 2532;
         
-        private readonly string[] _toolbarTitles = { "Simulator", "Uploader"};
-        private readonly string[] _adminToolbarTitles = { "Simulator", "Uploader", "Admin" };
+        private readonly string[] _toolbarTitles = { "Simulator","Beauty", "Uploader"};
+        private readonly string[] _adminToolbarTitles = { "Simulator","Beauty", "Uploader", "Admin" };
         private readonly string[] _packagePaths = { "Assets/pluginInfo.json", VariantTempSave };
         private readonly string[] _simulatorOptions = { "Face", "Body", "Face + Body" };
 
@@ -202,9 +202,12 @@ namespace Filta {
                         DrawSimulator();
                         break;
                     case 1:
-                        DrawUploader();
+                        DrawBeauty();
                         break;
                     case 2:
+                        DrawUploader();
+                        break;
+                    case 3:
                         DrawAdminTools();
                         break;
                 }
@@ -275,7 +278,7 @@ namespace Filta {
                 }
             }
         }
-        
+
         private void DrawSimulator() {
             _simulatorScrollPosition = GUILayout.BeginScrollView(_simulatorScrollPosition);
             HandleNewPluginVersion();
@@ -598,6 +601,32 @@ namespace Filta {
 
             if (localFilter is not null) {
                 localFilter.transform.SetAsLastSibling();
+            }
+        }
+
+        #endregion
+
+        #region Beauty
+
+        private bool _leftEyelashActive;
+        private bool _rightEyelashActive;
+
+        private void DrawBeauty() {
+            Beauty beauty = _faceSimulator.beauty;
+            if (beauty == null) {
+                return;
+            }
+            EditorGUILayout.LabelField("Eyelashes", EditorStyles.boldLabel);
+            beauty.leftEyelashActive = EditorGUILayout.Toggle("Left Eyelash Active", beauty.leftEyelashActive);
+            beauty.LeftCurve = EditorGUILayout.CurveField("Left Eyelash Curve", beauty.LeftCurve);
+            if (GUILayout.Button("Copy right eyelash")) {
+                beauty.LeftCurve.keys = beauty.RightCurve.keys;
+            }
+            EditorGUILayout.Space();
+            beauty.rightEyelashActive = EditorGUILayout.Toggle("Right Eyelash Active", beauty.rightEyelashActive);
+            beauty.RightCurve = EditorGUILayout.CurveField("Right Eyelash Curve", beauty.RightCurve);
+            if (GUILayout.Button("Copy left eyelash")) {
+                beauty.RightCurve.keys = beauty.LeftCurve.keys;
             }
         }
 

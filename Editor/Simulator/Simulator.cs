@@ -56,6 +56,10 @@ public class Simulator : SimulatorBase {
 
     [FormerlySerializedAs("facesHolder"), SerializeField]
     private Transform _facesHolder;
+    
+    public Transform leftEyelashHolder;
+    
+    public Transform rightEyelashHolder;
 
     [SerializeField]
     private Transform _vertices;
@@ -93,6 +97,10 @@ public class Simulator : SimulatorBase {
     private static readonly int ScreenSize = Shader.PropertyToID("_Screen");
 
     private bool _restarted;
+    public Beauty beauty;
+    
+    private Vector3[] _leftEyeVertices;
+    private Vector3[] _rightEyeVertices;
 
     protected override void Awake() {
         base.Awake();
@@ -107,6 +115,9 @@ public class Simulator : SimulatorBase {
         for (int i = 0; i < _faceMeshes.Count; i++) {
             _skinnedFaceMeshes.Add(_faceMeshes[i].GetComponent<SkinnedMeshRenderer>());
         }
+
+        _leftEyeVertices = new Vector3[11];
+        _rightEyeVertices = new Vector3[11];
     }
 
     protected override void OnEnable() {
@@ -145,6 +156,9 @@ public class Simulator : SimulatorBase {
         }
 
         SetFlags(true);
+        if (beauty == null) {
+            beauty = GetComponent<Beauty>();
+        }
         if (_videoFeed != null) {
             _canvas = _videoFeed.GetComponentInParent<Canvas>();
             _canvas.worldCamera = mainCamera;
@@ -209,6 +223,14 @@ public class Simulator : SimulatorBase {
             if (_vertices == null) {
                 _vertices = _faceTracker.Find("Vertices");
             }
+
+            if (leftEyelashHolder == null) {
+                leftEyelashHolder = _faceTracker.Find("LeftEyelashHolder");
+            }
+
+            if (rightEyelashHolder == null) {
+                rightEyelashHolder = _faceTracker.Find("RightEyelashHolder");
+            }
         }
 
         SetFlags();
@@ -225,7 +247,7 @@ public class Simulator : SimulatorBase {
         return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _meshFilter != null && _faceSampler != null && _sampleMeshFilter != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
-               _facesHolder != null && _vertices != null && _canvas != null && _canvas.worldCamera != null;
+               _facesHolder != null && _vertices != null && leftEyelashHolder != null && rightEyelashHolder != null && _canvas != null && _canvas.worldCamera != null && beauty != null;
     }
 
     private bool HasRecordingData() {
@@ -262,6 +284,7 @@ public class Simulator : SimulatorBase {
 
         if (!isPlaying) {
             _startTime = DateTime.Now;
+            beauty.HandlePlayback();
             return;
         }
 
@@ -387,6 +410,8 @@ public class Simulator : SimulatorBase {
         _faceMaskHolder.name = "FaceBlendshapes";
         _facesHolder.name = "FaceMeshes";
         _vertices.name = "Vertices";
+        leftEyelashHolder.name = "LeftEyelashHolder";
+        rightEyelashHolder.name = "RightEyelashHolder";
         gameObject.name = "Simulator";
         _filterObject.name = "Filter";
         _filterObject.position = Vector3.zero;
@@ -710,6 +735,7 @@ public class Simulator : SimulatorBase {
     }
 
     private void HandleVertexPairing(List<Vector3> vertices) {
+        HandleEyelash(vertices);
         if (vertexTrackers == null) {
             return;
         }
@@ -733,6 +759,28 @@ public class Simulator : SimulatorBase {
                 vertexTracker.holder.transform.localPosition = vertices[vertexTracker.vertexIndex];
             }
         }
+    }
+
+    private void HandleEyelash(List<Vector3> vertices) {
+        if (vertices == null || vertices.Count <= 1194) {
+            return;
+        }
+
+        if (_leftEyeVertices == null || _leftEyeVertices.Length != 11) {
+            _leftEyeVertices = new Vector3[11];
+        }
+
+        if (_rightEyeVertices == null || _rightEyeVertices.Length != 11) {
+            _rightEyeVertices = new Vector3[11];
+        }
+        int leftStart = 1182;
+        int rightStart = 1179;
+        for (int i = 0; i < 11; i++) {
+            _leftEyeVertices[i] = vertices[leftStart + i];
+            _rightEyeVertices[i] = vertices[rightStart - i];
+        }
+        
+        beauty.HandlePlayback(_leftEyeVertices, _rightEyeVertices);
     }
 
     public GameObject GenerateVertexTracker(int index) {
