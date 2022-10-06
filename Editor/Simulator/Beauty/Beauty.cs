@@ -31,6 +31,20 @@ public class Beauty : MonoBehaviour {
 
     private const string LeftEyelashName = "LeftEyelash";
     private const string RightEyelashName = "RightEyelash";
+    
+    private Vector3[] _vertices;
+    private Vector3[] _normals;
+    private Vector2[] _uv;
+    private int[] _indices;
+
+    private int _sideSize;
+    
+    private int _vertCount;
+    private int _indicesCount;
+    
+    AnimationCurve _curve;
+    Vector3[] _verts;
+    MeshFilter _filter;
 
     public enum Eye {
         Left,
@@ -91,6 +105,14 @@ public class Beauty : MonoBehaviour {
             _rightMeshFilter = _rightEyelash.GetComponent<MeshFilter>();
             rightEyelashActive = true;
         }
+        
+        _sideSize = Simulator.EyelashVertexCount;
+        int vertexLength = (((resolution * 2) * (_sideSize - 1)) + (2 * (_sideSize - 1))) * 2;
+        int indexLength = 6 * resolution * (_sideSize - 1) * 2;
+        _vertices = new Vector3[vertexLength];
+        _normals = new Vector3[vertexLength];
+        _uv = new Vector2[vertexLength];
+        _indices = new int[indexLength];
 
         _initialized = true;
     }
@@ -172,113 +194,111 @@ public class Beauty : MonoBehaviour {
     }
 
     private void GenerateMesh(Eye eye) {
-        AnimationCurve curve;
-        Vector3[] verts;
-        MeshFilter filter;
         if (eye == Eye.Left) {
-            curve = LeftCurve;
-            verts = leftEyeVertices;
-            filter = _leftMeshFilter;
+            _curve = LeftCurve;
+            _verts = leftEyeVertices;
+            _filter = _leftMeshFilter;
         } else {
-            curve = RightCurve;
-            verts = rightEyeVertices;
-            filter = _rightMeshFilter;
+            _curve = RightCurve;
+            _verts = rightEyeVertices;
+            _filter = _rightMeshFilter;
         }
         
-        float increments = curve.keys[^1].time / resolution;
-        int sideSize = verts.Length;
-        Mesh mesh = filter.sharedMesh;
+        float increments = _curve.keys[^1].time / resolution;
+        Mesh mesh = _filter.sharedMesh;
         if (mesh == null) {
             mesh = new Mesh();
-            filter.sharedMesh = mesh;
+            _filter.sharedMesh = mesh;
         }
         mesh.Clear();
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector3> normals = new List<Vector3>();
-        List<int> indices = new List<int>();
-        List<Vector2> uv = new List<Vector2>();
         float uvLength = resolution * increments;
         int indCount = 0;
         Vector3 totalDifference = Vector3.zero;
-        float fullWidth = verts[^1].x - verts[0].x;
-        for (int j = 0; j < sideSize - 1; j++) {
-            Vector3 difference = verts[j + 1] - verts[j];
-            vertices.Add(totalDifference);
-            vertices.Add(totalDifference + difference);
-            uv.Add(Vector3.right * totalDifference.x/fullWidth);
-            uv.Add(Vector3.right * ((totalDifference.x + difference.x))/fullWidth);
-            normals.Add(Vector3.up);
-            normals.Add(Vector3.up);
+        float fullWidth = _verts[^1].x - _verts[0].x;
+        _vertCount = 0;
+        _indicesCount = 0;
+        for (int j = 0; j < _sideSize - 1; j++) {
+            Vector3 difference = _verts[j + 1] - _verts[j];
+            _vertices[_vertCount] = totalDifference;
+            _uv[_vertCount] = Vector3.right * totalDifference.x/fullWidth;
+            _normals[_vertCount] = Vector3.up;
+            _vertCount++;
+            
+            _vertices[_vertCount] = totalDifference + difference;
+            _uv[_vertCount] = Vector3.right * ((totalDifference.x + difference.x))/fullWidth;
+            _normals[_vertCount] = Vector3.up;
+            _vertCount++;
+            
             for (int i = 1; i < resolution + 1; i++) {
                 float movement = i * increments;
-                float height = curve.Evaluate(movement);
-                vertices.Add(new Vector3(totalDifference.x, height + totalDifference.y, -movement + totalDifference.z));
-                vertices.Add(new Vector3((totalDifference.x + difference.x), height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z));
-                uv.Add(new Vector2(totalDifference.x/fullWidth, movement/uvLength));
-                uv.Add(new Vector2(((totalDifference.x + difference.x))/fullWidth, movement/uvLength));
-                Vector3 a = vertices[i * 2 - 2] - vertices[i * 2];
-                Vector3 b = vertices[i * 2 - 1] - vertices[i * 2];
+                float height = _curve.Evaluate(movement);
+                
+                _vertices[_vertCount] = new Vector3(totalDifference.x, height + totalDifference.y, -movement + totalDifference.z);
+                _uv[_vertCount] = new Vector2(totalDifference.x/fullWidth, movement/uvLength);
+                _vertCount++;
+                
+                _vertices[_vertCount] = new Vector3((totalDifference.x + difference.x), height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z);
+                _uv[_vertCount] = new Vector2(((totalDifference.x + difference.x))/fullWidth, movement/uvLength);
+                _vertCount++;
+                
+                Vector3 a = _vertices[i * 2 - 2] - _vertices[i * 2];
+                Vector3 b = _vertices[i * 2 - 1] - _vertices[i * 2];
                 Vector3 normal = Vector3.Cross(b, a);
                 normal.Normalize();
-                normals.Add(normal);
-                normals.Add(normal);
+                _normals[_vertCount - 2] = normal;
+                _normals[_vertCount - 1] = normal;
+                
                 //first set of triangles
-                indices.Add(indCount + (i * 2 - 2));
-                indices.Add(indCount + (i * 2));
-                indices.Add(indCount + (i * 2 - 1));
+                _indices[_indicesCount] = (indCount + (i * 2 - 2));
+                _indicesCount++;
+                _indices[_indicesCount] = (indCount + (i * 2));
+                _indicesCount++;
+                _indices[_indicesCount] = (indCount + (i * 2 - 1));
+                _indicesCount++;
+                
                 //second set of triangles
-                indices.Add(indCount + (i * 2));
-                indices.Add(indCount + (i * 2 + 1));
-                indices.Add(indCount + (i * 2 - 1));
+                _indices[_indicesCount] = (indCount + (i * 2));
+                _indicesCount++;
+                _indices[_indicesCount] = (indCount + (i * 2 + 1));
+                _indicesCount++;
+                _indices[_indicesCount] = (indCount + (i * 2 - 1));
+                _indicesCount++;
             }
 
             totalDifference += difference;
-            indCount = vertices.Count;
+            indCount = _vertCount;
         }
         mesh.name = "BillieEyelash";
-        mesh.vertices = vertices.ToArray();
-        mesh.normals = normals.ToArray();
-        mesh.triangles = indices.ToArray();
-        mesh.uv = uv.ToArray();
+        mesh.vertices = _vertices;
+        mesh.normals = _normals;
+        mesh.triangles = _indices;
+        mesh.uv = _uv;
         DuplicateBackface(mesh);
     }
 
     private void DuplicateBackface(Mesh mesh) {
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        Vector3[] normals = mesh.normals;
-        int vertLength = vertices.Length;
-        Vector3[] newVerts = new Vector3[vertLength * 2];
-        Vector2[] newUv = new Vector2[vertLength * 2];
-        Vector3[] newNorms = new Vector3[vertLength * 2];
+        int vertLength = _vertCount;
+
         for (var j = 0; j < vertLength; j++) {
             // duplicate vertices and uvs:
-            newVerts[j] = newVerts[j + vertLength] = vertices[j];
-            newUv[j] = newUv[j + vertLength] = uv[j];
+            _vertices[j + vertLength] = _vertices[j];
+            _uv[j + vertLength] = _uv[j];
             // copy the original normals...
-            newNorms[j] = normals[j];
             // and revert the new ones
-            newNorms[j + vertLength] = -normals[j];
+            _normals[j + vertLength] = -_normals[j];
         }
-
-        int[] triangles = mesh.triangles;
-        int triLength = triangles.Length;
-        int[] newTris = new int[triLength * 2]; // double the triangles
+        
+        int triLength = _indicesCount;
         for (var i = 0; i < triLength; i += 3) {
-            // copy the original triangle
-            newTris[i] = triangles[i];
-            newTris[i + 1] = triangles[i + 1];
-            newTris[i + 2] = triangles[i + 2];
-            // save the new reversed triangle
             var j = i + triLength;
-            newTris[j] = triangles[i] + vertLength;
-            newTris[j + 2] = triangles[i + 1] + vertLength;
-            newTris[j + 1] = triangles[i + 2] + vertLength;
+            _indices[j] = _indices[i] + vertLength;
+            _indices[j + 2] = _indices[i + 1] + vertLength;
+            _indices[j + 1] = _indices[i + 2] + vertLength;
         }
 
-        mesh.vertices = newVerts;
-        mesh.uv = newUv;
-        mesh.normals = newNorms;
-        mesh.triangles = newTris; // assign triangles last!
+        mesh.vertices = _vertices;
+        mesh.uv = _uv;
+        mesh.normals = _normals;
+        mesh.triangles = _indices; // assign triangles last!
     }
 }

@@ -101,6 +101,11 @@ public class Simulator : SimulatorBase {
     
     private Vector3[] _leftEyeVertices;
     private Vector3[] _rightEyeVertices;
+    
+    public const int EyelashVertexCount = 11;
+
+    private const int LeftEyelashStart = 1182;
+    private const int RightEyelashStart = 1179;
 
     protected override void Awake() {
         base.Awake();
@@ -116,8 +121,8 @@ public class Simulator : SimulatorBase {
             _skinnedFaceMeshes.Add(_faceMeshes[i].GetComponent<SkinnedMeshRenderer>());
         }
 
-        _leftEyeVertices = new Vector3[11];
-        _rightEyeVertices = new Vector3[11];
+        _leftEyeVertices = new Vector3[EyelashVertexCount];
+        _rightEyeVertices = new Vector3[EyelashVertexCount];
     }
 
     protected override void OnEnable() {
@@ -764,22 +769,22 @@ public class Simulator : SimulatorBase {
     }
 
     private void HandleEyelash(List<Vector3> vertices) {
-        if (vertices == null || vertices.Count <= 1194) {
+        if (vertices == null || vertices.Count <= LeftEyelashStart + EyelashVertexCount + 1) {
             return;
         }
 
-        if (_leftEyeVertices == null || _leftEyeVertices.Length != 11) {
-            _leftEyeVertices = new Vector3[11];
+        if (_leftEyeVertices == null || _leftEyeVertices.Length != EyelashVertexCount) {
+            _leftEyeVertices = new Vector3[EyelashVertexCount];
         }
 
-        if (_rightEyeVertices == null || _rightEyeVertices.Length != 11) {
-            _rightEyeVertices = new Vector3[11];
+        if (_rightEyeVertices == null || _rightEyeVertices.Length != EyelashVertexCount) {
+            _rightEyeVertices = new Vector3[EyelashVertexCount];
         }
-        int leftStart = 1182;
-        int rightStart = 1179;
-        for (int i = 0; i < 11; i++) {
-            _leftEyeVertices[i] = vertices[leftStart + i];
-            _rightEyeVertices[i] = vertices[rightStart - i];
+
+        //This is used to selected the vertices of the face mesh with which the eyelashes would be generated from
+        for (int i = 0; i < EyelashVertexCount; i++) {
+            _leftEyeVertices[i] = vertices[LeftEyelashStart + i];
+            _rightEyeVertices[i] = vertices[RightEyelashStart - i];
         }
         
         beauty.HandlePlayback(_leftEyeVertices, _rightEyeVertices);
