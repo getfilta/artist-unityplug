@@ -619,12 +619,14 @@ namespace Filta {
             EditorGUILayout.LabelField("Eyelashes", EditorStyles.boldLabel);
             beauty.leftEyelashActive = EditorGUILayout.Toggle("Left Eyelash Active", beauty.leftEyelashActive);
             beauty.LeftCurve = EditorGUILayout.CurveField("Left Eyelash Curve", beauty.LeftCurve);
+            beauty.LeftAngle = EditorGUILayout.Slider("Left Angle of Curvature", beauty.LeftAngle, 0f, 75f);
             if (GUILayout.Button("Copy right eyelash")) {
                 beauty.LeftCurve.keys = beauty.RightCurve.keys;
             }
             EditorGUILayout.Space();
             beauty.rightEyelashActive = EditorGUILayout.Toggle("Right Eyelash Active", beauty.rightEyelashActive);
             beauty.RightCurve = EditorGUILayout.CurveField("Right Eyelash Curve", beauty.RightCurve);
+            beauty.RightAngle = EditorGUILayout.Slider("Right Angle of Curvature", beauty.RightAngle, 0f, 75f);
             if (GUILayout.Button("Copy left eyelash")) {
                 beauty.RightCurve.keys = beauty.LeftCurve.keys;
             }

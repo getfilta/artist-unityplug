@@ -29,6 +29,9 @@ public class Beauty : MonoBehaviour {
     private AnimationCurve _leftCurve;
     private AnimationCurve _rightCurve;
 
+    private float _leftAngle;
+    private float _rightAngle;
+
     private const string LeftEyelashName = "LeftEyelash";
     private const string RightEyelashName = "RightEyelash";
     
@@ -45,6 +48,7 @@ public class Beauty : MonoBehaviour {
     AnimationCurve _curve;
     Vector3[] _verts;
     MeshFilter _filter;
+    private float _angle;
 
     public enum Eye {
         Left,
@@ -83,6 +87,39 @@ public class Beauty : MonoBehaviour {
             }
         }
     }
+    
+    public float LeftAngle {
+        get {
+            if (_leftVariables != null) {
+                _leftAngle = _leftVariables.declarations.Get<float>("Angle");
+            }
+
+            return _leftAngle;
+        }
+        set {
+            _leftAngle = value;
+            if (_leftVariables != null) {
+                _leftVariables.declarations.Set("Angle", _leftAngle);
+            }
+        }
+    }
+    
+    public float RightAngle {
+        get {
+            if (_rightVariables != null) {
+                _rightAngle = _rightVariables.declarations.Get<float>("Angle");
+            }
+
+            return _rightAngle;
+        }
+        set {
+            _rightAngle = value;
+            if (_rightVariables != null) {
+                _rightVariables.declarations.Set("Angle", _rightAngle);
+            }
+        }
+    }
+    
 
     [SerializeField]
     private Simulator simulator;
@@ -196,10 +233,12 @@ public class Beauty : MonoBehaviour {
     private void GenerateMesh(Eye eye) {
         if (eye == Eye.Left) {
             _curve = LeftCurve;
+            _angle = LeftAngle;
             _verts = leftEyeVertices;
             _filter = _leftMeshFilter;
         } else {
             _curve = RightCurve;
+            _angle = -RightAngle;
             _verts = rightEyeVertices;
             _filter = _rightMeshFilter;
         }
@@ -233,11 +272,15 @@ public class Beauty : MonoBehaviour {
                 float movement = i * increments;
                 float height = _curve.Evaluate(movement);
                 
-                _vertices[_vertCount] = new Vector3(totalDifference.x, height + totalDifference.y, -movement + totalDifference.z);
+                float internalRadius = Mathf.Lerp(_angle, -_angle, 1 - (float)j / (_sideSize - 1));
+                float radialCurve = -movement * Mathf.Tan(Mathf.Deg2Rad * internalRadius);
+                _vertices[_vertCount] = new Vector3(totalDifference.x - radialCurve, height + totalDifference.y, -movement + totalDifference.z);
                 _uv[_vertCount] = new Vector2(totalDifference.x/fullWidth, movement/uvLength);
                 _vertCount++;
                 
-                _vertices[_vertCount] = new Vector3((totalDifference.x + difference.x), height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z);
+                float internalRadius2 = Mathf.Lerp(_angle, -_angle, 1 - ((float)j + 1) / (_sideSize - 1)); 
+                float radialCurve2 = -movement * Mathf.Tan(Mathf.Deg2Rad * internalRadius2);
+                _vertices[_vertCount] = new Vector3((totalDifference.x + difference.x - radialCurve2), height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z);
                 _uv[_vertCount] = new Vector2(((totalDifference.x + difference.x))/fullWidth, movement/uvLength);
                 _vertCount++;
                 
