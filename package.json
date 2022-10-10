@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 3,
-      "pluginMinorVersion": 0
+      "pluginMinorVersion": 1
     },
-    "releaseNotes": "-feat: optimize face filters. face filters published with this version should have better performance on the app.\n- feat: change object name from FaceMasks to FaceBlendshapes.\n- fix: issue of face texture not working when Variables component is on Filta object\n- feat: add onFaceAdd, onFaceRemove and onFaceUpdate nodes.\n- fix: rename OnEyeOpenValueChange nodes to OnEyeCloseValueChange\n- fix: body simulator video still showing when you switch to face only\n- fix: body avatars deforming in playmode"
+    "releaseNotes": "-feat: add eyelash generation feature."
   }
 }
