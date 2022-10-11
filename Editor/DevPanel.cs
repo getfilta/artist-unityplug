@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace Filta {
@@ -160,6 +161,9 @@ namespace Filta {
         #endregion
 
         private async void OnEnable() {
+            if (GraphicsSettings.defaultRenderPipeline == null) {
+                Util.SetRenderPipeline();
+            }
             Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{PackagePath}/Editor/icon.png");
             titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
             _s = new GUIStyle();
@@ -195,6 +199,13 @@ namespace Filta {
         void OnGUI() {
             Login();
             AutoRefreshArts();
+            if (!_activeSimulator) {
+                HandleNewPluginVersion();
+                CreateNewScene();
+                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
+                DrawUILine(Color.gray);
+                return;
+            }
             if (Authentication.Instance.IsLoggedIn) {
                 _selectedTab = GUILayout.Toolbar(_selectedTab, Authentication.IsAdmin ? _adminToolbarTitles: _toolbarTitles );
                 switch (_selectedTab) {
@@ -224,11 +235,13 @@ namespace Filta {
 
         #region Simulator
 
+        private SimulatorBase.SimulatorType _activeSimulatorType;
         private void SetSimulator(SimulatorBase.SimulatorType type) {
             if (_fusionSimulator == null || (_simulator != null && _fusionSimulator.activeType == type)) {
                 return;
             }
             _fusionSimulator.activeType = type;
+            _activeSimulatorType = type;
             switch (type) {
                 case SimulatorBase.SimulatorType.Face:
                     _simulator = _fusionSimulator.faceSimulator;
@@ -241,6 +254,9 @@ namespace Filta {
                     _fusionSimulator.bodySimulator.Enable();
                     break;
             }
+
+            _fusionSimulator.faceSimulator.dynamicLightOn = false;
+            _fusionSimulator.bodySimulator.dynamicLightOn = false;
         }
 
         private void FindSimulator(PlayModeStateChange stateChange) {
@@ -251,8 +267,8 @@ namespace Filta {
                 _simulatorType = SimulatorBase.SimulatorType.Fusion;
                 _faceSimulator = _fusionSimulator.faceSimulator;
                 _bodySimulator = _fusionSimulator.bodySimulator;
-                SetSimulator(SimulatorBase.SimulatorType.Body);
-                _tabIndex = (int)SimulatorBase.SimulatorType.Body;
+                SetSimulator(_activeSimulatorType);
+                _tabIndex = (int)_activeSimulatorType;
                 _activeSimulator = true;
                 _simulatorIndex = (int)SimulatorBase.SimulatorType.Fusion;
             } else {
@@ -283,30 +299,40 @@ namespace Filta {
             _simulatorScrollPosition = GUILayout.BeginScrollView(_simulatorScrollPosition);
             HandleNewPluginVersion();
             CreateNewScene();
-            if (_activeSimulator) {
-                DrawUILine(Color.gray);
-                HandleSimulator();
-                DrawUILine(Color.gray);
-            } else {
-                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                DrawUILine(Color.gray);
-                return;
-            }
+            DrawUILine(Color.gray);
+            HandleSimulator();
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
             float originalValue = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 215;
             _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
-            _simulator.dynamicLightOn =
-                EditorGUILayout.Toggle("Environmental Lighting Estimation", _simulator.dynamicLightOn);
-            //Used to mark scene as dirty when toggle value is changed
-            if (_dynamicLightOn != _simulator.dynamicLightOn) {
-                EditorSceneManager.MarkAllScenesDirty();
-            }
-            _dynamicLightOn = _simulator.dynamicLightOn;
+            HandleDynamicLighting();
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
             GUILayout.EndScrollView();
+        }
+
+        private void HandleDynamicLighting() {
+            if (_simulatorType != SimulatorBase.SimulatorType.Fusion) {
+                _simulator.dynamicLightOn =
+                    EditorGUILayout.Toggle("Environmental Lighting Estimation", _simulator.dynamicLightOn);
+                //Used to mark scene as dirty when toggle value is changed
+                if (_dynamicLightOn != _simulator.dynamicLightOn && !EditorApplication.isPlaying) {
+                    EditorSceneManager.MarkAllScenesDirty();
+                }
+                _dynamicLightOn = _simulator.dynamicLightOn;
+            } else {
+                _fusionSimulator.DynamicLightOn =
+                    EditorGUILayout.Toggle("Environmental Lighting Estimation", _fusionSimulator.DynamicLightOn);
+                //Used to mark scene as dirty when toggle value is changed
+                if (_dynamicLightOn != _fusionSimulator.DynamicLightOn && !EditorApplication.isPlaying) {
+                    EditorSceneManager.MarkAllScenesDirty();
+                }
+
+                _dynamicLightOn = _fusionSimulator.DynamicLightOn;
+            }
+            
         }
 
         private void SetPluginInfo() {
@@ -560,7 +586,6 @@ namespace Filta {
 
                     break;
             }
-
             FindSimulator(PlayModeStateChange.EnteredEditMode);
         }
 
@@ -602,6 +627,7 @@ namespace Filta {
             if (localFilter is not null) {
                 localFilter.transform.SetAsLastSibling();
             }
+            
         }
 
         #endregion

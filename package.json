@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 3,
-      "pluginMinorVersion": 1
+      "pluginMinorVersion": 2
     },
-    "releaseNotes": "-feat: add eyelash generation feature."
+    "releaseNotes": "-fix: face + body filter playmode issues resetting to body filter and turning off dynamic lighting"
   }
 }
