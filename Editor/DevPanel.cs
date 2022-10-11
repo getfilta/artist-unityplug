@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace Filta {
@@ -160,6 +161,9 @@ namespace Filta {
         #endregion
 
         private async void OnEnable() {
+            if (GraphicsSettings.defaultRenderPipeline == null) {
+                Util.SetRenderPipeline();
+            }
             Texture icon = AssetDatabase.LoadAssetAtPath<Texture>($"{PackagePath}/Editor/icon.png");
             titleContent = new GUIContent($"Filta: Artist Panel - {GetVersionNumber()}", icon);
             _s = new GUIStyle();
