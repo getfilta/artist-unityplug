@@ -195,6 +195,13 @@ namespace Filta {
         void OnGUI() {
             Login();
             AutoRefreshArts();
+            if (!_activeSimulator) {
+                HandleNewPluginVersion();
+                CreateNewScene();
+                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
+                DrawUILine(Color.gray);
+                return;
+            }
             if (Authentication.Instance.IsLoggedIn) {
                 _selectedTab = GUILayout.Toolbar(_selectedTab, Authentication.IsAdmin ? _adminToolbarTitles: _toolbarTitles );
                 switch (_selectedTab) {
@@ -283,15 +290,9 @@ namespace Filta {
             _simulatorScrollPosition = GUILayout.BeginScrollView(_simulatorScrollPosition);
             HandleNewPluginVersion();
             CreateNewScene();
-            if (_activeSimulator) {
-                DrawUILine(Color.gray);
-                HandleSimulator();
-                DrawUILine(Color.gray);
-            } else {
-                EditorGUILayout.LabelField("Not a Filter scene. Create a new Filter above", EditorStyles.boldLabel);
-                DrawUILine(Color.gray);
-                return;
-            }
+            DrawUILine(Color.gray);
+            HandleSimulator();
+            DrawUILine(Color.gray);
             EditorGUILayout.LabelField("Extra settings", EditorStyles.boldLabel);
             float originalValue = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 215;
