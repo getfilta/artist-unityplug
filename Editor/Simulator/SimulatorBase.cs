@@ -65,6 +65,9 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     [SerializeField]
     protected SimulatorData simulatorData;
+    
+    public EventHandler onRecordStart = delegate { };
+    public EventHandler onRecordStop = delegate { };
 
     public virtual bool IsSetUpProperly() {
         return false;
@@ -194,6 +197,14 @@ public abstract class SimulatorBase : MonoBehaviour {
         }
 
         mainCamera.gameObject.hideFlags = HideFlags.NotEditable;
+    }
+    
+    public void HandleStartRecording() {
+        onRecordStart.Invoke(this, null);
+    }
+
+    public void HandleStopRecording() {
+        onRecordStop.Invoke(this, null);
     }
     #endif
 }

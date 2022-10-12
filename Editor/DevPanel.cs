@@ -81,6 +81,7 @@ namespace Filta {
         
         private string _sceneName;
         private bool _showPrivCollection = true;
+        private bool _recording;
 
         private string StatusBar {
             get => _statusBar;
@@ -403,6 +404,25 @@ namespace Filta {
                 if (GUILayout.Button("Try Automatic Setup")) {
                     _simulator.TryAutomaticSetup();
                 }
+            }
+            HandleRecordingSimulation();
+        }
+
+        private void HandleRecordingSimulation() {
+            DrawUILine(Color.gray);
+            EditorGUILayout.LabelField("Simulate User Actions", EditorStyles.boldLabel);
+            if (!_recording) {
+                if (GUILayout.Button("Start Recording")) {
+                    _simulator.HandleStartRecording();
+                    _recording = !_recording;
+                }
+            } else {
+                SetButtonColor(true);
+                if (GUILayout.Button("Stop Recording")) {
+                    _simulator.HandleStopRecording();
+                    _recording = !_recording;
+                }
+                ResetButtonColor();
             }
         }
 
