@@ -110,9 +110,6 @@ public class Simulator : SimulatorBase {
     protected override void Awake() {
         base.Awake();
         mesh = new Mesh();
-        isPlaying = true;
-        _startTime = DateTime.Now;
-        Debug.Log("Starting playback");
         TryAutomaticSetup();
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
@@ -136,7 +133,8 @@ public class Simulator : SimulatorBase {
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
     }
 
-    private void OnDisable() {
+    protected override void OnDisable() {
+        base.OnDisable();
         EditorApplication.hierarchyChanged -= GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged -= GetFaceMeshFilters;
     }
@@ -424,15 +422,6 @@ public class Simulator : SimulatorBase {
         _filterObject.position = Vector3.zero;
         _filterObject.rotation = Quaternion.identity;
         _filterObject.localScale = Vector3.one;
-    }
-
-    public override void PauseSimulator() {
-        _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
-        isPlaying = false;
-    }
-
-    public override void ResumeSimulator() {
-        isPlaying = true;
     }
 
     public override void ResetSimulator() {

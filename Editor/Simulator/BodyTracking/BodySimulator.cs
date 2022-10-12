@@ -108,8 +108,6 @@ public class BodySimulator : SimulatorBase {
 
     protected override void Awake() {
         base.Awake();
-        isPlaying = true;
-        _startTime = DateTime.Now;
         TryAutomaticSetup();
         InitializeBodyAvatars();
     }
@@ -125,7 +123,8 @@ public class BodySimulator : SimulatorBase {
         showBodyVisualiser = true;
     }
     
-    private void OnDisable() {
+    protected override void OnDisable() {
+        base.OnDisable();
         EditorApplication.hierarchyChanged -= GetBodyAvatars;
     }
     private void GetRecordingData() {

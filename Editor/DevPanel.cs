@@ -16,7 +16,6 @@ using UnityEngine.SceneManagement;
 namespace Filta {
     public class DevPanel : EditorWindow {
         #region Variable Declarations
-        
         private const string PackagePath = "Packages/com.getfilta.artist-unityplug";
         private const string VariantTempSave = "Assets/Filter.prefab";
         private const string KnowledgeBaseLink =
@@ -63,6 +62,7 @@ namespace Filta {
         private DateTime _lastGuiTime;
         
         private SimulatorBase.SimulatorType _simulatorType;
+        private SimulatorBase.SimulatorType _activeSimulatorType;
         private FusionSimulator _fusionSimulator;
         private SimulatorBase _simulator;
         private Simulator _faceSimulator;
@@ -73,7 +73,7 @@ namespace Filta {
         private bool _resetOnRecord;
         private bool _dynamicLightOn;
         private int _tabIndex;
-        
+
         private string _artistUid;
         private string _artistWallet;
         private string _loadingText;
@@ -159,7 +159,7 @@ namespace Filta {
         }
         
         #endregion
-
+        
         private async void OnEnable() {
             if (GraphicsSettings.defaultRenderPipeline == null) {
                 Util.SetRenderPipeline();
@@ -173,7 +173,7 @@ namespace Filta {
             Global.StatusChange += HandleStatusChange;
             Backend.Instance.BundleQueue += OnBundleQueueUpdate;
             Authentication.Instance.AuthStateChanged += HandleAuthStateChange;
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            FindSimulator(PlayModeStateChange.ExitingPlayMode);
             _localReleaseInfo = GetLocalReleaseInfo();
             SetPluginInfo();
             if (!Authentication.Instance.IsLoggedIn) {
@@ -234,8 +234,7 @@ namespace Filta {
         }
 
         #region Simulator
-
-        private SimulatorBase.SimulatorType _activeSimulatorType;
+        
         private void SetSimulator(SimulatorBase.SimulatorType type) {
             if (_fusionSimulator == null || (_simulator != null && _fusionSimulator.activeType == type)) {
                 return;
@@ -292,6 +291,10 @@ namespace Filta {
                         _tabIndex = (int)SimulatorBase.SimulatorType.Body;
                     }
                 }
+            }
+
+            if (stateChange == PlayModeStateChange.EnteredEditMode) {
+                _simulator.HandlePlaymodeChange();
             }
         }
 
@@ -586,7 +589,7 @@ namespace Filta {
 
                     break;
             }
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            FindSimulator(PlayModeStateChange.ExitingPlayMode);
         }
 
         void SpawnNewFilterType(SimulatorBase.SimulatorType newSimType, SimulatorBase.SimulatorType oldSimType) {
@@ -938,7 +941,10 @@ namespace Filta {
         #region Util
         
         private async void HandleSceneChange(Scene oldScene, Scene newScene) {
-            FindSimulator(PlayModeStateChange.EnteredEditMode);
+            FindSimulator(PlayModeStateChange.ExitingPlayMode);
+            if (!String.IsNullOrEmpty(oldScene.name) && _simulator != null) {
+                _simulator.ResumeSimulator();
+            }
             SetPluginInfo();
             //Wait a second to ensure scene is set up properly.
             await Task.Delay(1000);

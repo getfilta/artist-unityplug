@@ -76,6 +76,8 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     protected virtual void Awake() {
         _objectsToHide = GetComponentsInChildren<Transform>(true);
+        isPlaying = true;
+        _startTime = DateTime.Now;
     }
 
     private void Start() {
@@ -113,6 +115,17 @@ public abstract class SimulatorBase : MonoBehaviour {
         }
     }
 
+    protected virtual void OnDisable() {
+    }
+
+    public void HandlePlaymodeChange() {
+        if (simulatorData.isPlaying) {
+            ResumeSimulator();
+        } else {
+            StopSimulator();
+        }
+    }
+
     protected virtual void Update() {
 
     }
@@ -143,10 +156,12 @@ public abstract class SimulatorBase : MonoBehaviour {
     public virtual void PauseSimulator() {
         _pauseTime = (long)(DateTime.Now - _startTime).TotalMilliseconds + _pauseTime;
         isPlaying = false;
+        simulatorData.isPlaying = false;
     }
 
     public virtual void ResumeSimulator() {
         isPlaying = true;
+        simulatorData.isPlaying = true;
     }
 
     public virtual void ResetSimulator() {
