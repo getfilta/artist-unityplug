@@ -16,6 +16,6 @@
       "pluginMajorVersion": 3,
       "pluginMinorVersion": 2
     },
-    "releaseNotes": "- fix: face + body filter playmode issues resetting to body filter and turning off dynamic lighting.\n- fix: stops auto-playing simulator when you exit play mode"
+    "releaseNotes": "- fix: face + body filter playmode issues resetting to body filter and turning off dynamic lighting.\n- fix: stops auto-playing simulator when you exit play mode\n- feat: add nodes for OnRecordStart and OnRecordStop"
   }
 }
