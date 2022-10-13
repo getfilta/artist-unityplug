@@ -1,22 +1,23 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.VisualScripting;
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
 using UnityEditor;
+
 [ExecuteAlways]
 #endif
 public class Beauty : MonoBehaviour {
+#if UNITY_EDITOR
     public int resolution = 10;
     public bool leftEyelashActive;
     public bool rightEyelashActive;
 
     [SerializeField]
     private GameObject eyelashPrefab;
-    
+
     public Vector3[] leftEyeVertices;
     public Vector3[] rightEyeVertices;
-    
+
     private GameObject _leftEyelash;
     private GameObject _rightEyelash;
 
@@ -34,17 +35,17 @@ public class Beauty : MonoBehaviour {
 
     private const string LeftEyelashName = "LeftEyelash";
     private const string RightEyelashName = "RightEyelash";
-    
+
     private Vector3[] _vertices;
     private Vector3[] _normals;
     private Vector2[] _uv;
     private int[] _indices;
 
     private int _sideSize;
-    
+
     private int _vertCount;
     private int _indicesCount;
-    
+
     AnimationCurve _curve;
     Vector3[] _verts;
     MeshFilter _filter;
@@ -54,6 +55,7 @@ public class Beauty : MonoBehaviour {
         Left,
         Right
     }
+
     public AnimationCurve LeftCurve {
         get {
             _leftCurve ??= new AnimationCurve();
@@ -70,7 +72,7 @@ public class Beauty : MonoBehaviour {
             }
         }
     }
-    
+
     public AnimationCurve RightCurve {
         get {
             _rightCurve ??= new AnimationCurve();
@@ -87,7 +89,7 @@ public class Beauty : MonoBehaviour {
             }
         }
     }
-    
+
     public float LeftAngle {
         get {
             if (_leftVariables != null) {
@@ -103,7 +105,7 @@ public class Beauty : MonoBehaviour {
             }
         }
     }
-    
+
     public float RightAngle {
         get {
             if (_rightVariables != null) {
@@ -119,7 +121,7 @@ public class Beauty : MonoBehaviour {
             }
         }
     }
-    
+
 
     [SerializeField]
     private Simulator simulator;
@@ -142,7 +144,7 @@ public class Beauty : MonoBehaviour {
             _rightMeshFilter = _rightEyelash.GetComponent<MeshFilter>();
             rightEyelashActive = true;
         }
-        
+
         _sideSize = Simulator.EyelashVertexCount;
         int vertexLength = (((resolution * 2) * (_sideSize - 1)) + (2 * (_sideSize - 1))) * 2;
         int indexLength = 6 * resolution * (_sideSize - 1) * 2;
@@ -159,14 +161,16 @@ public class Beauty : MonoBehaviour {
         rightEyeVertices = rightVertices;
         HandlePlayback();
     }
-    
+
     public void HandlePlayback() {
         if (!_initialized) {
             return;
         }
+
         if (simulator == null) {
             simulator = GetComponent<Simulator>();
         }
+
         if (simulator == null || !simulator.IsSetUpProperly())
             return;
         HandleEyelashToggling();
@@ -242,13 +246,14 @@ public class Beauty : MonoBehaviour {
             _verts = rightEyeVertices;
             _filter = _rightMeshFilter;
         }
-        
+
         float increments = _curve.keys[^1].time / resolution;
         Mesh mesh = _filter.sharedMesh;
         if (mesh == null) {
             mesh = new Mesh();
             _filter.sharedMesh = mesh;
         }
+
         mesh.Clear();
         float uvLength = resolution * increments;
         int indCount = 0;
@@ -259,38 +264,40 @@ public class Beauty : MonoBehaviour {
         for (int j = 0; j < _sideSize - 1; j++) {
             Vector3 difference = _verts[j + 1] - _verts[j];
             _vertices[_vertCount] = totalDifference;
-            _uv[_vertCount] = Vector3.right * totalDifference.x/fullWidth;
+            _uv[_vertCount] = Vector3.right * totalDifference.x / fullWidth;
             _normals[_vertCount] = Vector3.up;
             _vertCount++;
-            
+
             _vertices[_vertCount] = totalDifference + difference;
-            _uv[_vertCount] = Vector3.right * ((totalDifference.x + difference.x))/fullWidth;
+            _uv[_vertCount] = Vector3.right * ((totalDifference.x + difference.x)) / fullWidth;
             _normals[_vertCount] = Vector3.up;
             _vertCount++;
-            
+
             for (int i = 1; i < resolution + 1; i++) {
                 float movement = i * increments;
                 float height = _curve.Evaluate(movement);
-                
+
                 float internalRadius = Mathf.Lerp(_angle, -_angle, 1 - (float)j / (_sideSize - 1));
                 float radialCurve = -movement * Mathf.Tan(Mathf.Deg2Rad * internalRadius);
-                _vertices[_vertCount] = new Vector3(totalDifference.x - radialCurve, height + totalDifference.y, -movement + totalDifference.z);
-                _uv[_vertCount] = new Vector2(totalDifference.x/fullWidth, movement/uvLength);
+                _vertices[_vertCount] = new Vector3(totalDifference.x - radialCurve, height + totalDifference.y,
+                    -movement + totalDifference.z);
+                _uv[_vertCount] = new Vector2(totalDifference.x / fullWidth, movement / uvLength);
                 _vertCount++;
-                
-                float internalRadius2 = Mathf.Lerp(_angle, -_angle, 1 - ((float)j + 1) / (_sideSize - 1)); 
+
+                float internalRadius2 = Mathf.Lerp(_angle, -_angle, 1 - ((float)j + 1) / (_sideSize - 1));
                 float radialCurve2 = -movement * Mathf.Tan(Mathf.Deg2Rad * internalRadius2);
-                _vertices[_vertCount] = new Vector3((totalDifference.x + difference.x - radialCurve2), height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z);
-                _uv[_vertCount] = new Vector2(((totalDifference.x + difference.x))/fullWidth, movement/uvLength);
+                _vertices[_vertCount] = new Vector3((totalDifference.x + difference.x - radialCurve2),
+                    height + totalDifference.y + difference.y, -movement + totalDifference.z + difference.z);
+                _uv[_vertCount] = new Vector2(((totalDifference.x + difference.x)) / fullWidth, movement / uvLength);
                 _vertCount++;
-                
+
                 Vector3 a = _vertices[i * 2 - 2] - _vertices[i * 2];
                 Vector3 b = _vertices[i * 2 - 1] - _vertices[i * 2];
                 Vector3 normal = Vector3.Cross(b, a);
                 normal.Normalize();
                 _normals[_vertCount - 2] = normal;
                 _normals[_vertCount - 1] = normal;
-                
+
                 //first set of triangles
                 _indices[_indicesCount] = (indCount + (i * 2 - 2));
                 _indicesCount++;
@@ -298,7 +305,7 @@ public class Beauty : MonoBehaviour {
                 _indicesCount++;
                 _indices[_indicesCount] = (indCount + (i * 2 - 1));
                 _indicesCount++;
-                
+
                 //second set of triangles
                 _indices[_indicesCount] = (indCount + (i * 2));
                 _indicesCount++;
@@ -311,6 +318,7 @@ public class Beauty : MonoBehaviour {
             totalDifference += difference;
             indCount = _vertCount;
         }
+
         mesh.name = "BillieEyelash";
         mesh.vertices = _vertices;
         mesh.normals = _normals;
@@ -330,7 +338,7 @@ public class Beauty : MonoBehaviour {
             // and revert the new ones
             _normals[j + vertLength] = -_normals[j];
         }
-        
+
         int triLength = _indicesCount;
         for (var i = 0; i < triLength; i += 3) {
             var j = i + triLength;
@@ -344,4 +352,5 @@ public class Beauty : MonoBehaviour {
         mesh.normals = _normals;
         mesh.triangles = _indices; // assign triangles last!
     }
+#endif
 }
