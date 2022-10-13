@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 [ExecuteAlways]
 #endif
 public abstract class SimulatorBase : MonoBehaviour {
+    public EventHandler onRecordStart = delegate { };
+    public EventHandler onRecordStop = delegate { };
     #if UNITY_EDITOR
     public enum SimulatorType {
         Face,
@@ -65,9 +67,6 @@ public abstract class SimulatorBase : MonoBehaviour {
 
     [SerializeField]
     protected SimulatorData simulatorData;
-    
-    public EventHandler onRecordStart = delegate { };
-    public EventHandler onRecordStop = delegate { };
 
     public virtual bool IsSetUpProperly() {
         return false;
