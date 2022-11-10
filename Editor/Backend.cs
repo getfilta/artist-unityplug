@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 namespace Filta {
     public class Backend {
 
-        public static Backend Instance { get;}
+        public static Backend Instance { get; }
         static Backend() {
             Instance = new Backend();
         }
@@ -30,8 +30,8 @@ namespace Filta {
         private static string TestFuncLocation => $"http://localhost:5001/{(Global.UseTestEnvironment ? "filta-dev" : "filta-machina")}/us-central1/";
         private static string FuncLocation => Global.UseTestEnvironment ? "https://us-central1-filta-dev.cloudfunctions.net/" : "https://us-central1-filta-machina.cloudfunctions.net/";
         private static string RtdbUrlbase => Global.UseTestEnvironment ? "https://filta-dev-default-rtdb.firebaseio.com" : "https://filta-machina.firebaseio.com";
-        private static string UploadURL => RunLocally ? TestFuncLocation + "uploadArtSource" : FuncLocation + "uploadUnityPackage";
-        private static string DeletePrivArtURL => ConstructUrl("deletePrivArt");
+        private static string UploadURL => RunLocally ? TestFuncLocation + "artist-uploadArtSource" : FuncLocation + "artist-uploadUnityPackage";
+        private static string DeletePrivArtURL => ConstructUrl("artist-deletePrivArt");
 
         private static string ConstructUrl(string functionName) {
             return RunLocally ? TestFuncLocation + functionName : FuncLocation + functionName;
@@ -189,7 +189,7 @@ namespace Filta {
                 entries = new[] { entry }
             };
 
-            _ = CallFunction<SendTelemetryRequest, SendTelemetryResponse>("sendTelemetry", request);
+            _ = CallFunction<SendTelemetryRequest, SendTelemetryResponse>("ops-sendTelemetry", request);
         }
 
         public void LogAnalyticsEvent(string eventName, params AnalyticsEventParam[] eventParams) {
@@ -197,7 +197,7 @@ namespace Filta {
                 eventName = eventName,
                 eventParams = eventParams
             };
-            _ = CallFunction<LogAnalyticsEventRequest, LogAnalyticsEventResponse>("logAnalyticsEvent", request, true);
+            _ = CallFunction<LogAnalyticsEventRequest, LogAnalyticsEventResponse>("ops-logAnalyticsEvent", request, true);
         }
 
         private void ParseArtMetas(JObject json, ArtsAndBundleStatus collection) {
@@ -306,7 +306,7 @@ namespace Filta {
 
         public async Task<AskForRemoteLoginResponse> AskForRemoteLogin() {
             AskForRemoteLoginRequest request = new() { };
-            var response = await CallFunction<AskForRemoteLoginRequest, AskForRemoteLoginResponse>("askForRemoteLogin", request);
+            var response = await CallFunction<AskForRemoteLoginRequest, AskForRemoteLoginResponse>("auth-askForRemoteLogin", request);
             return response;
         }
 
@@ -314,20 +314,20 @@ namespace Filta {
             GetRemoteLoginAskStatusRequest request = new() {
                 statusKey = key
             };
-            var response = await CallFunction<GetRemoteLoginAskStatusRequest, GetRemoteLoginAskStatusResponse>("getRemoteLoginAskStatus", request);
+            var response = await CallFunction<GetRemoteLoginAskStatusRequest, GetRemoteLoginAskStatusResponse>("auth-getRemoteLoginAskStatus", request);
             return response;
         }
 
         public async Task<GetPrivCollectionResponse> GetUserPrivCollection(string uid, string wallet) {
             Debug.Log($"{uid},{wallet}");
             GetPrivCollectionRequest request = new() { uid = uid, wallet = wallet };
-            var response = await CallFunction<GetPrivCollectionRequest, GetPrivCollectionResponse>("getPrivCollection", request, true);
+            var response = await CallFunction<GetPrivCollectionRequest, GetPrivCollectionResponse>("artist-getPrivCollection", request, true);
             return response;
         }
 
         public async Task<GetPrivCollectionUnityPackageResponse> GetUserPrivUnityPackage(string artId) {
             GetPrivCollectionUnityPackageRequest request = new() { artId = artId };
-            var response = await CallFunction<GetPrivCollectionUnityPackageRequest, GetPrivCollectionUnityPackageResponse>("getPrivCollectionUnityPackage", request, true);
+            var response = await CallFunction<GetPrivCollectionUnityPackageRequest, GetPrivCollectionUnityPackageResponse>("artist-getPrivCollectionUnityPackage", request, true);
             return response;
         }
 
@@ -337,8 +337,7 @@ namespace Filta {
                 request.SetRequestHeader("Content-Type", "application/octet-stream");
                 await request.SendWebRequest();
                 return request.downloadHandler.data;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Debug.LogError($"Error downloading package. {e.Message}");
                 throw new Exception(e.Message);
             }
@@ -346,7 +345,7 @@ namespace Filta {
 
         public async Task<GetAccessResponse> GetAccess() {
             GetAccessRequest request = new() { };
-            var response = await CallFunction<GetAccessRequest, GetAccessResponse>("getAccess", request, true);
+            var response = await CallFunction<GetAccessRequest, GetAccessResponse>("artist-getAccess", request, true);
             return response;
         }
     }
@@ -427,16 +426,16 @@ namespace Filta {
         public bool resetOnRecord;
         public bool dynamicLightOn;
     }
-    
+
     public class ScopedRegistry {
         public string name;
         public string url;
         public string[] scopes;
     }
- 
+
     public class ManifestJson {
-        public Dictionary<string,string> dependencies = new Dictionary<string, string>();
- 
+        public Dictionary<string, string> dependencies = new Dictionary<string, string>();
+
         public List<ScopedRegistry> scopedRegistries = new List<ScopedRegistry>();
     }
 
@@ -444,7 +443,7 @@ namespace Filta {
         public Version version;
         public string releaseNotes;
     }
-    
+
     public class Version {
         public int pluginAppVersion;
         public int pluginMajorVersion;
@@ -500,7 +499,7 @@ namespace Filta {
     public class LogAnalyticsEventResponse {
         public string result;
     }
-    
+
     public class GetPrivCollectionRequest {
         public string uid;
         public string wallet;
@@ -508,14 +507,14 @@ namespace Filta {
     public class GetPrivCollectionResponse {
         public ArtMeta[] collection;
     }
-  
+
     public class GetPrivCollectionUnityPackageRequest {
         public string artId;
     }
     public class GetPrivCollectionUnityPackageResponse {
         public string signedUrl;
     }
-  
+
     public class GetAccessRequest {
     }
     public class GetAccessResponse {
