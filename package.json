@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 3,
-      "pluginMinorVersion": 2
+      "pluginMinorVersion": 3
     },
-    "releaseNotes": "- fix: face + body filter playmode issues resetting to body filter and turning off dynamic lighting.\n- fix: stops auto-playing simulator when you exit play mode\n- feat: add nodes for OnRecordStart and OnRecordStop"
+    "releaseNotes": "- feat: sort filters by last updated"
   }
 }

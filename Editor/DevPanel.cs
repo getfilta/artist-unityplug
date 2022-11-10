@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 using Filta.Datatypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -1200,6 +1201,8 @@ namespace Filta {
             }
             _artsAndBundleStatus = new ArtsAndBundleStatus();
             _artsAndBundleStatus = await Backend.Instance.GetArtsAndBundleStatus();
+            _artsAndBundleStatus.ArtMetas = _artsAndBundleStatus.ArtMetas
+                .OrderByDescending((pair => pair.Value.lastUpdated)).ToDictionary(z => z.Key, y => y.Value);
             Repaint();
         }
         

@@ -357,7 +357,7 @@ namespace Filta {
     public class ArtsAndBundleStatus {
         public enum StatusUpdate { Success, Error, None }
 
-        public Dictionary<string, ArtMeta> ArtMetas { get; } = new();
+        public Dictionary<string, ArtMeta> ArtMetas { get; set; } = new();
         public Dictionary<string, Bundle> Bundles { get; } = new();
         public StatusUpdate RecentStatusUpdate { get; set; } = StatusUpdate.None;
     }
