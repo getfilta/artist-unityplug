@@ -680,6 +680,14 @@ namespace Filta {
             if (GUILayout.Button("Copy left eyelash")) {
                 beauty.RightCurve.keys = beauty.LeftCurve.keys;
             }
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Lips", EditorStyles.boldLabel);
+            beauty.lipsActive = EditorGUILayout.Toggle("Lips Active", beauty.lipsActive);
+            beauty.LipsTexture = (Texture)EditorGUILayout.ObjectField("Lips Texture", beauty.LipsTexture, typeof(Texture), true);
+            beauty.Tiling = EditorGUILayout.Vector2Field("Tiling", beauty.Tiling);
+            beauty.Offset = EditorGUILayout.Vector2Field("Offset", beauty.Offset);
+            beauty.Tint = EditorGUILayout.ColorField("Tint", beauty.Tint);
+            beauty.Glossiness = EditorGUILayout.Slider("Glossiness", beauty.Glossiness, 0f, 1f);
         }
 
         #endregion

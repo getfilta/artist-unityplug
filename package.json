@@ -16,6 +16,6 @@
       "pluginMajorVersion": 3,
       "pluginMinorVersion": 3
     },
-    "releaseNotes": "- feat: sort filters by last updated"
+    "releaseNotes": "- feat: sort filters by last updated.\n- feat: add lip features to beauty panel"
   }
 }

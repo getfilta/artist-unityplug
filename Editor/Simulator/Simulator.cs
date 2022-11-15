@@ -61,6 +61,8 @@ public class Simulator : SimulatorBase {
     
     public Transform rightEyelashHolder;
 
+    public Transform lipsHolder;
+
     [SerializeField]
     private Transform _vertices;
     //public SkinnedMeshRenderer faceMask;
@@ -235,6 +237,10 @@ public class Simulator : SimulatorBase {
             if (rightEyelashHolder == null) {
                 rightEyelashHolder = _faceTracker.Find("RightEyelashHolder");
             }
+
+            if (lipsHolder == null) {
+                lipsHolder = _faceTracker.Find("LipsHolder");
+            }
             beauty.Initialize();
         }
 
@@ -252,7 +258,7 @@ public class Simulator : SimulatorBase {
         return _filterObject != null && mainTracker != null && _faceMeshVisualiser != null && _meshFilter != null && _faceSampler != null && _sampleMeshFilter != null && _faceTracker != null &&
                _leftEyeTracker != null &&
                _rightEyeTracker != null && _noseBridgeTracker != null && _faceMaskHolder != null &&
-               _facesHolder != null && _vertices != null && leftEyelashHolder != null && rightEyelashHolder != null && _canvas != null && _canvas.worldCamera != null && beauty != null;
+               _facesHolder != null && _vertices != null && leftEyelashHolder != null && rightEyelashHolder != null && lipsHolder != null && _canvas != null && _canvas.worldCamera != null && beauty != null;
     }
 
     private bool HasRecordingData() {
@@ -417,6 +423,7 @@ public class Simulator : SimulatorBase {
         _vertices.name = "Vertices";
         leftEyelashHolder.name = "LeftEyelashHolder";
         rightEyelashHolder.name = "RightEyelashHolder";
+        lipsHolder.name = "LipsHolder";
         gameObject.name = "Simulator";
         _filterObject.name = "Filter";
         _filterObject.position = Vector3.zero;
@@ -714,6 +721,10 @@ public class Simulator : SimulatorBase {
                         _skinnedFaceMeshes[i].sharedMesh = mesh;
                     }
                 }
+            }
+
+            if (beauty != null && beauty.lipsActive && beauty.lipsMeshRenderer != null) {
+                beauty.lipsMeshRenderer.sharedMesh = mesh;
             }
         }
     }
