@@ -680,6 +680,7 @@ namespace Filta {
             if (GUILayout.Button("Copy left eyelash")) {
                 beauty.RightCurve.keys = beauty.LeftCurve.keys;
             }
+            DrawUILine(Color.grey);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Lips", EditorStyles.boldLabel);
             beauty.lipsActive = EditorGUILayout.Toggle("Lips Active", beauty.lipsActive);
