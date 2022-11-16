@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Unity.VisualScripting;
 #if UNITY_EDITOR
@@ -8,33 +9,41 @@ using UnityEditor;
 #endif
 public class Beauty : MonoBehaviour {
 #if UNITY_EDITOR
+
+    #region Variable Definitions
+    
+    [SerializeField]
+    private Simulator simulator;
+
+    private bool _initialized;
+
+    #region Eyelash Variables
+    
+    [SerializeField]
+    private GameObject eyelashPrefab;
+    
+    private AnimationCurve _leftCurve;
+    private AnimationCurve _rightCurve;
+    
     public int resolution = 10;
     public bool leftEyelashActive;
     public bool rightEyelashActive;
-
-    [SerializeField]
-    private GameObject eyelashPrefab;
-
+    
     public Vector3[] leftEyeVertices;
     public Vector3[] rightEyeVertices;
 
     private GameObject _leftEyelash;
     private GameObject _rightEyelash;
-
+    
     private MeshFilter _leftMeshFilter;
     private MeshFilter _rightMeshFilter;
-
-    private Variables _leftVariables;
-    private Variables _rightVariables;
-
-    private AnimationCurve _leftCurve;
-    private AnimationCurve _rightCurve;
-
-    private float _leftAngle;
-    private float _rightAngle;
-
     private const string LeftEyelashName = "LeftEyelash";
     private const string RightEyelashName = "RightEyelash";
+    
+    private float _leftAngle;
+    private float _rightAngle;
+    private Variables _leftVariables;
+    private Variables _rightVariables;
 
     private Vector3[] _vertices;
     private Vector3[] _normals;
@@ -122,15 +131,126 @@ public class Beauty : MonoBehaviour {
         }
     }
 
+    #endregion
+
+    #region Lip Variables
+    private static readonly int LipTextureProperty = Shader.PropertyToID("_LipTexture");
+    private static readonly int GlossProperty = Shader.PropertyToID("_Gloss");
+    private static readonly int TintProperty = Shader.PropertyToID("_Tint");
+    private static readonly int TilingProperty = Shader.PropertyToID("_Tiling");
+    private static readonly int OffsetProperty = Shader.PropertyToID("_Offset");
+    public bool lipsActive;
 
     [SerializeField]
-    private Simulator simulator;
+    private Material lipsMaterial;
+    
+    private GameObject _lips;
 
-    private bool _initialized;
+    [NonSerialized]
+    public SkinnedMeshRenderer lipsMeshRenderer;
+
+    
+    private Variables _lipsVariable;
+
+    private Texture _lipsTexture;
+    
+    private float _glossiness = 0.5f;
+    private Color _tint = Color.white;
+    private Vector2 _tiling = new(1, 1);
+    private Vector2 _offset = new(0, 0);
+
+    
+    private const string LipsName = "Lips";
+    public Texture LipsTexture {
+        get {
+            if (_lipsVariable != null) {
+                _lipsTexture = _lipsVariable.declarations.Get<Texture>("Texture");
+            }
+
+            return _lipsTexture;
+        }
+        set {
+            _lipsTexture = value;
+            if (_lipsVariable != null) {
+                _lipsVariable.declarations.Set("Texture", _lipsTexture);
+            }
+        }
+    }
+    
+    public float Glossiness {
+        get {
+            if (_lipsVariable != null) {
+                _glossiness = _lipsVariable.declarations.Get<float>("Glossiness");
+            }
+
+            return _glossiness;
+        }
+        set {
+            _glossiness = value;
+            if (_lipsVariable != null) {
+                _lipsVariable.declarations.Set("Glossiness", _glossiness);
+            }
+        }
+    }
+    
+    public Color Tint {
+        get {
+            if (_lipsVariable != null) {
+                _tint = _lipsVariable.declarations.Get<Color>("Tint");
+            }
+
+            return _tint;
+        }
+        set {
+            _tint = value;
+            if (_lipsVariable != null) {
+                _lipsVariable.declarations.Set("Tint", _tint);
+            }
+        }
+    }
+    
+    public Vector2 Tiling {
+        get {
+            if (_lipsVariable != null) {
+                _tiling = _lipsVariable.declarations.Get<Vector2>("Tiling");
+            }
+
+            return _tiling;
+        }
+        set {
+            _tiling = value;
+            if (_lipsVariable != null) {
+                _lipsVariable.declarations.Set("Tiling", _tiling);
+            }
+        }
+    }
+    
+    public Vector2 Offset {
+        get {
+            if (_lipsVariable != null) {
+                _offset = _lipsVariable.declarations.Get<Vector2>("Offset");
+            }
+
+            return _offset;
+        }
+        set {
+            _offset = value;
+            if (_lipsVariable != null) {
+                _lipsVariable.declarations.Set("Offset", _offset);
+            }
+        }
+    }
+
+    #endregion
+    
+
+    #endregion
+    
 
     public void Initialize() {
         Transform left = simulator.leftEyelashHolder.Find(LeftEyelashName);
         Transform right = simulator.rightEyelashHolder.Find(RightEyelashName);
+        Transform lips = simulator.lipsHolder.Find(LipsName);
         if (left != null) {
             _leftEyelash = left.gameObject;
             _leftVariables = _leftEyelash.GetComponent<Variables>();
@@ -143,6 +263,13 @@ public class Beauty : MonoBehaviour {
             _rightVariables = _rightEyelash.GetComponent<Variables>();
             _rightMeshFilter = _rightEyelash.GetComponent<MeshFilter>();
             rightEyelashActive = true;
+        }
+
+        if (lips != null) {
+            _lips = lips.gameObject;
+            _lipsVariable = _lips.GetComponent<Variables>();
+            lipsMeshRenderer = _lips.GetComponent<SkinnedMeshRenderer>();
+            lipsActive = true;
         }
 
         _sideSize = Simulator.EyelashVertexCount;
@@ -174,6 +301,17 @@ public class Beauty : MonoBehaviour {
         if (simulator == null || !simulator.IsSetUpProperly())
             return;
         HandleEyelashToggling();
+        HandleLipsToggling();
+        if (_lips != null) {
+            _lips.name = LipsName;
+            lipsMeshRenderer.sharedMaterial = lipsMaterial;
+            lipsMeshRenderer.sharedMaterial.SetTexture(LipTextureProperty, LipsTexture);
+            lipsMeshRenderer.sharedMaterial.SetFloat(GlossProperty, Glossiness);
+            lipsMeshRenderer.sharedMaterial.SetColor(TintProperty, Tint);
+            lipsMeshRenderer.sharedMaterial.SetVector(TilingProperty, Tiling);
+            lipsMeshRenderer.sharedMaterial.SetVector(OffsetProperty, Offset);
+        }
+        
         if (_leftEyelash != null) {
             _leftEyelash.name = LeftEyelashName;
             simulator.leftEyelashHolder.localPosition = leftEyeVertices[0];
@@ -188,6 +326,8 @@ public class Beauty : MonoBehaviour {
             GenerateMesh(Eye.Right);
         }
     }
+
+    #region Eyelash Functions
 
     private void HandleEyelashToggling() {
         if (leftEyelashActive && _leftEyelash == null) {
@@ -233,8 +373,8 @@ public class Beauty : MonoBehaviour {
         EditorSceneManager.MarkAllScenesDirty();
 #endif
     }
-
-    private void GenerateMesh(Eye eye) {
+    
+        private void GenerateMesh(Eye eye) {
         if (eye == Eye.Left) {
             _curve = LeftCurve;
             _angle = LeftAngle;
@@ -352,5 +492,43 @@ public class Beauty : MonoBehaviour {
         mesh.normals = _normals;
         mesh.triangles = _indices; // assign triangles last!
     }
+
+    #endregion
+
+    #region Lip Functions
+
+    private void HandleLipsToggling() {
+        if (lipsActive && _lips == null) {
+            GenerateLip();
+        } else if (!lipsActive && _lips != null) {
+            DestroyImmediate(_lips);
+            _lips = null;
+#if UNITY_EDITOR
+            EditorSceneManager.MarkAllScenesDirty();
+#endif
+        }
+    }
+
+    private void GenerateLip() {
+        if (simulator != null) {
+            _lips = simulator.SpawnNewFaceMesh();
+            _lips.transform.SetParent(simulator.lipsHolder);
+            _lipsVariable = _lips.AddComponent<Variables>();
+            _lipsVariable.declarations.Set("Glossiness", _glossiness);
+            _lipsVariable.declarations.Set("Texture", _lipsTexture);
+            _lipsVariable.declarations.Set("Tint", _tint);
+            _lipsVariable.declarations.Set("Tiling", _tiling);
+            _lipsVariable.declarations.Set("Offset", _offset);
+            lipsMeshRenderer = _lips.GetComponent<SkinnedMeshRenderer>();
+            lipsMeshRenderer.sharedMaterial = lipsMaterial;
+#if UNITY_EDITOR
+            Selection.activeGameObject = _lips;
+            _lips.hideFlags = HideFlags.NotEditable;
+            EditorSceneManager.MarkAllScenesDirty();
+#endif
+        }
+    }
+
+    #endregion
 #endif
 }
