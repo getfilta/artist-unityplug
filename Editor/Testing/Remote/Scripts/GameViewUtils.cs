@@ -25,6 +25,15 @@ public class GameViewUtils {
         FixedResolution
     }
 
+    public static readonly Vector2Int IPhoneSe = new Vector2Int(1136, 640);
+    public static readonly Vector2Int IPhone11 = new Vector2Int(1792, 828);
+    public static readonly Vector2Int IPhone11Pro = new Vector2Int(2436, 1125);
+    public static readonly Vector2Int IPhone11ProMax = new Vector2Int(2688, 1242);
+    public static readonly Vector2Int IPhone12Mini = new Vector2Int(2340, 1080);
+    public static readonly Vector2Int IPhone12Pro = new Vector2Int(2532, 1170);
+    public static readonly Vector2Int IPhone12ProMax = new Vector2Int(2778, 1284);
+    
+
     private static void SetSize(int index) {
         var gvWndType = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
         EditorWindow gvWnd = EditorWindow.GetWindow(gvWndType);
@@ -70,15 +79,18 @@ public class GameViewUtils {
     }
 
     public static void SetGameView(GameViewSizeType viewSizeType, int width,
-        int height, string text) {
+        int height, string text, bool forceSet = true) {
         GameViewSizeGroupType sizeGroupType = GetGroupType();
         List<string> existingSizes = GetViewListSize(sizeGroupType).ToList();
         int index = existingSizes.FindIndex((s => s.Contains(text)));
         if ( index != -1) {
+            Debug.Log(index + " " + text);
             RemoveCustomSize(index, sizeGroupType);
         }
         AddCustomSize(viewSizeType, sizeGroupType, width, height, text);
-        SetSize(GetViewListSize(sizeGroupType).Length - 1);
+        if (forceSet) {
+            SetSize(GetViewListSize(sizeGroupType).Length - 1);
+        }
     }
     
     public static Vector2 GetMainGameViewSize()
