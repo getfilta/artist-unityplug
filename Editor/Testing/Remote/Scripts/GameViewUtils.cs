@@ -25,13 +25,13 @@ public class GameViewUtils {
         FixedResolution
     }
 
-    public static readonly Vector2Int IPhoneSe = new Vector2Int(1136, 640);
-    public static readonly Vector2Int IPhone11 = new Vector2Int(1792, 828);
-    public static readonly Vector2Int IPhone11Pro = new Vector2Int(2436, 1125);
-    public static readonly Vector2Int IPhone11ProMax = new Vector2Int(2688, 1242);
-    public static readonly Vector2Int IPhone12Mini = new Vector2Int(2340, 1080);
-    public static readonly Vector2Int IPhone12Pro = new Vector2Int(2532, 1170);
-    public static readonly Vector2Int IPhone12ProMax = new Vector2Int(2778, 1284);
+    public static readonly Vector2Int IPhoneSe = new Vector2Int(640, 1136);
+    public static readonly Vector2Int IPhone11 = new Vector2Int( 828,1792);
+    public static readonly Vector2Int IPhone11Pro = new Vector2Int( 1125,2436);
+    public static readonly Vector2Int IPhone11ProMax = new Vector2Int( 1242,2688);
+    public static readonly Vector2Int IPhone12Mini = new Vector2Int( 1080,2340);
+    public static readonly Vector2Int IPhone12Pro = new Vector2Int( 1170,2532);
+    public static readonly Vector2Int IPhone12ProMax = new Vector2Int( 1284,2778);
     
 
     private static void SetSize(int index) {
