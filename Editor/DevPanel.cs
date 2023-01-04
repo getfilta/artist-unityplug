@@ -316,6 +316,7 @@ namespace Filta {
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
             GUILayout.EndScrollView();
+            Feedback();
         }
 
         private void HandleDynamicLighting() {
@@ -654,6 +655,13 @@ namespace Filta {
             
         }
 
+        private void Feedback() {
+            if (GUILayout.Button("Send Feedback")) {
+                FeedbackWindow window = (FeedbackWindow)GetWindow(typeof(FeedbackWindow), false, "Feedback");
+                window.Show();
+            }
+        }
+
         #endregion
 
         #region Beauty
@@ -689,6 +697,8 @@ namespace Filta {
             beauty.Offset = EditorGUILayout.Vector2Field("Offset", beauty.Offset);
             beauty.Tint = EditorGUILayout.ColorField("Tint", beauty.Tint);
             beauty.Glossiness = EditorGUILayout.Slider("Glossiness", beauty.Glossiness, 0f, 1f);
+            DrawUILine(Color.grey);
+            GUILayout.FlexibleSpace();
         }
 
         #endregion
