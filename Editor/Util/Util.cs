@@ -95,6 +95,17 @@ namespace Filta {
                     $"{PackagePath}/Core/template/UniversalRenderPipelineAsset.asset");
             GraphicsSettings.defaultRenderPipeline = pluginRP;
         }
+
+        [InitializeOnLoadMethod]
+        public static void AddExtraGameViews() {
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone11.x, GameViewUtils.IPhone11.y, "iPhone 11 - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone11Pro.x, GameViewUtils.IPhone11Pro.y, "iPhone 11 Pro - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone11ProMax.x, GameViewUtils.IPhone11ProMax.y, "iPhone 11 Pro Max - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone12Mini.x, GameViewUtils.IPhone12Mini.y, "iPhone 12 Mini - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone12Pro.x, GameViewUtils.IPhone12Pro.y, "iPhone 12 Pro - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhone12ProMax.x, GameViewUtils.IPhone12ProMax.y, "iPhone 12 Pro Max - Filta", false);
+            GameViewUtils.SetGameView(GameViewUtils.GameViewSizeType.FixedResolution, GameViewUtils.IPhoneSe.x, GameViewUtils.IPhoneSe.y, "iPhone SE - Filta", false);
+        }
     }
 }
 #endif
