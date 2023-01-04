@@ -84,7 +84,6 @@ public class GameViewUtils {
         List<string> existingSizes = GetViewListSize(sizeGroupType).ToList();
         int index = existingSizes.FindIndex((s => s.Contains(text)));
         if ( index != -1) {
-            Debug.Log(index + " " + text);
             RemoveCustomSize(index, sizeGroupType);
         }
         AddCustomSize(viewSizeType, sizeGroupType, width, height, text);
