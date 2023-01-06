@@ -122,6 +122,15 @@ namespace Filta {
             return response;
         }
 
+        public async Task<bool> SendFeedback(string feedback) {
+            FeedbackRequest request = new FeedbackRequest
+                {uid = Authentication.Instance.Uid, feedback = feedback};
+            bool response =
+                await CallFunction<FeedbackRequest, bool>("ops-sendArtistFeedback",
+                    request, true);
+            return response;
+        }
+
         public async Task<List<ReleaseInfo>> GetMasterReleaseInfo() {
             try {
                 using UnityWebRequest req = UnityWebRequest.Get(RegistryURL);
@@ -293,13 +302,16 @@ namespace Filta {
                 Debug.LogError(req.error.ToString());
                 throw new Exception(req.error.ToString());
             }
-
+            
             var jsonResult = JObject.Parse(req.downloadHandler.text);
             if (jsonResult["error"] != null) {
                 Debug.LogError(req.error.ToString());
                 throw new Exception(jsonResult["error"].ToString());
             }
 
+            if (typeof(TResponse).IsValueType) {
+                return jsonResult["result"].ToObject<TResponse>();
+            }
             var result = JsonConvert.DeserializeObject<TResponse>(jsonResult["result"].ToString());
             return result;
         }
@@ -498,6 +510,11 @@ namespace Filta {
     }
     public class LogAnalyticsEventResponse {
         public string result;
+    }
+
+    public class FeedbackRequest {
+        public string uid;
+        public string feedback;
     }
 
     public class GetPrivCollectionRequest {
