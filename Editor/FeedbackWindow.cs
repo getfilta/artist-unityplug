@@ -35,7 +35,9 @@ namespace Filta {
         private async void SendFeedback() {
             _sending = true;
             bool result = await Backend.Instance.SendFeedback(_feedbackText);
-            Debug.Log(result);
+            if (result) {
+                Debug.Log("Feedback sent successfully");
+            }
             _sending = false;
         }
     }
