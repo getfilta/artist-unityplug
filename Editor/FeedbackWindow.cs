@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,12 +34,19 @@ namespace Filta {
         }
 
         private async void SendFeedback() {
-            _sending = true;
-            bool result = await Backend.Instance.SendFeedback(_feedbackText);
-            if (result) {
-                Debug.Log("Feedback sent successfully");
+            try {
+                _sending = true;
+                bool result = await Backend.Instance.SendFeedback(_feedbackText);
+                if (result) {
+                    Debug.Log("Feedback sent successfully");
+                }
+
+                _sending = false;
             }
-            _sending = false;
+            catch (Exception e) {
+                Debug.LogError(e);
+                _sending = false;
+            }
         }
     }
 }
