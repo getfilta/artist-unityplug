@@ -2,9 +2,12 @@
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Object = UnityEngine.Object;
+using Task = System.Threading.Tasks.Task;
 
 namespace Filta {
     public static class Util
@@ -89,11 +92,33 @@ namespace Filta {
         }
 
         [InitializeOnLoadMethod]
-        public static void SetRenderPipeline() {
+        public static async void SetRenderPipeline() {
             RenderPipelineAsset pluginRP =
                 AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(
                     $"{PackagePath}/Core/template/UniversalRenderPipelineAsset.asset");
             GraphicsSettings.defaultRenderPipeline = pluginRP;
+            //Set a delay cos it wasn't being effected immediately on load.
+            await Task.Delay(1000);
+            SetMkRendererFeature();
+        }
+        
+        private static void SetMkRendererFeature() {
+            UniversalRendererData mkRenderer =
+                AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/internal/mkRenderer.asset");
+            if (mkRenderer == null) {
+                return;
+            }
+            ScriptableRendererFeature mkFeature = mkRenderer.rendererFeatures[0];
+            if (mkFeature == null) {
+                return;
+            }
+            UniversalRendererData renderer =
+                AssetDatabase.LoadAssetAtPath<UniversalRendererData>(
+                    $"{PackagePath}/Core/template/UniversalRenderPipelineAsset_Renderer.asset");
+            if (!renderer.rendererFeatures.Contains(mkFeature)) {
+                renderer.rendererFeatures.Add(mkFeature);
+                renderer.SetDirty();
+            }
         }
 
         [InitializeOnLoadMethod]
