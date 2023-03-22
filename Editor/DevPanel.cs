@@ -1143,10 +1143,11 @@ namespace Filta {
                 }
 
                 EditorSceneManager.OpenScene($"Assets/Filters/{_sceneName}.unity", OpenSceneMode.Single);
+                Util.AutoAddPostProcessing();
                 SetStatusMessage("Created new scene");
             }
         }
-        
+
         private async Task RefreshExternalDatasources() {
             await RefreshArtsAndBundleStatus();
             Backend.Instance.ListenToQueue();

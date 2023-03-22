@@ -2,7 +2,6 @@
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -119,6 +118,22 @@ namespace Filta {
                 renderer.rendererFeatures.Add(mkFeature);
                 renderer.SetDirty();
             }
+        }
+        
+        public static void AutoAddPostProcessing() {
+            VolumeProfile postProcessData =
+                AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/internal/FiltaDefaultPP.asset");
+            if (postProcessData == null) {
+                return;
+            }
+            GameObject filter = GetFilterObject();
+            if (filter != null) {
+                GameObject pp = new GameObject("PostProcess", new[] {typeof(Volume)});
+                pp.transform.SetParent(filter.transform);
+                Volume volume = pp.GetComponent<Volume>();
+                volume.profile = postProcessData;
+            }
+            
         }
 
         [InitializeOnLoadMethod]
