@@ -122,7 +122,7 @@ namespace Filta {
         
         public static void AutoAddPostProcessing() {
             VolumeProfile postProcessData =
-                AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/internal/FiltaDefaultPP.asset");
+                AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/internal/FiltaDefaultPostProcess.asset");
             if (postProcessData == null) {
                 return;
             }
