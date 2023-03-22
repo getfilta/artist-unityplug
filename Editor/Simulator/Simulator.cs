@@ -131,6 +131,7 @@ public class Simulator : SimulatorBase {
                 _cloths = _filterObject.GetComponentsInChildren<Cloth>();
             }
         }
+        PopulateVertexTrackers();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
     }
@@ -798,6 +799,28 @@ public class Simulator : SimulatorBase {
         vertexTrackers.Add(vertexTracker);
         HandleVertexPairing();
         return vertex;
+    }
+
+    private void PopulateVertexTrackers() {
+        vertexTrackers = new List<VertexTracker>();
+        for (int i = 0; i < _vertices.childCount; i++) {
+            string componentName = _vertices.GetChild(i).name;
+            if (!componentName.Contains("VertexTrackerIndex_")) {
+                continue;
+            }
+            int ind = componentName.IndexOf('_');
+            if (ind == -1) {
+                continue;
+            }
+
+            string indexString = componentName.Substring(ind + 1);
+            if (String.IsNullOrEmpty(indexString)) {
+                continue;
+            }
+
+            int index = Convert.ToInt32(indexString);
+            vertexTrackers.Add(new VertexTracker {vertexIndex = index, holder = _vertices.GetChild(i).gameObject});
+        }
     }
 
 

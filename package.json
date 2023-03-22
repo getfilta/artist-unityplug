@@ -16,6 +16,6 @@
       "pluginMajorVersion": 4,
       "pluginMinorVersion": 1
     },
-    "releaseNotes": "- feat: add feedback panel for artists.\n- feat: add more game view resolutions"
+    "releaseNotes": "-feat: add support for MKGlow post processing which is in the new artist template.\n- feat: add feedback panel for artists.\n- feat: add more game view resolutions.\n- fix: vertex trackers breaking on play mode."
   }
 }
