@@ -120,9 +120,14 @@ namespace Filta {
             }
         }
         
-        public static void AutoAddPostProcessing() {
+        public static void AutoAddPostProcessing(string sceneName) {
+            bool success = AssetDatabase.CopyAsset("Assets/internal/FiltaDefaultPostProcess.asset",
+                $"Assets/Filters/{sceneName}PostProcess.asset");
+            if (!success) {
+                return;
+            }
             VolumeProfile postProcessData =
-                AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/internal/FiltaDefaultPostProcess.asset");
+                AssetDatabase.LoadAssetAtPath<VolumeProfile>($"Assets/Filters/{sceneName}PostProcess.asset");
             if (postProcessData == null) {
                 return;
             }
