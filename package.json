@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 5,
-      "pluginMinorVersion": 0
+      "pluginMinorVersion": 1
     },
-    "releaseNotes": "-feat: add support for MKGlow post processing which is in the new artist template.\n- feat: add feedback panel for artists.\n- feat: add more game view resolutions.\n- fix: vertex trackers breaking on play mode."
+    "releaseNotes": "-fix: bug in new post processing stack."
   }
 }
