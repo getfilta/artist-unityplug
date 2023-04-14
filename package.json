@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 5,
-      "pluginMinorVersion": 1
+      "pluginMinorVersion": 2
     },
-    "releaseNotes": "-fix: bug in new post processing stack."
+    "releaseNotes": "- fix: body simulator not working\n- fix: add feedback message to feedback window"
   }
 }
