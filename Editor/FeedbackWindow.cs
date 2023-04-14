@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,11 +17,13 @@ namespace Filta {
 
         private string _feedbackText;
         private const string DiscordLink = "http://discord.gg/CWed5Krf7X";
+        private string _process;
 
         private void OnGUI() {
             EditorGUILayout.LabelField("Send feedback to team", EditorStyles.boldLabel);
             if (_sending) {
-                EditorGUILayout.LabelField("Sending...");
+                EditorGUILayout.LabelField(_process);
+                _feedbackText = "";
                 return;
             }
             _feedbackText = EditorGUILayout.TextArea(_feedbackText);
@@ -36,16 +39,22 @@ namespace Filta {
         private async void SendFeedback() {
             try {
                 _sending = true;
+                _process = "Sending...";
+                Repaint();
                 bool result = await Backend.Instance.SendFeedback(_feedbackText);
-                if (result) {
-                    Debug.Log("Feedback sent successfully");
-                }
-
+                _process = result ? "Feedback sent successfully" : "Failed to send feedback";
+                Repaint();
+                await Task.Delay(2000);
                 _sending = false;
+                Repaint();
             }
             catch (Exception e) {
+                _process = "Failed to send feedback. Check console for error";
+                Repaint();
                 Debug.LogError(e);
+                await Task.Delay(2000);
                 _sending = false;
+                Repaint();
             }
         }
     }
