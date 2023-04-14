@@ -2,6 +2,7 @@
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -133,12 +134,12 @@ namespace Filta {
             }
             GameObject filter = GetFilterObject();
             if (filter != null) {
-                GameObject pp = new GameObject("PostProcess", new[] {typeof(Volume)});
+                GameObject pp = new GameObject("PostProcess");
                 pp.transform.SetParent(filter.transform);
-                Volume volume = pp.GetComponent<Volume>();
-                volume.profile = postProcessData;
+                Volume volume = pp.AddComponent<Volume>();
+                volume.sharedProfile = postProcessData;
+                EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
             }
-            
         }
 
         [InitializeOnLoadMethod]
