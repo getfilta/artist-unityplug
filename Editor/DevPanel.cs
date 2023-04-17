@@ -312,6 +312,8 @@ namespace Filta {
             EditorGUIUtility.labelWidth = 215;
             _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
             HandleDynamicLighting();
+            _faceSimulator.fillFaceMesh =
+                EditorGUILayout.Toggle("Fill Face Meshes", _faceSimulator.fillFaceMesh);
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();

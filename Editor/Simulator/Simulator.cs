@@ -14,6 +14,23 @@ using UnityEditor;
 #endif
 
 public class Simulator : SimulatorBase {
+    private static readonly int[] LeftEyeVerts = {
+        1101, 1102, 1100, 1103, 1099, 1104, 1098, 1105, 1097, 1106, 1096, 1107, 1095, 1108, 1094, 1085, 1093, 1086,
+        1092, 1087, 1091, 1088, 1090, 1089
+    };
+
+    private static readonly int[] RightEyeVerts = {
+        1081, 1082, 1080, 1083, 1079, 1084, 1078, 1061, 1077, 1062, 1076, 1063, 1075, 1064, 1074, 1065, 1073, 1066,
+        1072, 1067, 1071, 1068, 1070, 1069
+    };
+
+    private static readonly int[] MouthVerts = {
+        249, 404, 393, 305, 250, 248, 251, 247, 252, 275, 253, 290, 254, 274, 255, 265, 256, 25, 24, 700, 691, 709, 690,
+        725, 689, 710, 688, 682, 687, 683, 686, 740, 685, 834, 823, 684
+    };
+
+    private List<int> _faceIndicesWithCovering;
+     
     public EventHandler<UpdateBlendShapeWeightEventArgs> updateBlendShapeWeightEvent = delegate { };
     public EventHandler<FaceData.Trans> onFaceUpdate;
     public EventHandler onFaceAdd;
@@ -75,6 +92,9 @@ public class Simulator : SimulatorBase {
 
     [NonSerialized]
     public bool showFaceMeshVisualiser;
+
+    [NonSerialized]
+    public bool fillFaceMesh;
     
     [NonSerialized]
     public RenderTexture _faceTexture;
@@ -687,7 +707,8 @@ public class Simulator : SimulatorBase {
         mesh.Clear();
         if (vertices.Count > 0 && indices.Count > 0) {
             mesh.SetVertices(vertices);
-            mesh.SetIndices(indices, MeshTopology.Triangles, 0, false);
+            GetIndicesWithCoverings(indices);
+            mesh.SetIndices(fillFaceMesh ? _faceIndicesWithCovering : indices , MeshTopology.Triangles, 0, false);
             mesh.RecalculateBounds();
             if (normals.Count == vertices.Count) {
                 mesh.SetNormals(normals);
@@ -727,6 +748,36 @@ public class Simulator : SimulatorBase {
             if (beauty != null && beauty.lipsActive && beauty.lipsMeshRenderer != null) {
                 beauty.lipsMeshRenderer.sharedMesh = mesh;
             }
+        }
+    }
+    
+    
+    private void GetIndicesWithCoverings(List<int> indices) {
+        if (_faceIndicesWithCovering != null && _faceIndicesWithCovering.Count > 0) {
+            return;
+        }
+        int capacity = (LeftEyeVerts.Length - 2) * 3 + (RightEyeVerts.Length - 2) * 3 + (MouthVerts.Length - 2) * 3;
+        _faceIndicesWithCovering = new List<int>(capacity + indices.Count);
+        List<int> addedIndices = new List<int>(capacity);
+        FormTriangles(LeftEyeVerts, addedIndices);
+        FormTriangles(RightEyeVerts, addedIndices);
+        FormTriangles(MouthVerts, addedIndices);
+        _faceIndicesWithCovering.AddRange(indices);
+        _faceIndicesWithCovering.AddRange(addedIndices);
+    }
+
+    private void FormTriangles(int[] vertexIndices, List<int> addedIndices) {
+        bool clock = true;
+        for (int i = 2; i < vertexIndices.Length; i++) {
+            addedIndices.Add(vertexIndices[i]);
+            if (clock) {
+                addedIndices.Add(vertexIndices[i - 1]);
+                addedIndices.Add(vertexIndices[i - 2]);
+            } else {
+                addedIndices.Add(vertexIndices[i - 2]);
+                addedIndices.Add(vertexIndices[i - 1]);
+            }
+            clock = !clock;
         }
     }
 
