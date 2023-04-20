@@ -51,8 +51,9 @@ namespace Filta {
         }
 
         private static void HandleTextures(GameObject filter, SimulatorBase simulator) {
-            Variables variables = filter.AddComponent<Variables>();
-            int componentCount = filter.GetComponents<Component>().Length;
+            GameObject variableHolder = new GameObject("VariableHolder");
+            variableHolder.transform.SetParent(filter.transform);
+            Variables variables = variableHolder.AddComponent<Variables>();
             PrefabUtility.SaveAsPrefabAsset(filter, MockPath, out bool success);
             string[] paths = AssetDatabase.GetDependencies(MockPath, true);
             if (paths.Contains(FaceTexturePath)) {
@@ -68,12 +69,6 @@ namespace Filta {
                 }
                 if (paths.Contains(BodySegPath)) {
                     variables.declarations.Set("BodySegmentation", simulator._stencilRT);
-                }
-            }
-            for (int i = 0; i < componentCount; i++) {
-                bool top = UnityEditorInternal.ComponentUtility.MoveComponentUp(variables);
-                if (!top) {
-                    break;
                 }
             }
             AssetDatabase.DeleteAsset(MockPath);
