@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.5.3",
+  "version": "2.6.0",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -13,9 +13,9 @@
   "release": {
     "version": {
       "pluginAppVersion": 2,
-      "pluginMajorVersion": 5,
-      "pluginMinorVersion": 3
+      "pluginMajorVersion": 6,
+      "pluginMinorVersion": 0
     },
-    "releaseNotes": "- feat: add option for eye coverings"
+    "releaseNotes": "- feat: add option for eye coverings\n- fix: broken filter if script machine is put on filter object"
   }
 }
