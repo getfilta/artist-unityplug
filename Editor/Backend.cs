@@ -437,6 +437,7 @@ namespace Filta {
         public FilterType filterType;
         public bool resetOnRecord;
         public bool dynamicLightOn;
+        public bool fillFaceMesh;
     }
 
     public class ScopedRegistry {

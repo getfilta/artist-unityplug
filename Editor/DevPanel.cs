@@ -312,6 +312,8 @@ namespace Filta {
             EditorGUIUtility.labelWidth = 215;
             _resetOnRecord = EditorGUILayout.Toggle("Reset filter when user starts recording", _resetOnRecord);
             HandleDynamicLighting();
+            _faceSimulator.fillFaceMesh =
+                EditorGUILayout.Toggle("Fill Face Meshes", _faceSimulator.fillFaceMesh);
             EditorGUIUtility.labelWidth = originalValue;
             DrawUILine(Color.gray);
             GUILayout.FlexibleSpace();
@@ -358,7 +360,14 @@ namespace Filta {
                     filterType = PluginInfo.FilterType.Fusion;
                     break;
             }
-            _pluginInfo = new PluginInfo { version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version, filterType = filterType, resetOnRecord = _resetOnRecord, dynamicLightOn = _simulator.dynamicLightOn};
+
+            bool fillFaceMesh = _simulatorType == SimulatorBase.SimulatorType.Face && _faceSimulator.fillFaceMesh;
+
+            _pluginInfo = new PluginInfo {
+                version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version,
+                filterType = filterType, resetOnRecord = _resetOnRecord, dynamicLightOn = _simulator.dynamicLightOn,
+                fillFaceMesh = fillFaceMesh
+            };
         }
 
         private void ShowSimulatorTabs() {
