@@ -95,6 +95,8 @@ namespace Filta {
             //Set a delay cos it wasn't being effected immediately on load.
             await Task.Delay(1000);
             SetMkRendererFeature();
+            //Clear console warnings that are logged because of render pipeline setting.
+            Debug.ClearDeveloperConsole();
         }
         
         private static void SetMkRendererFeature() {
