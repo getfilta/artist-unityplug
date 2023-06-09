@@ -133,7 +133,7 @@ public class Simulator : SimulatorBase {
         base.Awake();
         mesh = new Mesh();
         TryAutomaticSetup();
-        _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        GetSkinnedMeshRenderers();
         _faceMeshes = _facesHolder.GetComponentsInChildren<MeshFilter>().ToList();
         _skinnedFaceMeshes = new List<SkinnedMeshRenderer>(_faceMeshes.Count);
         for (int i = 0; i < _faceMeshes.Count; i++) {
@@ -574,6 +574,7 @@ public class Simulator : SimulatorBase {
     #region Face Mask Control
 
     private List<SkinnedMeshRenderer> _faceMasks;
+    private List<FaceBlendShapeSet> _faceBlendShapeSets;
 
     private int _maskCount;
 
@@ -583,6 +584,22 @@ public class Simulator : SimulatorBase {
         }
 
         _faceMasks = _faceMaskHolder.GetComponentsInChildren<SkinnedMeshRenderer>().ToList();
+        string[] arKitNames = Enum.GetNames(typeof(ARKitBlendShapeLocation));
+        _faceBlendShapeSets = new List<FaceBlendShapeSet>();
+        for (int i = 0; i < _faceMasks.Count; i++) {
+            Dictionary<string, int> indices = new Dictionary<string, int>();
+            Mesh sharedMesh = _faceMasks[i].sharedMesh;
+            for (int j = 0; j < sharedMesh.blendShapeCount; j++) {
+                string blendShapeName = sharedMesh.GetBlendShapeName(j);
+                for (int k = 0; k < arKitNames.Length; k++) {
+                    if (blendShapeName.ToLower().Contains(arKitNames[k].ToLower())) {
+                        indices.Add(arKitNames[k], j);
+                        break;
+                    }
+                }
+            }
+            _faceBlendShapeSets.Add(new FaceBlendShapeSet{smr = _faceMasks[i], indices = indices});
+        }
         _maskCount = _faceMaskHolder.childCount;
     }
 
@@ -599,13 +616,11 @@ public class Simulator : SimulatorBase {
                 continue;
             }
 
-            for (int i = 0; i < _faceMasks.Count; i++) {
-                if (_faceMasks[i] != null) {
-                    int index = _faceMasks[i].sharedMesh
-                        .GetBlendShapeIndex(faceData.blendshapeData[j].blendShapeLocation.ToString());
-                    if (index != -1) {
-                        _faceMasks[i].SetBlendShapeWeight(index,
-                            faceData.blendshapeData[j].coefficient * _coefficientScale);
+            for (int i = 0; i < _faceBlendShapeSets.Count; i++) {
+                if (_faceBlendShapeSets[i] != null) {
+                    if (_faceBlendShapeSets[i].indices
+                        .TryGetValue(faceData.blendshapeData[j].blendShapeLocation.ToString(), out int index)) {
+                        _faceBlendShapeSets[i].smr.SetBlendShapeWeight(index, faceData.blendshapeData[j].coefficient * _coefficientScale);
                     }
                 }
 
@@ -631,14 +646,12 @@ public class Simulator : SimulatorBase {
             if (_faceMasks == null || _faceMasks.Count == 0) {
                 continue;
             }
-
-            for (int i = 0; i < _faceMasks.Count; i++) {
-                if (_faceMasks[i] != null) {
-                    //Cache this
-                    int index = _faceMasks[i].sharedMesh
-                        .GetBlendShapeIndex(prevBlendShape[j].blendShapeLocation.ToString());
-                    if (index != -1) {
-                        _faceMasks[i].SetBlendShapeWeight(index, nowValue);
+            
+            for (int i = 0; i < _faceBlendShapeSets.Count; i++) {
+                if (_faceBlendShapeSets[i] != null) {
+                    if (_faceBlendShapeSets[i].indices
+                        .TryGetValue(prevBlendShape[j].blendShapeLocation.ToString(), out int index)) {
+                        _faceBlendShapeSets[i].smr.SetBlendShapeWeight(index, nowValue);
                     }
                 }
 
@@ -884,6 +897,11 @@ public class Simulator : SimulatorBase {
     public class VertexTracker {
         public int vertexIndex;
         public GameObject holder;
+    }
+
+    public class FaceBlendShapeSet {
+        public SkinnedMeshRenderer smr;
+        public Dictionary<string, int> indices;
     }
 
     [Serializable]
