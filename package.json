@@ -14,8 +14,8 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 6,
-      "pluginMinorVersion": 0
+      "pluginMinorVersion": 1
     },
-    "releaseNotes": "- feat: add option for eye coverings\n- fix: broken filter if script machine is put on filter object"
+    "releaseNotes": "- feat: be less strict with blendshape names"
   }
 }
