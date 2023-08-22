@@ -1,7 +1,7 @@
 {
   "name": "com.getfilta.artist-unityplug",
   "displayName": "Filta Artist Suite",
-  "version": "2.6.0",
+  "version": "2.6.2",
   "unity": "2021.2",
   "author": "Filta",
   "description": "A suite of tools to help artists create face filters in Unity. Check www.getfilta.com for more information.",
@@ -14,7 +14,7 @@
     "version": {
       "pluginAppVersion": 2,
       "pluginMajorVersion": 6,
-      "pluginMinorVersion": 1
+      "pluginMinorVersion": 2
     },
     "releaseNotes": "- feat: be less strict with blendshape names"
   }

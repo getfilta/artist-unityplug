@@ -83,6 +83,7 @@ namespace Filta {
         private string _sceneName;
         private bool _showPrivCollection = true;
         private bool _recording;
+        private bool _manualChatHead;
 
         private string StatusBar {
             get => _statusBar;
@@ -366,7 +367,7 @@ namespace Filta {
             _pluginInfo = new PluginInfo {
                 version = _localReleaseInfo.version.pluginAppVersion, pluginVersion = _localReleaseInfo.version,
                 filterType = filterType, resetOnRecord = _resetOnRecord, dynamicLightOn = _simulator.dynamicLightOn,
-                fillFaceMesh = fillFaceMesh
+                fillFaceMesh = fillFaceMesh, manualChatHead = _manualChatHead,
             };
         }
 
@@ -775,6 +776,7 @@ namespace Filta {
                 EditorGUILayout.LabelField(_loadingText);
                 return;
             }
+            _manualChatHead = EditorGUILayout.Toggle("Set filter to manual chathead", _manualChatHead);
             EditorGUILayout.LabelField("Artist Uid");
             _artistUid = GUILayout.TextField(_artistUid);
             EditorGUILayout.LabelField("Artist Wallet Address");
