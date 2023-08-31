@@ -439,6 +439,7 @@ namespace Filta {
         public bool dynamicLightOn;
         public bool fillFaceMesh;
         public bool manualChatHead;
+        public bool manualBackground;
     }
 
     public class ScopedRegistry {
