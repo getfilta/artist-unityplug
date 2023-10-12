@@ -83,8 +83,8 @@ namespace Filta {
         private string _sceneName;
         private bool _showPrivCollection = true;
         private bool _recording;
-        private bool _manualChatHead;
-        private bool _manualBackground;
+        private bool _manualChatHead = true;
+        private bool _manualBackground = true;
 
         private string StatusBar {
             get => _statusBar;
@@ -165,6 +165,8 @@ namespace Filta {
         #endregion
         
         private async void OnEnable() {
+            _manualBackground = true;
+            _manualChatHead = true;
             if (GraphicsSettings.defaultRenderPipeline == null) {
                 Util.SetRenderPipeline();
             }
