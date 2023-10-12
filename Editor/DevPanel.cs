@@ -13,6 +13,8 @@ using UnityEditor.PackageManager.Requests;
 using UnityEditor.SceneManagement;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+using Filta.VisualScripting;
+using Object = UnityEngine.Object;
 
 namespace Filta {
     public class DevPanel : EditorWindow {
@@ -85,6 +87,8 @@ namespace Filta {
         private bool _recording;
         private bool _manualChatHead = true;
         private bool _manualBackground = true;
+
+        private string _petEventInput;
 
         private string StatusBar {
             get => _statusBar;
@@ -782,6 +786,7 @@ namespace Filta {
             EditorGUILayout.LabelField("Fanfic settings");
             _manualChatHead = EditorGUILayout.Toggle("Set filter to manual chathead", _manualChatHead);
             _manualBackground = EditorGUILayout.Toggle("Set filter to manual background", _manualBackground);
+            DrawPetSimulator();
             EditorGUILayout.LabelField("Artist Uid");
             _artistUid = GUILayout.TextField(_artistUid);
             EditorGUILayout.LabelField("Artist Wallet Address");
@@ -861,6 +866,24 @@ namespace Filta {
             catch (Exception e) {
                 Authentication.IsAdmin = false;
                 Debug.LogError("Failed to check admin status" + e.Message);
+            }
+        }
+
+        protected void DrawPetSimulator() {
+            EditorGUILayout.LabelField("Input PetEvent Json");
+            _petEventInput = EditorGUILayout.TextArea(_petEventInput);
+            if (GUILayout.Button("Invoke Event")) {
+                InvokeChatheadEvent();
+            }
+            
+        }
+
+        private void InvokeChatheadEvent() {
+            ChatheadPetStateChangedEvent stateChangedEvent =
+                JsonConvert.DeserializeObject<ChatheadPetStateChangedEvent>(_petEventInput);
+            ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
+            for (int i = 0; i < stateChangedEvent.petEvents.Length; i++) {
+                arTriggerEvents.onPetEvent.Invoke(this, stateChangedEvent.petEvents[i].name);
             }
         }
 
@@ -1449,7 +1472,7 @@ namespace Filta {
         }
         
         #endregion
-        
+
     }
 }
 #endif
