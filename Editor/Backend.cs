@@ -540,4 +540,21 @@ namespace Filta {
     public class GetAccessResponse {
         public bool isAdmin;
     }
+    
+    public class ChatheadPetState {
+        public string petType { get; set; }
+        public string name { get; set; }
+        public int hungerLevel { get; set; }
+        public int happinessLevel { get; set; }
+        public string mood { get; set; }
+        public string personality { get; set; }
+    }
+    public class ChatheadPetEvent {
+        public string name;
+        public string perkind;
+    }
+    public class ChatheadPetStateChangedEvent {
+        public ChatheadPetState petState { get; set; }
+        public ChatheadPetEvent[] petEvents { get; set; }
+    }
 }

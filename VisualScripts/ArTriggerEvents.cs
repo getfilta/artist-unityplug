@@ -23,6 +23,8 @@ namespace Filta.VisualScripting {
         public EventHandler onScreenTap = delegate { };
         public EventHandler onScreenDoubleTap = delegate { };
 
+        public EventHandler<string> onPetEvent = delegate { };
+
         private const float JawOpenFactor = 10f;
         private const float EyeBlinkFactor = 60f;
 
