@@ -52,6 +52,18 @@ public class Simulator : SimulatorBase {
     private MeshFilter _meshFilter;
     private MeshFilter _sampleMeshFilter;
 
+    [SerializeField]
+    private Transform petHolder;
+
+    [SerializeField]
+    private Transform twister;
+
+    [SerializeField]
+    private GameObject background;
+
+    private Vector3 initTwisterPos;
+    private Quaternion initTwisterRot;
+
     [FormerlySerializedAs("visualiserOffset"), SerializeField]
     private float _visualiserOffset;
 
@@ -128,6 +140,8 @@ public class Simulator : SimulatorBase {
 
     private const int LeftEyelashStart = 1182;
     private const int RightEyelashStart = 1179;
+    [NonSerialized]
+    public bool isAr;
 
     protected override void Awake() {
         base.Awake();
@@ -154,6 +168,7 @@ public class Simulator : SimulatorBase {
         PopulateVertexTrackers();
         EditorApplication.hierarchyChanged += GetSkinnedMeshRenderers;
         EditorApplication.hierarchyChanged += GetFaceMeshFilters;
+        TryGetPetObjects();
     }
 
     protected override void OnDisable() {
@@ -174,6 +189,72 @@ public class Simulator : SimulatorBase {
         showFaceMeshVisualiser = previousVisStatus;
         ResumeSimulator();
     }
+
+    public override void ResumeSimulator() {
+        base.ResumeSimulator();
+        isAr = true;
+    }
+
+    #region Pets
+
+    private void TryGetPetObjects() {
+        if (_filterObject == null) {
+            _filterObject = GameObject.Find("Filter").transform;
+        }
+
+        if (petHolder == null) {
+            petHolder = _filterObject.Find("PetHolder");
+        }
+
+        if (twister == null && petHolder != null) {
+            twister = petHolder.Find("Twister");
+        }
+
+        if (twister != null) {
+            initTwisterPos = twister.position;
+            initTwisterRot = twister.rotation;
+        }
+
+        if (_filterObject != null) {
+            Canvas[] canvases = _filterObject.GetComponentsInChildren<Canvas>();
+            if (canvases is {Length: > 0}) {
+                background = canvases[0].gameObject;
+            }
+        }
+    }
+    
+    public void ToggleAr(bool forceNonAr = false) {
+        if (petHolder == null) {
+            Debug.Log("No pet holder");
+            return;
+        }
+        if (forceNonAr) {
+            isAr = true;
+        }
+        if (isAr) {
+            StopSimulator();
+            mainCamera.transform.position = Vector3.back;
+            mainCamera.transform.rotation = Quaternion.identity;
+            if (twister != null) {
+                twister.position = initTwisterPos;
+                twister.rotation = initTwisterRot;
+            }
+
+            if (background != null) {
+                background.SetActive(true);
+            }
+            isAr = false;
+        } else {
+            isAr = true;
+            if (background != null) {
+                background.SetActive(false);
+            }
+            ResumeSimulator();
+        }
+    }
+
+    #endregion
+    
 
     public override void TryAutomaticSetup() {
         if (IsSetUpProperly()) {

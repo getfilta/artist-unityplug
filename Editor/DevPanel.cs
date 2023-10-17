@@ -787,6 +787,8 @@ namespace Filta {
             _manualChatHead = EditorGUILayout.Toggle("Set filter to manual chathead", _manualChatHead);
             _manualBackground = EditorGUILayout.Toggle("Set filter to manual background", _manualBackground);
             DrawPetSimulator();
+            DrawUILine(Color.gray);
+            
             EditorGUILayout.LabelField("Artist Uid");
             _artistUid = GUILayout.TextField(_artistUid);
             EditorGUILayout.LabelField("Artist Wallet Address");
@@ -875,7 +877,17 @@ namespace Filta {
             if (GUILayout.Button("Invoke Event")) {
                 InvokeChatheadEvent();
             }
-            
+            EditorGUILayout.LabelField("AR Settings");
+            bool arMode = _faceSimulator.isAr;
+            if (arMode) {
+                if (GUILayout.Button("Switch OFF AR")) {
+                    _faceSimulator.ToggleAr();
+                }
+            } else {
+                if (GUILayout.Button("Switch ON AR")) {
+                    _faceSimulator.ToggleAr();
+                }
+            }
         }
 
         private void InvokeChatheadEvent() {
@@ -948,6 +960,9 @@ namespace Filta {
             }
             SetStatusMessage("Exporting... (1/5)");
             try {
+                if (_simulator._simulatorType == SimulatorBase.SimulatorType.Face) {
+                    _faceSimulator.ToggleAr(true);
+                }
                 if (_simulator._simulatorType == SimulatorBase.SimulatorType.Body) {
                     _bodySimulator.PauseSimulator();
                     _bodySimulator.RevertAvatarsToTPose();
