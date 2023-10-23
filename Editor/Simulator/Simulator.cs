@@ -53,7 +53,9 @@ public class Simulator : SimulatorBase {
     private MeshFilter _sampleMeshFilter;
 
     [SerializeField]
-    private Transform petHolder;
+    private Transform nonArObject;
+    [SerializeField]
+    private Transform arObject;
 
     [SerializeField]
     private Transform twister;
@@ -202,17 +204,16 @@ public class Simulator : SimulatorBase {
             _filterObject = GameObject.Find("Filter").transform;
         }
 
-        if (petHolder == null) {
-            petHolder = _filterObject.Find("PetHolder");
+        if (nonArObject == null) {
+            nonArObject = GameObject.Find("NonArObject").transform;
+        }
+        
+        if (arObject == null) {
+            arObject = GameObject.Find("ArObject").transform;
         }
 
-        if (twister == null && petHolder != null) {
-            twister = petHolder.Find("Twister");
-        }
-
-        if (twister != null) {
-            initTwisterPos = twister.position;
-            initTwisterRot = twister.rotation;
+        if (twister == null && _filterObject) {
+            twister = GameObject.Find("Twister").transform;
         }
 
         if (_filterObject != null) {
@@ -224,8 +225,8 @@ public class Simulator : SimulatorBase {
     }
     
     public void ToggleAr(bool forceNonAr = false) {
-        if (petHolder == null) {
-            Debug.Log("No pet holder");
+        if (twister == null) {
+            Debug.Log("No Twister Object");
             return;
         }
         if (forceNonAr) {
@@ -235,9 +236,8 @@ public class Simulator : SimulatorBase {
             StopSimulator();
             mainCamera.transform.position = Vector3.back;
             mainCamera.transform.rotation = Quaternion.identity;
-            if (twister != null) {
-                twister.position = initTwisterPos;
-                twister.rotation = initTwisterRot;
+            if (nonArObject != null && nonArObject.childCount > 0) {
+                twister.SetParent(nonArObject.GetChild(0), false);
             }
 
             if (background != null) {
@@ -246,6 +246,9 @@ public class Simulator : SimulatorBase {
             isAr = false;
         } else {
             isAr = true;
+            if (arObject != null && arObject.childCount > 0) {
+                twister.SetParent(arObject.GetChild(0), false);
+            }
             if (background != null) {
                 background.SetActive(false);
             }
