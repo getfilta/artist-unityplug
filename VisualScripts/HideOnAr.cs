@@ -1,7 +1,9 @@
 using Filta.VisualScripting;
 using UnityEngine;
 
+#if UNITY_EDITOR
 [ExecuteAlways]
+#endif
 public class HideOnAr : MonoBehaviour {
     public enum Mode{Ar, NonAr}
 
