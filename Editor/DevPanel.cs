@@ -882,10 +882,14 @@ namespace Filta {
             if (arMode) {
                 if (GUILayout.Button("Switch OFF AR")) {
                     _faceSimulator.ToggleAr();
+                    ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
+                    arTriggerEvents.onArModeSwitch.Invoke(this, false);
                 }
             } else {
                 if (GUILayout.Button("Switch ON AR")) {
                     _faceSimulator.ToggleAr();
+                    ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
+                    arTriggerEvents.onArModeSwitch.Invoke(this, true);
                 }
             }
         }
