@@ -882,14 +882,12 @@ namespace Filta {
             if (arMode) {
                 if (GUILayout.Button("Switch OFF AR")) {
                     _faceSimulator.ToggleAr();
-                    ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
-                    arTriggerEvents.onArModeSwitch.Invoke(this, false);
+                    ArTriggerEvents.onArModeSwitch.Invoke(this, false);
                 }
             } else {
                 if (GUILayout.Button("Switch ON AR")) {
                     _faceSimulator.ToggleAr();
-                    ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
-                    arTriggerEvents.onArModeSwitch.Invoke(this, true);
+                    ArTriggerEvents.onArModeSwitch.Invoke(this, true);
                 }
             }
         }
@@ -899,7 +897,7 @@ namespace Filta {
                 JsonConvert.DeserializeObject<ChatheadPetStateChangedEvent>(_petEventInput);
             ArTriggerEvents arTriggerEvents = FindObjectOfType<ArTriggerEvents>();
             for (int i = 0; i < stateChangedEvent.petEvents.Length; i++) {
-                arTriggerEvents.onPetEvent.Invoke(this, stateChangedEvent.petEvents[i].name);
+                arTriggerEvents.onZooPalEvent.Invoke(this, stateChangedEvent.petEvents[i].name);
             }
         }
 
