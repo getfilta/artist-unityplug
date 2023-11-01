@@ -12,6 +12,8 @@ using UnityEngine.SceneManagement;
 public abstract class SimulatorBase : MonoBehaviour {
     public EventHandler onRecordStart = delegate { };
     public EventHandler onRecordStop = delegate { };
+    [SerializeField]
+    public Camera mainCamera;
     #if UNITY_EDITOR
     public enum SimulatorType {
         Face,
@@ -33,9 +35,6 @@ public abstract class SimulatorBase : MonoBehaviour {
     
     [SerializeField]
     protected RawImage _remoteFeed;
-    
-    [SerializeField]
-    protected Camera mainCamera;
 
     [SerializeField]
     protected GameObject defaultLight;

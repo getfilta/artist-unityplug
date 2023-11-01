@@ -35,6 +35,7 @@ public class Simulator : SimulatorBase {
     public EventHandler<FaceData.Trans> onFaceUpdate;
     public EventHandler onFaceAdd;
     public EventHandler onFaceRemove;
+    public Animator zooPalAnimator;
 
 #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Face;
@@ -214,6 +215,10 @@ public class Simulator : SimulatorBase {
 
         if (twister == null && _filterObject) {
             twister = GameObject.Find("Twister").transform;
+        }
+
+        if (twister != null) {
+            zooPalAnimator = twister.GetComponentInChildren<Animator>();
         }
 
         if (_filterObject != null) {
