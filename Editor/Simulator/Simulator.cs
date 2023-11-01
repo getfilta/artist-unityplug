@@ -60,6 +60,8 @@ public class Simulator : SimulatorBase {
     [SerializeField]
     private Transform twister;
 
+    public Animator zooPalAnimator;
+
     [SerializeField]
     private GameObject background;
 
@@ -214,6 +216,10 @@ public class Simulator : SimulatorBase {
 
         if (twister == null && _filterObject) {
             twister = GameObject.Find("Twister").transform;
+        }
+
+        if (twister != null) {
+            zooPalAnimator = twister.GetComponentInChildren<Animator>();
         }
 
         if (_filterObject != null) {

@@ -35,7 +35,7 @@ public abstract class SimulatorBase : MonoBehaviour {
     protected RawImage _remoteFeed;
     
     [SerializeField]
-    protected Camera mainCamera;
+    public Camera mainCamera;
 
     [SerializeField]
     protected GameObject defaultLight;

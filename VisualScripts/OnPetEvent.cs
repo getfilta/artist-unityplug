@@ -5,18 +5,18 @@ namespace Filta.VisualScripting {
     [UnitCategory("Events/Filta/Internal")]
     public class OnPetEvent : ManualEventUnit<Unit> {
         protected override string hookName => "petEvent";
-
+        
         [DoNotSerialize]
         private ValueOutput _eventName;
         
         private GraphReference _graph;
         private ArTriggerEvents _arTriggerEvents;
 
-        private string _val;
+        private Vector3 _val;
 
         protected override void Definition() {
             base.Definition();
-            _eventName = ValueOutput("Pet Event Name", _ => _val);
+            _eventName = ValueOutput("World Position", _ => _val);
         }
 
         public override void StartListening(GraphStack stack) {
@@ -26,8 +26,8 @@ namespace Filta.VisualScripting {
             _arTriggerEvents.onPetEvent += OnNewPetEvent;
         }
 
-        private void OnNewPetEvent(object sender, string eventName) {
-            _val = eventName;
+        private void OnNewPetEvent(object sender, Vector3 pos) {
+            _val = pos;
             Trigger(_graph, this);
         }
 
