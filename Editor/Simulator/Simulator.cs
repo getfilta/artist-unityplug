@@ -35,6 +35,7 @@ public class Simulator : SimulatorBase {
     public EventHandler<FaceData.Trans> onFaceUpdate;
     public EventHandler onFaceAdd;
     public EventHandler onFaceRemove;
+    public Animator zooPalAnimator;
 
 #if UNITY_EDITOR
     public override SimulatorType _simulatorType => SimulatorType.Face;
@@ -59,8 +60,6 @@ public class Simulator : SimulatorBase {
 
     [SerializeField]
     private Transform twister;
-
-    public Animator zooPalAnimator;
 
     [SerializeField]
     private GameObject background;
