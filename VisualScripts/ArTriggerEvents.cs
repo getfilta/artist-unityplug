@@ -56,7 +56,7 @@ namespace Filta.VisualScripting {
 
         public void OnDestroy() {
             _simulator.updateBlendShapeWeightEvent -= OnUpdateBlendShapeWeightEvent;
-            onZooPalEvent += HandleZooPalEvent;
+            onZooPalEvent -= HandleZooPalEvent;
         }
 
         void Update() {
