@@ -248,6 +248,8 @@ public class Simulator : SimulatorBase {
             if (background != null) {
                 background.SetActive(true);
             }
+
+            mainCamera.fieldOfView = NonArCameraFov;
             isAr = false;
         } else {
             isAr = true;
@@ -257,6 +259,7 @@ public class Simulator : SimulatorBase {
             if (background != null) {
                 background.SetActive(false);
             }
+            mainCamera.fieldOfView = ArCameraFov;
             ResumeSimulator();
         }
     }

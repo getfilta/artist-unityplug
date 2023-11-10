@@ -27,6 +27,9 @@ namespace Filta.VisualScripting {
         public EventHandler<string> onZooPalEvent = delegate { };
         public EventHandler<Vector3> onPetEvent = delegate { };
         public EventHandler<Vector3> onPetDragEvent = delegate { };
+        public EventHandler<ChatheadPetState> onZooPalStateChange = delegate { };
+
+        public static ChatheadPetState currentState;
 
         private const float JawOpenFactor = 10f;
         private const float EyeBlinkFactor = 60f;
@@ -41,9 +44,15 @@ namespace Filta.VisualScripting {
         private Vector3 _prevWorldPos;
         private float _dragDistance;
         private const float MinDragDistance = 2f; //in screenspace pixels
-        private const float PetDragThreshold = 2000f;
+        private const float PetDragThreshold = 2000f; //in screenspace pixels
+        private const int PetThreshold = 4; //number of taps that become a full pet
+        private const float PetTimeThreshold = 15;
+        
         protected static readonly int Petted = Animator.StringToHash("Petted");
-        protected static readonly int FullPetted = Animator.StringToHash("FullPetted");//in screenspace pixels
+        protected static readonly int FullPetted = Animator.StringToHash("FullPetted");
+        
+        private int _petCounter;
+        private float _petTimer;
 
         private void Awake() {
             _simulator = GetComponent<Simulator>();
@@ -61,6 +70,7 @@ namespace Filta.VisualScripting {
 
         void Update() {
             _tapTime += Time.deltaTime;
+            _petTimer += Time.deltaTime;
             if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)) {
                 onScreenTap(this, null);
                 if (_tapTime < MaximumDoubleTapTime) {
@@ -72,10 +82,17 @@ namespace Filta.VisualScripting {
             if (Input.GetMouseButtonUp(0)) {
                 Ray ray = _simulator.mainCamera.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out RaycastHit hit, 100)) {
+                    if (_petCounter >= PetThreshold) {
+                        onZooPalEvent.Invoke(this, "pet");
+                        _petCounter = 0;
+                        return;
+                    }
                     if (_simulator.zooPalAnimator != null) {
                         _simulator.zooPalAnimator.SetTrigger(Petted);
                     }
                     onPetEvent.Invoke(this, hit.point);
+                    _petCounter++;
+                    _petTimer = 0;
                 }
             }
 
@@ -83,6 +100,9 @@ namespace Filta.VisualScripting {
                 HandleDragPetting();
             } else {
                 ResetDrag();
+            }
+            if (_petTimer > PetTimeThreshold) {
+                _petCounter = 0;
             }
         }
         
@@ -189,5 +209,22 @@ namespace Filta.VisualScripting {
                 _isRightEyeOpen = false;
             }
         }
+    }
+    
+    public class ChatheadPetState {
+        public string petType { get; set; }
+        public string name { get; set; }
+        public float affection { get; set; }
+        public float wellBeing { get; set; }
+        public int fullness { get; set; }
+        public int cleanliness { get; set; }
+    }
+    public class ChatheadPetEvent {
+        public string name;
+        public string perkind;
+    }
+    public class ChatheadPetStateChangedEvent {
+        public ChatheadPetState petState { get; set; }
+        public ChatheadPetEvent[] petEvents { get; set; }
     }
 }

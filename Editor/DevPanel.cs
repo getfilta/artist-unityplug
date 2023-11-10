@@ -899,6 +899,7 @@ namespace Filta {
             for (int i = 0; i < stateChangedEvent.petEvents.Length; i++) {
                 arTriggerEvents.onZooPalEvent.Invoke(this, stateChangedEvent.petEvents[i].name);
             }
+            arTriggerEvents.onZooPalStateChange.Invoke(this, stateChangedEvent.petState);
         }
 
         #endregion
