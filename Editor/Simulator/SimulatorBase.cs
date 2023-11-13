@@ -14,6 +14,8 @@ public abstract class SimulatorBase : MonoBehaviour {
     public EventHandler onRecordStop = delegate { };
     [SerializeField]
     public Camera mainCamera;
+    protected const float ArCameraFov = 72.6885f;
+    protected const float NonArCameraFov = 60f;
     #if UNITY_EDITOR
     public enum SimulatorType {
         Face,
