@@ -47,12 +47,14 @@ namespace Filta.VisualScripting {
         private const float PetDragThreshold = 2000f; //in screenspace pixels
         private const int PetThreshold = 4; //number of taps that become a full pet
         private const float PetTimeThreshold = 15;
+        private const float PetCooldownTimeThreshold = 3; //in seconds
         
         protected static readonly int Petted = Animator.StringToHash("Petted");
         protected static readonly int FullPetted = Animator.StringToHash("FullPetted");
         
         private int _petCounter;
         private float _petTimer;
+        private float _petCooldownTimer;
 
         private void Awake() {
             _simulator = GetComponent<Simulator>();
@@ -71,6 +73,7 @@ namespace Filta.VisualScripting {
         void Update() {
             _tapTime += Time.deltaTime;
             _petTimer += Time.deltaTime;
+            _petCooldownTimer += Time.deltaTime;
             if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)) {
                 onScreenTap(this, null);
                 if (_tapTime < MaximumDoubleTapTime) {
@@ -115,6 +118,9 @@ namespace Filta.VisualScripting {
         }
 
         private void HandleDragPetting() {
+            if (_petCooldownTimer < PetCooldownTimeThreshold) {
+                return;
+            }
             Vector2 currentDragPos = Input.mousePosition;
             Ray ray = _simulator.mainCamera.ScreenPointToRay(currentDragPos);
             if (Physics.Raycast(ray, out RaycastHit hit, 100)) {
@@ -126,6 +132,7 @@ namespace Filta.VisualScripting {
                         if (_dragDistance > PetDragThreshold) {
                             ResetDrag();
                             _dragDistance = 0;
+                            _petCooldownTimer = 0;
                             onZooPalEvent.Invoke(this, "pet");
                         }
                     }
